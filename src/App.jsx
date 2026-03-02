@@ -76,7 +76,7 @@ function Gauge({score}){
 }
 
 // ━━━ LEAD DETAIL PAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function LeadPage({lead,onBack,onAsk}){
+function LeadPage({lead,onBack,onAsk,onAskInline,inlineResponse,inlineLoading}){
   const [editing,setEditing]=useState(false);
   const [info,setInfo]=useState({first_name:lead.first_name||"",last_name:lead.last_name||"",email:lead.email||"",phone:lead.phone||"",market:lead.market||"",brokerage:lead.brokerage||""});
   const [notes,setNotes]=useState(lead._notes||[]);
@@ -113,14 +113,17 @@ function LeadPage({lead,onBack,onAsk}){
         </div>
       </div>
 
-      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginBottom:24}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>onAsk(q)} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10}} onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div></div>
+      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginBottom:24}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>onAskInline(q)} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
+      {inlineLoading&&<div style={{marginTop:16,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
+      </div>
 
       <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
         <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>📝 Notes</div><div style={{display:"flex",gap:8,marginBottom:14}}><textarea value={newNote} onChange={ev=>setNewNote(ev.target.value)} onKeyDown={ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();addNote();}}} placeholder="Add a note..." rows={2} style={{flex:1,padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,fontFamily:"inherit",outline:"none",resize:"none",lineHeight:1.5}}/><div onClick={addNote} style={{padding:"12px 18px",borderRadius:8,background:newNote.trim()?T.am:T.d,color:newNote.trim()?T.a:T.m,fontSize:14,fontWeight:700,cursor:newNote.trim()?"pointer":"default",display:"flex",alignItems:"center"}}>Save</div></div><div style={{maxHeight:300,overflow:"auto"}}>{notes.length>0?notes.map(n=><div key={n.id} style={{padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6}}><div style={{fontSize:14,color:T.t,lineHeight:1.5}}>{n.text}</div><div style={{fontSize:11,color:T.m,marginTop:4}}>{new Date(n.date).toLocaleString()}</div></div>):<div style={{fontSize:14,color:T.m,textAlign:"center",padding:"20px"}}>No notes yet</div>}</div></div>
         <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>📞 Communication</div><div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>{Object.entries(commIcons).map(([k,v])=><div key={k} onClick={()=>setCommType(k)} style={{padding:"6px 12px",borderRadius:6,background:commType===k?T.am:T.d,color:commType===k?T.a:T.s,fontSize:13,fontWeight:600,cursor:"pointer"}}>{v} {k.charAt(0).toUpperCase()+k.slice(1)}</div>)}</div><div style={{display:"flex",gap:8,marginBottom:14}}><input value={commNote} onChange={ev=>setCommNote(ev.target.value)} onKeyDown={ev=>{if(ev.key==="Enter")addComm();}} placeholder={`Log ${commType}...`} style={{flex:1,padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,fontFamily:"inherit",outline:"none"}}/><div onClick={addComm} style={{padding:"12px 18px",borderRadius:8,background:commNote.trim()?T.am:T.d,color:commNote.trim()?T.a:T.m,fontSize:14,fontWeight:700,cursor:commNote.trim()?"pointer":"default"}}>Log</div></div><div style={{maxHeight:300,overflow:"auto"}}>{commLog.length>0?commLog.map(c=><div key={c.id} style={{display:"flex",gap:10,padding:"10px 0",borderBottom:`1px solid ${T.b}`}}><span style={{fontSize:18}}>{commIcons[c.type]||"📌"}</span><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:13,fontWeight:700,color:T.t,textTransform:"capitalize"}}>{c.type}</span><span style={{fontSize:11,color:T.m}}>{new Date(c.date).toLocaleString()}</span></div><div style={{fontSize:14,color:T.s,lineHeight:1.5,marginTop:2}}>{c.note}</div></div></div>):<div style={{fontSize:14,color:T.m,textAlign:"center",padding:"20px"}}>No communication logged</div>}</div></div>
       </div>
 
-      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🔍 Intel Dossier</div>{lead.raw_dossier?<pre style={{fontSize:14,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{lead.raw_dossier}</pre>:<div style={{textAlign:"center",padding:"24px"}}><div style={{fontSize:14,color:T.m,marginBottom:12}}>No intel yet</div><div onClick={()=>onAsk(`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find production, reviews, social media, outreach angle.`)} style={{display:"inline-block",padding:"10px 20px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer"}}>🔍 Ask LIVI to Research</div></div>}</div>
+      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🔍 Intel Dossier</div>{lead.raw_dossier?<pre style={{fontSize:14,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{lead.raw_dossier}</pre>:<div style={{textAlign:"center",padding:"24px"}}><div style={{fontSize:14,color:T.m,marginBottom:12}}>No intel yet</div><div onClick={()=>onAskInline(`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find production, reviews, social media, outreach angle.`)} style={{display:"inline-block",padding:"10px 20px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer"}}>🔍 Ask LIVI to Research</div></div>}</div>
     </div>
   );
 }
@@ -148,9 +151,10 @@ export default function Livi(){
   useEffect(()=>{load();const i=setInterval(load,45000);return()=>clearInterval(i);},[load]);
   useEffect(()=>{endRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
 
-  const send=async()=>{
-    if(!inp.trim()||busy)return;
-    const txt=inp.trim();setInp("");
+  const send=async(overrideMsg)=>{
+    const txt=overrideMsg||inp.trim();
+    if(!txt||busy)return;
+    if(!overrideMsg)setInp("");
     const next=[...msgs,{role:"user",content:txt}];
     setMsgs(next);setBusy(true);
     try{
@@ -159,14 +163,53 @@ export default function Livi(){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
         sys+=`\n\nAd spend: $20/day Facebook/Instagram for LPT Realty recruiting.`;
       }
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages:next.map(m=>({role:m.role,content:m.content}))})});
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages:next.map(m=>({role:m.role,content:m.content}))})});
+      if(!r.ok){const err=await r.text();console.error("API error:",r.status,err);setMsgs(p=>[...p,{role:"assistant",content:`API returned ${r.status}. To enable LIVI chat, add your Anthropic API key as VITE_ANTHROPIC_KEY in Vercel environment variables.`}]);setBusy(false);return;}
       const d=await r.json();
       setMsgs(p=>[...p,{role:"assistant",content:d.content?.map(c=>c.text||"").join("\n")||"Try again."}]);
-    }catch{setMsgs(p=>[...p,{role:"assistant",content:"Connection error. Try again."}]);}
+    }catch(e){console.error("Chat error:",e);setMsgs(p=>[...p,{role:"assistant",content:"Connection error. Check console for details."}]);}
     setBusy(false);
   };
 
-  const askLivi=(q)=>{setInp(q);setView("chat");setChatWide(true);setTimeout(()=>{const el=document.querySelector('textarea');if(el){el.focus();}},100);};
+  // askLivi: for sidebar/chat - auto-sends the message
+  const askLivi=(q)=>{
+    const next=[...msgs,{role:"user",content:q}];
+    setMsgs(next);setInp("");
+    if(view!=="lead"&&view!=="addlead"){setView("chat");setChatWide(true);}
+    send(q);
+  };
+
+  // askLiviInline: for lead page - returns promise with response text
+  const [inlineResponse,setInlineResponse]=useState(null);
+  const [inlineLoading,setInlineLoading]=useState(false);
+  const askLiviInline=async(q)=>{
+    setInlineLoading(true);setInlineResponse(null);
+    try{
+      let sys=SYSTEM;
+      if(leads.length>0){
+        sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
+      }
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,system:sys,messages:[{role:"user",content:q}]})});
+      if(!r.ok){setInlineResponse("API error — add your Anthropic API key to Vercel env vars to enable LIVI.");setInlineLoading(false);return;}
+      const d=await r.json();
+      setInlineResponse(d.content?.map(c=>c.text||"").join("\n")||"No response.");
+    }catch{setInlineResponse("Connection error.");}
+    setInlineLoading(false);
+  };
+
+  // Browser history for back button
+  const setViewWithHistory=(v)=>{
+    window.history.pushState({view:v},"",`#${v}`);
+    setView(v);
+  };
+  useEffect(()=>{
+    const onPop=(ev)=>{
+      if(ev.state?.view){setView(ev.state.view);if(ev.state.view!=="lead")setSelLead(null);}
+      else{setView("home");setSelLead(null);}
+    };
+    window.addEventListener("popstate",onPop);
+    return()=>window.removeEventListener("popstate",onPop);
+  },[]);
 
   const total=leads.length,targets=leads.filter(l=>l.brokerage&&!l.brokerage.includes("LPT")).length,urgent=leads.filter(l=>l.urgency==="HIGH").length;
   const today=leads.filter(l=>l.created_at&&new Date(l.created_at).toDateString()===new Date().toDateString()).length;
@@ -256,21 +299,21 @@ export default function Livi(){
           {(needsFollowUp.length>0||needsResearch.length>0||hasMeeting.length>0)?(
             <div>
               {hasMeeting.map((l,i)=>
-                <div key={`m${i}`} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.p+"08",border:`1px solid ${T.p}15`,marginBottom:8,cursor:"pointer"}}>
+                <div key={`m${i}`} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.p+"08",border:`1px solid ${T.p}15`,marginBottom:8,cursor:"pointer"}}>
                   <span style={{fontSize:18}}>🤝</span>
                   <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600,color:T.t}}>Prep for {l.first_name} {l.last_name}</div><div style={{fontSize:13,color:T.s}}>Meeting booked — prep your talking points</div></div>
                   <span style={{fontSize:13,color:T.p,fontWeight:600}}>Prep →</span>
                 </div>
               )}
               {needsFollowUp.slice(0,3).map((l,i)=>
-                <div key={`f${i}`} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.r+"08",border:`1px solid ${T.r}15`,marginBottom:8,cursor:"pointer"}}>
+                <div key={`f${i}`} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.r+"08",border:`1px solid ${T.r}15`,marginBottom:8,cursor:"pointer"}}>
                   <span style={{fontSize:18}}>🔄</span>
                   <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600,color:T.t}}>Follow up with {l.first_name} {l.last_name}</div><div style={{fontSize:13,color:T.s}}>{l.market} · {ago(l.created_at)} since last touch</div></div>
                   <span style={{fontSize:13,color:T.r,fontWeight:600}}>Overdue</span>
                 </div>
               )}
               {needsResearch.slice(0,3).map((l,i)=>
-                <div key={`r${i}`} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.bl+"08",border:`1px solid ${T.bl}15`,marginBottom:8,cursor:"pointer"}}>
+                <div key={`r${i}`} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.bl+"08",border:`1px solid ${T.bl}15`,marginBottom:8,cursor:"pointer"}}>
                   <span style={{fontSize:18}}>🔍</span>
                   <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600,color:T.t}}>Research {l.first_name} {l.last_name}</div><div style={{fontSize:13,color:T.s}}>New lead — needs intel before outreach</div></div>
                   <span style={{fontSize:13,color:T.bl,fontWeight:600}}>Research →</span>
@@ -287,9 +330,9 @@ export default function Livi(){
 
         {/* Hot Leads */}
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><span style={{fontSize:18,fontWeight:700,color:T.t}}>🔥 Hot Leads</span><span onClick={()=>setView("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>All →</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><span style={{fontSize:18,fontWeight:700,color:T.t}}>🔥 Hot Leads</span><span onClick={()=>setViewWithHistory("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>All →</span></div>
           {leads.filter(l=>l.urgency==="HIGH"||l.urgency==="MEDIUM").sort((a,b)=>({HIGH:0,MEDIUM:1}[a.urgency]||2)-({HIGH:0,MEDIUM:1}[b.urgency]||2)).slice(0,5).map((l,i)=>
-            <div key={i} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}
+            <div key={i} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}
               onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
               <div>
                 <div style={{fontSize:15,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</div>
@@ -334,7 +377,7 @@ export default function Livi(){
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <span style={{fontSize:18,fontWeight:700,color:T.t}}>🆕 Recent Leads</span>
-          <span onClick={()=>setView("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>View All →</span>
+          <span onClick={()=>setViewWithHistory("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>View All →</span>
         </div>
         {leads.length>0 ? (
           <div style={{overflowX:"auto"}}>
@@ -343,7 +386,7 @@ export default function Livi(){
               <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
             )}</tr></thead>
             <tbody>{leads.slice(0,6).map((l,i)=>
-              <tr key={i} onClick={()=>{setSelLead(l);setView("lead");}} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+              <tr key={i} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
                 <td style={{padding:"14px",fontSize:15,fontWeight:600,color:T.t,whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
                 <td style={{padding:"14px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
                 <td style={{padding:"14px",fontSize:14,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,22)||"—"}</td>
@@ -413,7 +456,7 @@ export default function Livi(){
     return(
       <div draggable onDragStart={()=>setDragLead(l)} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:8,padding:"14px 16px",marginBottom:18,cursor:"grab",transition:"border-color 0.12s"}}
         onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
-        <div onClick={()=>{setSelLead(l);setView("lead");}} style={{cursor:"pointer"}}>
+        <div onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{cursor:"pointer"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
             <div style={{fontSize:16,fontWeight:700,color:T.t}}>{l.first_name} {l.last_name}</div>
             <UPill u={l.urgency}/>
@@ -467,7 +510,7 @@ export default function Livi(){
           {[["urgency","🔥 Hot First"],["tier","🏆 Top Tier"],["newest","🕐 Newest"],["oldest","⏳ Oldest"]].map(([v,l])=><option key={v} value={v} style={{background:T.card}}>{l}</option>)}
         </select>
         <div onClick={()=>setPipeView(pipeView==="kanban"?"table":"kanban")} style={{padding:"10px 16px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,fontSize:15,color:T.s,cursor:"pointer"}}>{pipeView==="kanban"?"☰ Table":"▦ Board"}</div>
-        <div onClick={()=>setView("addlead")} style={{padding:"10px 16px",borderRadius:6,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer"}}>+ Add Lead</div>
+        <div onClick={()=>setViewWithHistory("addlead")} style={{padding:"10px 16px",borderRadius:6,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer"}}>+ Add Lead</div>
       </div>
 
       {/* Active filters */}
@@ -515,7 +558,7 @@ export default function Livi(){
           const contactColor=daysSince===null?T.m:daysSince>7?T.r:daysSince>3?T.y:T.a;
           return(
             <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-              <td onClick={()=>{setSelLead(l);setView("lead");}} style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t,cursor:"pointer"}}>{l.first_name} {l.last_name}</td>
+              <td onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t,cursor:"pointer"}}>{l.first_name} {l.last_name}</td>
               <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.market}</td>
               <td style={{padding:"14px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,22)}</td>
               <td style={{padding:"14px"}}><TPill t={l.tier}/></td>
@@ -544,7 +587,7 @@ export default function Livi(){
               const act=stageAction(l);
               return(
                 <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-                  <td onClick={()=>{setSelLead(l);setView("lead");}} style={{padding:"14px",fontSize:15,fontWeight:600,color:T.t,cursor:"pointer",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
+                  <td onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{padding:"14px",fontSize:15,fontWeight:600,color:T.t,cursor:"pointer",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
                   <td style={{padding:"14px",fontSize:13,color:T.bl}}>{l.email?<a href={`mailto:${l.email}`} style={{color:T.bl,textDecoration:"none"}}>{l.email.length>24?l.email.substring(0,24)+"…":l.email}</a>:"—"}</td>
                   <td style={{padding:"14px",fontSize:14,color:T.s,whiteSpace:"nowrap"}}>{l.phone||"—"}</td>
                   <td style={{padding:"14px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
@@ -612,7 +655,7 @@ export default function Livi(){
       <div className="app-sidebar" style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
         <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
         {[["home","⬡"],["pipeline","◎"],["chat","💬"]].map(([id,ic])=>
-          <div key={id} onClick={()=>{setView(id);if(id==="chat")setChatWide(true);else setChatWide(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
+          <div key={id} onClick={()=>{setViewWithHistory(id);if(id==="chat")setChatWide(true);else setChatWide(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
         )}
         <div style={{flex:1}}/>
         <div onClick={load} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
@@ -635,16 +678,16 @@ export default function Livi(){
             {view!=="lead"&&view!=="addlead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
               <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":"Lead Pipeline"}</h1>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
-                {view==="home"&&<div onClick={()=>setView("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
+                {view==="home"&&<div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
                 <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
               </div>
             </div>}
             {view==="home"&&<Dash/>}
             {view==="pipeline"&&<Pipeline/>}
-            {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setView("pipeline");}} onAsk={(q)=>{askLivi(q);}}/>}
+            {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAsk={askLivi} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
             {view==="addlead"&&(
               <div style={{flex:1,overflow:"auto",padding:"24px 32px",maxWidth:700}}>
-                <div onClick={()=>setView("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
+                <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
                 <h1 style={{fontSize:28,fontWeight:800,margin:"0 0 24px"}}>Add New Lead</h1>
                 <div style={{background:T.card,borderRadius:12,padding:"28px 30px",border:`1px solid ${T.b}`}}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}} className="form-grid">
