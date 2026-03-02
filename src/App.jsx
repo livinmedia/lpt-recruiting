@@ -385,8 +385,8 @@ function AgentDirectory(){
       {!searched && !loading && (
         <div style={{textAlign:"center",padding:"60px 20px"}}>
           <div style={{fontSize:48,marginBottom:16}}>🔍</div>
-          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>352,338 Real Licensed Agents</div>
-          <div style={{fontSize:15,color:T.s,maxWidth:500,margin:"0 auto",lineHeight:1.6}}>Search by state, brokerage, name, or city. Every record is from official state licensing boards — Texas TREC, New York DOS, Connecticut DCP. Add agents directly to your recruiting pipeline.</div>
+          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>848,000+ Real Licensed Agents</div>
+          <div style={{fontSize:15,color:T.s,maxWidth:500,margin:"0 auto",lineHeight:1.6}}>Search by state, brokerage, name, or city. Every record is from official state licensing boards — Florida DBPR, Texas TREC, New York DOS, Connecticut DCP. Auto-synced weekly. Add agents directly to your recruiting pipeline.</div>
           <div style={{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:10,marginTop:24}}>
             {[{l:"🆕 New TX agents (30d)",f:{state:"TX",brokerage:"",name:"",city:"",newDays:"30"}},{l:"eXp agents in TX",f:{state:"TX",brokerage:"EXP REALTY",name:"",city:"",newDays:""}},{l:"Compass in NY",f:{state:"NY",brokerage:"COMPASS",name:"",city:"",newDays:""}},{l:"All LPT Realty",f:{state:"",brokerage:"LPT REALTY",name:"",city:"",newDays:""}}].map((ex,i)=>
               <div key={i} onClick={()=>{setFilters(ex.f);doSearch(ex.f,0);}} style={{padding:"10px 18px",borderRadius:8,background:i===0?T.y+"20":T.am,color:i===0?T.y:T.a,fontSize:14,fontWeight:600,cursor:"pointer",border:`1px solid ${i===0?T.y+"30":T.a+"20"}`}}>{ex.l}</div>
@@ -415,11 +415,13 @@ export default function Livi(){
 
   useEffect(()=>{load();const i=setInterval(load,45000);return()=>clearInterval(i);},[load]);
 
-  // askLiviInline: inline AI on every page
+  // askLiviInline: scoped per page — response clears on navigation
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
-  const askLiviInline=async(q)=>{
-    setInlineLoading(true);setInlineResponse(null);
+  const [responseSource,setResponseSource]=useState(null); // tracks which view/lead triggered it
+  const askLiviInline=async(q,source)=>{
+    const src=source||view;
+    setInlineLoading(true);setInlineResponse(null);setResponseSource(src);
     try{
       let sys=SYSTEM;
       if(leads.length>0){
@@ -442,6 +444,8 @@ export default function Livi(){
   const setViewWithHistory=(v)=>{
     window.history.pushState({view:v},"",`#${v}`);
     setView(v);
+    // Clear LIVI response when navigating away
+    if(v!==responseSource){setInlineResponse(null);setResponseSource(null);}
   };
   useEffect(()=>{
     const onPop=(ev)=>{
@@ -460,21 +464,23 @@ export default function Livi(){
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
 
-  // ━━━ ASK LIVI BAR (top of every page) ━━━━━━━━━━━━
-  const AskLiviBar=({prompts})=>(
+  // ━━━ ASK LIVI BAR (top of page, scoped response) ━━━━━━━━━━━━
+  const AskLiviBar=({prompts,source})=>{
+    const isMyResponse=responseSource===source;
+    return(
     <>
       <div className="quick-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
         {prompts.map(([icon,label,q,c],i)=>
-          <div key={i} onClick={()=>askLiviInline(q)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
+          <div key={i} onClick={()=>askLiviInline(q,source)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
             onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20"}} onMouseOut={ev=>ev.currentTarget.style.background=(c||T.bl)+"10"}>
             <span style={{fontSize:24}}>{icon}</span><span style={{fontSize:15,fontWeight:700,color:T.t}}>{label}</span>
           </div>
         )}
       </div>
-      {inlineLoading&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
+      {inlineLoading&&isMyResponse&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
+      {inlineResponse&&!inlineLoading&&isMyResponse&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><div style={{display:"flex",gap:12}}><span onClick={()=>{setInlineResponse(null);setResponseSource(null);}} style={{fontSize:12,color:T.m,cursor:"pointer"}}>✕ Dismiss</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
     </>
-  );
+  );};
 
   // ━━━ ADD LEAD TO SUPABASE ━━━━━━━━━━━━━━━━━━━━━━━
   const saveLead=async(doResearch)=>{
@@ -921,11 +927,11 @@ export default function Livi(){
             <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
           </div>
         </div>}
-        {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents in my target markets who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.`,T.y]]}/><Dash/></>}
-        {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
-        {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
+        {view==="home"&&<><AskLiviBar source="home" prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents in my target markets who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.`,T.y]]}/><Dash/></>}
+        {view==="pipeline"&&<><AskLiviBar source="pipeline" prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
+        {view==="crm"&&<><AskLiviBar source="crm" prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
         {view==="agents"&&<AgentDirectory/>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} onRefreshLead={async()=>{await load();}}/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setInlineResponse(null);setResponseSource(null);setViewWithHistory("pipeline");}} onAskInline={(q)=>askLiviInline(q,"lead_"+selLead.id)} inlineResponse={responseSource===("lead_"+selLead.id)?inlineResponse:null} inlineLoading={inlineLoading&&responseSource===("lead_"+selLead.id)} onRefreshLead={async()=>{await load();}}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
