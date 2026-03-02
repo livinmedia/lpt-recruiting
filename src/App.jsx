@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-const SUPA = "https://zuwvovjhrkzlpdxcpsud.supabase.co/rest/v1";
-const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1d3Zvdmpocmt6bHBkeGNwc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTMyOTAsImV4cCI6MjA4NzcyOTI5MH0.SmOAe8yeEa79hrSkwMLLq5z70Fmoxznvhs0YNOxa-no";
+const SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
 
-// LIVI AI Platform — Agent Directory (352K+ real agents)
+// LIVI AI Platform — Agent Directory (848K+ real agents)
 const LIVI_SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
 const LIVI_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
 
@@ -188,9 +188,9 @@ Return ONLY JSON. No markdown, no backticks.`;
         }
       }
 
-      // Step 3: PATCH to dazet_leads
+      // Step 3: PATCH to leads
       setSaveMsg(`Saving ${fieldNames.length+1} fields...`);
-      const r=await fetch(`${SUPA}/dazet_leads?id=eq.${lead.id}`,{
+      const r=await fetch(`${SUPA}/leads?id=eq.${lead.id}`,{
         method:"PATCH",
         headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
         body:JSON.stringify(updates)
@@ -199,8 +199,8 @@ Return ONLY JSON. No markdown, no backticks.`;
         setSaveMsg(`✓ Saved dossier + ${fieldNames.length} parsed fields`);
         if(onRefreshLead)onRefreshLead();
       }else{
-        // Some fields might not exist on dazet_leads — fallback to just raw_dossier
-        const r2=await fetch(`${SUPA}/dazet_leads?id=eq.${lead.id}`,{
+        // Some fields might not exist on leads — fallback to just raw_dossier
+        const r2=await fetch(`${SUPA}/leads?id=eq.${lead.id}`,{
           method:"PATCH",
           headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
           body:JSON.stringify({raw_dossier:inlineResponse,pipeline_stage:lead.pipeline_stage==="new"?"researched":lead.pipeline_stage,updated_at:new Date().toISOString()})
@@ -318,7 +318,7 @@ function AgentDirectory(){
   const addToPipeline=async(agent)=>{
     try {
       const body={first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage:agent.brokerage_name||"",market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),source:"Agent Directory",pipeline_stage:"new",tier:"New",urgency:"LOW",notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`};
-      const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
+      const r=await fetch(`${SUPA}/leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));}
     } catch(e) { console.error("Add to pipeline error:", e); }
   };
@@ -478,7 +478,7 @@ export default function Livi(){
 
   const load=useCallback(async()=>{
     setLoading(true);
-    const [l,a]=await Promise.all([sq("dazet_leads","order=created_at.desc&limit=100"),sq("dazet_agent_activity","order=created_at.desc&limit=50")]);
+    const [l,a]=await Promise.all([sq("leads","order=created_at.desc&limit=100"),sq("activity_log","order=created_at.desc&limit=50")]);
     setLeads(l||[]);setActivity(a||[]);setLoading(false);
   },[]);
 
@@ -556,7 +556,7 @@ export default function Livi(){
     if(!newLead.first_name.trim())return;
     try{
       const body={first_name:newLead.first_name.trim(),last_name:newLead.last_name.trim(),email:newLead.email.trim()||null,phone:newLead.phone.trim()||null,market:newLead.market.trim()||null,brokerage:newLead.brokerage.trim()||null,source:newLead.source.trim()||"Manual",pipeline_stage:"new",tier:"New",urgency:"LOW"};
-      const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
+      const r=await fetch(`${SUPA}/leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(!r.ok){console.error("Add lead error:",r.status,await r.text());return;}
       const saved=await r.json();
       console.log("Lead saved:",saved);
@@ -1004,7 +1004,7 @@ export default function Livi(){
           await load();
           // Refresh the selected lead with latest data
           try{
-            const r=await fetch(`${SUPA}/dazet_leads?id=eq.${selLead.id}&select=*`,{headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`}});
+            const r=await fetch(`${SUPA}/leads?id=eq.${selLead.id}&select=*`,{headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`}});
             if(r.ok){const d=await r.json();if(d[0])setSelLead(d[0]);}
           }catch{}
         }}/>}
