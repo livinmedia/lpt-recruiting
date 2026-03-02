@@ -75,40 +75,212 @@ function Gauge({score}){
   return <div style={{textAlign:"center"}}><svg width="160" height="96" viewBox="0 0 100 60"><path d="M 6 56 A 44 44 0 0 1 94 56" fill="none" stroke={T.m} strokeWidth="5" strokeLinecap="round"/><path d="M 6 56 A 44 44 0 0 1 94 56" fill="none" stroke={col} strokeWidth="5" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={o} style={{transition:"all 0.8s"}}/><text x="50" y="44" textAnchor="middle" fill={T.t} fontSize="20" fontWeight="800">{score}</text><text x="50" y="56" textAnchor="middle" fill={col} fontSize="7" fontWeight="700">{score>=70?"STRONG":score>=40?"BUILDING":"WEAK"}</text></svg></div>;
 }
 
-// ━━━ LEAD PANEL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function LeadPanel({lead,onClose,onAsk}){
+// ━━━ LEAD DETAIL PAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function LeadPage({lead,onBack,onAsk}){
+  const [tab,setTab]=useState("overview");
+  const [notes,setNotes]=useState(lead._notes||[]);
+  const [newNote,setNewNote]=useState("");
+  const [commLog,setCommLog]=useState(lead._comms||[]);
+  const [commType,setCommType]=useState("call");
+  const [commNote,setCommNote]=useState("");
+
   if(!lead)return null;
-  const F=({l,v})=>v?<div style={{marginBottom:14}}><div style={{fontSize:12,color:T.m,letterSpacing:1}}>{l}</div><div style={{fontSize:16,color:T.t}}>{v}</div></div>:null;
+
+  const addNote=()=>{
+    if(!newNote.trim())return;
+    setNotes(p=>[{text:newNote.trim(),date:new Date().toISOString(),id:Date.now()},...p]);
+    setNewNote("");
+  };
+
+  const addComm=()=>{
+    if(!commNote.trim())return;
+    setCommLog(p=>[{type:commType,note:commNote.trim(),date:new Date().toISOString(),id:Date.now()},...p]);
+    setCommNote("");
+  };
+
+  const commIcons={call:"📞",text:"💬",email:"📧",meeting:"🤝",dm:"📱",linkedin:"💼"};
+  const F=({l,v,link})=>v?<div style={{marginBottom:16}}><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:4}}>{l}</div>{link?<a href={link} style={{fontSize:16,color:T.bl,textDecoration:"none"}}>{v}</a>:<div style={{fontSize:16,color:T.t}}>{v}</div>}</div>:null;
+
+  const tabs=[["overview","Overview"],["notes","Notes"],["comms","Communication"],["dossier","Intel"],["livi","Ask LIVI"]];
+
   return(
-    <div style={{position:"fixed",inset:0,zIndex:100,display:"flex"}}>
-      <div onClick={onClose} style={{flex:1,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)"}}/>
-      <div style={{width:480,background:T.side,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column"}}>
-        <div style={{padding:"22px 24px",borderBottom:`1px solid ${T.b}`}}>
-          <div style={{display:"flex",justifyContent:"space-between"}}>
-            <div><div style={{fontSize:22,fontWeight:800,color:T.t}}>{lead.first_name} {lead.last_name}</div><div style={{fontSize:15,color:T.s}}>{lead.market} · {lead.brokerage?.substring(0,28)}</div></div>
-            <div onClick={onClose} style={{cursor:"pointer",color:T.s}}>✕</div>
+    <div style={{flex:1,overflow:"auto",padding:"24px 32px"}}>
+      {/* Header */}
+      <div onClick={onBack} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:20}}>← Back to Pipeline</div>
+      
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+        <div>
+          <h1 style={{fontSize:32,fontWeight:800,margin:"0 0 6px"}}>{lead.first_name} {lead.last_name}</h1>
+          <div style={{display:"flex",alignItems:"center",gap:12,fontSize:16,color:T.s}}>
+            <span>{lead.market||"Unknown Market"}</span>
+            <span style={{color:T.m}}>·</span>
+            <span>{lead.brokerage||"Unknown Brokerage"}</span>
           </div>
-          <div style={{display:"flex",gap:10,marginTop:10}}>{STAGES.map(s=><div key={s.id} style={{flex:1,padding:"6px 0",borderRadius:3,textAlign:"center",fontSize:12,fontWeight:700,background:lead.pipeline_stage===s.id?s.c+"20":T.d,color:lead.pipeline_stage===s.id?s.c:T.m}}>{s.l.toUpperCase()}</div>)}</div>
         </div>
-        <div style={{flex:1,overflow:"auto",padding:"24px 32px"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
-            {[["TIER",lead.tier],["URGENCY",lead.urgency],["TREND",lead.trend]].map(([l,v])=><div key={l} style={{background:T.card,borderRadius:6,padding:"10px 14px",border:`1px solid ${T.b}`}}><div style={{fontSize:12,color:T.m,letterSpacing:1}}>{l}</div><div style={{fontSize:17,fontWeight:800,color:T.t}}>{v||"—"}</div></div>)}
-          </div>
-          <div style={{background:T.card,borderRadius:7,padding:"14px 18px",border:`1px solid ${T.b}`,marginBottom:18,display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-            <F l="EMAIL" v={lead.email}/><F l="PHONE" v={lead.phone}/><F l="BROKERAGE" v={lead.brokerage}/><F l="LICENSE" v={lead.license_number}/>
-          </div>
-          {lead.outreach_angle&&<div style={{background:T.as,borderRadius:7,padding:"14px 18px",border:`1px solid ${T.a}15`,marginBottom:18}}><div style={{fontSize:13,color:T.a,letterSpacing:1.5,fontWeight:700,marginBottom:20}}>🎯 OUTREACH ANGLE</div><div style={{fontSize:16,color:T.t,lineHeight:1.6}}>{lead.outreach_angle}</div></div>}
-          {lead.urgency_reason&&<div style={{background:T.y+"08",borderRadius:7,padding:"14px 18px",border:`1px solid ${T.y}15`,marginBottom:18}}><div style={{fontSize:13,color:T.y,letterSpacing:1.5,fontWeight:700,marginBottom:20}}>⚡ URGENCY</div><div style={{fontSize:16,color:T.t,lineHeight:1.6}}>{lead.urgency_reason}</div></div>}
-          <div style={{fontSize:13,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:20}}>ASK LIVI ABOUT THIS LEAD</div>
-          {[`Draft outreach to ${lead.first_name}`,`Research ${lead.first_name}'s production in ${lead.market}`,`Write a post targeting ${lead.market} agents`].map((q,i)=>(
-            <div key={i} onClick={()=>{onAsk(q);onClose();}} style={{padding:"12px 16px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,fontSize:15,color:T.s,cursor:"pointer",marginBottom:20,display:"flex",gap:6}}
-              onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
-              <span style={{color:T.a}}>→</span>{q}
-            </div>
-          ))}
-          {lead.raw_dossier&&<details style={{marginTop:8}}><summary style={{fontSize:14,color:T.s,cursor:"pointer"}}>📄 Full Dossier</summary><pre style={{fontSize:14,color:T.s,lineHeight:1.5,whiteSpace:"pre-wrap",margin:"6px 0 0",background:T.card,padding:10,borderRadius:7,border:`1px solid ${T.b}`,maxHeight:250,overflow:"auto"}}>{lead.raw_dossier}</pre></details>}
+        <div style={{display:"flex",gap:8}}>
+          <TPill t={lead.tier}/>
+          <UPill u={lead.urgency}/>
         </div>
       </div>
+
+      {/* Pipeline Stage Bar */}
+      <div style={{display:"flex",gap:6,marginBottom:24}}>{STAGES.map(s=>
+        <div key={s.id} style={{flex:1,padding:"10px 0",borderRadius:6,textAlign:"center",fontSize:13,fontWeight:700,background:lead.pipeline_stage===s.id?s.c+"20":T.d,color:lead.pipeline_stage===s.id?s.c:T.m,border:`1px solid ${lead.pipeline_stage===s.id?s.c+"30":T.b}`,cursor:"pointer"}}>{s.l}</div>
+      )}</div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",gap:4,marginBottom:24,borderBottom:`1px solid ${T.b}`,paddingBottom:0}}>
+        {tabs.map(([id,label])=>
+          <div key={id} onClick={()=>setTab(id)} style={{padding:"12px 20px",fontSize:15,fontWeight:tab===id?700:500,color:tab===id?T.a:T.s,borderBottom:tab===id?`2px solid ${T.a}`:"2px solid transparent",cursor:"pointer",marginBottom:-1}}>{label}</div>
+        )}
+      </div>
+
+      {/* ━━━ OVERVIEW TAB ━━━ */}
+      {tab==="overview"&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          {/* Contact Info */}
+          <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}>
+            <div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:16}}>📇 Contact Info</div>
+            <F l="EMAIL" v={lead.email} link={lead.email?`mailto:${lead.email}`:null}/>
+            <F l="PHONE" v={lead.phone} link={lead.phone?`tel:${lead.phone}`:null}/>
+            <F l="BROKERAGE" v={lead.brokerage}/>
+            <F l="MARKET" v={lead.market}/>
+            <F l="LICENSE" v={lead.license_number}/>
+            <F l="SOURCE" v={lead.source}/>
+          </div>
+
+          {/* Quick Stats */}
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+              {[["TIER",lead.tier,T.p],["URGENCY",lead.urgency,{HIGH:T.r,MEDIUM:T.y,LOW:T.a}[lead.urgency]||T.s],["TREND",lead.trend||"—",T.bl]].map(([l,v,c])=>
+                <div key={l} style={{background:T.card,borderRadius:10,padding:"16px 18px",border:`1px solid ${T.b}`,textAlign:"center"}}>
+                  <div style={{fontSize:11,color:T.m,letterSpacing:2,marginBottom:6}}>{l}</div>
+                  <div style={{fontSize:20,fontWeight:800,color:c}}>{v||"—"}</div>
+                </div>
+              )}
+            </div>
+
+            {lead.outreach_angle&&<div style={{background:T.as,borderRadius:10,padding:"20px 22px",border:`1px solid ${T.a}20`}}>
+              <div style={{fontSize:13,color:T.a,letterSpacing:1.5,fontWeight:700,marginBottom:8}}>🎯 OUTREACH ANGLE</div>
+              <div style={{fontSize:15,color:T.t,lineHeight:1.7}}>{lead.outreach_angle}</div>
+            </div>}
+
+            {lead.urgency_reason&&<div style={{background:T.y+"08",borderRadius:10,padding:"20px 22px",border:`1px solid ${T.y}20`}}>
+              <div style={{fontSize:13,color:T.y,letterSpacing:1.5,fontWeight:700,marginBottom:8}}>⚡ URGENCY REASON</div>
+              <div style={{fontSize:15,color:T.t,lineHeight:1.7}}>{lead.urgency_reason}</div>
+            </div>}
+
+            {/* Social Links */}
+            {(lead.linkedin_url||lead.instagram_handle||lead.facebook_url||lead.youtube_channel||lead.website_url)&&(
+              <div style={{background:T.card,borderRadius:10,padding:"20px 22px",border:`1px solid ${T.b}`}}>
+                <div style={{fontSize:13,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:12}}>🔗 LINKS</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                  {lead.linkedin_url&&<a href={lead.linkedin_url} target="_blank" rel="noreferrer" style={{padding:"8px 14px",borderRadius:6,background:T.bl+"15",color:T.bl,fontSize:13,fontWeight:600,textDecoration:"none"}}>LinkedIn</a>}
+                  {lead.instagram_handle&&<span style={{padding:"8px 14px",borderRadius:6,background:T.p+"15",color:T.p,fontSize:13,fontWeight:600}}>@{lead.instagram_handle}</span>}
+                  {lead.facebook_url&&<a href={lead.facebook_url} target="_blank" rel="noreferrer" style={{padding:"8px 14px",borderRadius:6,background:T.bl+"15",color:T.bl,fontSize:13,fontWeight:600,textDecoration:"none"}}>Facebook</a>}
+                  {lead.youtube_channel&&<a href={lead.youtube_channel} target="_blank" rel="noreferrer" style={{padding:"8px 14px",borderRadius:6,background:T.r+"15",color:T.r,fontSize:13,fontWeight:600,textDecoration:"none"}}>YouTube</a>}
+                  {lead.website_url&&<a href={lead.website_url} target="_blank" rel="noreferrer" style={{padding:"8px 14px",borderRadius:6,background:T.a+"15",color:T.a,fontSize:13,fontWeight:600,textDecoration:"none"}}>Website</a>}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ━━━ NOTES TAB ━━━ */}
+      {tab==="notes"&&(
+        <div>
+          <div style={{display:"flex",gap:10,marginBottom:20}}>
+            <textarea value={newNote} onChange={ev=>setNewNote(ev.target.value)} placeholder="Add a note about this lead..." rows={2} style={{flex:1,padding:"14px 18px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:15,fontFamily:"inherit",outline:"none",resize:"none",lineHeight:1.5}}/>
+            <div onClick={addNote} style={{padding:"14px 24px",borderRadius:10,background:newNote.trim()?T.am:T.d,color:newNote.trim()?T.a:T.m,fontSize:15,fontWeight:700,cursor:newNote.trim()?"pointer":"default",display:"flex",alignItems:"center"}}>Save</div>
+          </div>
+          {notes.length>0?notes.map(n=>
+            <div key={n.id} style={{background:T.card,borderRadius:10,padding:"16px 20px",border:`1px solid ${T.b}`,marginBottom:10}}>
+              <div style={{fontSize:15,color:T.t,lineHeight:1.6,marginBottom:6}}>{n.text}</div>
+              <div style={{fontSize:12,color:T.m}}>{new Date(n.date).toLocaleString()}</div>
+            </div>
+          ):(
+            <div style={{textAlign:"center",padding:"40px",color:T.m}}>
+              <div style={{fontSize:28,marginBottom:8}}>📝</div>
+              <div style={{fontSize:16}}>No notes yet — add your first note above</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ━━━ COMMUNICATION TAB ━━━ */}
+      {tab==="comms"&&(
+        <div>
+          <div style={{background:T.card,borderRadius:12,padding:"20px 22px",border:`1px solid ${T.b}`,marginBottom:20}}>
+            <div style={{display:"flex",gap:6,marginBottom:12}}>
+              {Object.entries(commIcons).map(([k,v])=>
+                <div key={k} onClick={()=>setCommType(k)} style={{padding:"8px 14px",borderRadius:6,background:commType===k?T.am:T.d,color:commType===k?T.a:T.s,fontSize:14,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{v} {k.charAt(0).toUpperCase()+k.slice(1)}</div>
+              )}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <input value={commNote} onChange={ev=>setCommNote(ev.target.value)} onKeyDown={ev=>{if(ev.key==="Enter")addComm();}} placeholder={`Log ${commType}...`} style={{flex:1,padding:"12px 18px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,fontFamily:"inherit",outline:"none"}}/>
+              <div onClick={addComm} style={{padding:"12px 24px",borderRadius:8,background:commNote.trim()?T.am:T.d,color:commNote.trim()?T.a:T.m,fontSize:15,fontWeight:700,cursor:commNote.trim()?"pointer":"default"}}>Log</div>
+            </div>
+          </div>
+          {commLog.length>0?commLog.map(c=>
+            <div key={c.id} style={{display:"flex",gap:14,padding:"14px 0",borderBottom:`1px solid ${T.b}`}}>
+              <div style={{width:40,height:40,borderRadius:10,background:T.card,border:`1px solid ${T.b}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{commIcons[c.type]||"📌"}</div>
+              <div style={{flex:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{fontSize:14,fontWeight:700,color:T.t,textTransform:"capitalize"}}>{c.type}</span>
+                  <span style={{fontSize:12,color:T.m}}>{new Date(c.date).toLocaleString()}</span>
+                </div>
+                <div style={{fontSize:15,color:T.s,lineHeight:1.5}}>{c.note}</div>
+              </div>
+            </div>
+          ):(
+            <div style={{textAlign:"center",padding:"40px",color:T.m}}>
+              <div style={{fontSize:28,marginBottom:8}}>📞</div>
+              <div style={{fontSize:16}}>No communication logged — log your first call, text, or email above</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ━━━ DOSSIER TAB ━━━ */}
+      {tab==="dossier"&&(
+        <div>
+          {lead.raw_dossier?(
+            <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}>
+              <div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:16}}>🔍 Research Dossier</div>
+              <pre style={{fontSize:14,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{lead.raw_dossier}</pre>
+            </div>
+          ):(
+            <div style={{textAlign:"center",padding:"40px",color:T.m}}>
+              <div style={{fontSize:28,marginBottom:8}}>🔍</div>
+              <div style={{fontSize:16,marginBottom:12}}>No dossier yet</div>
+              <div onClick={()=>{onAsk(`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find their production, reviews, social media, and give me an outreach angle.`);}} style={{display:"inline-block",padding:"12px 24px",borderRadius:8,background:T.am,color:T.a,fontSize:15,fontWeight:700,cursor:"pointer"}}>🔍 Ask LIVI to Research</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ━━━ ASK LIVI TAB ━━━ */}
+      {tab==="livi"&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {[
+            ["📱","Draft outreach message",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown brokerage"} in ${lead.market||"unknown market"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],
+            ["🔄","Write follow-up",`Write a follow-up message to ${lead.first_name} ${lead.last_name}. I already sent initial outreach. Make it casual and value-driven.`],
+            ["📋","Create meeting prep",`Create a meeting prep sheet for my call with ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}. Include talking points, objections, and how to close.`],
+            ["🎯","Closing script",`Give me a closing script for ${lead.first_name} ${lead.last_name}. We've been talking and I need to move them to a decision.`],
+            ["🔍","Deep research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find their production volume, reviews, social media, and give me an outreach angle.`],
+            ["🎨","Create recruiting post",`Write a recruiting-focused social media post targeting agents in ${lead.market||"this market"} who might be looking to switch from ${lead.brokerage||"their brokerage"}.`],
+            ["💡","Objection handlers",`What objections will ${lead.first_name} ${lead.last_name} likely have about switching from ${lead.brokerage||"their brokerage"} to LPT Realty? Give me responses for each.`],
+            ["📊","Competitive analysis",`Compare LPT Realty vs ${lead.brokerage||"their current brokerage"} for an agent in ${lead.market||"this market"}. What's our advantage?`]
+          ].map(([icon,label,q],i)=>
+            <div key={i} onClick={()=>onAsk(q)} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"18px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}
+              onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
+              <span style={{fontSize:22}}>{icon}</span>
+              <span style={{fontSize:15,color:T.s,fontWeight:600}}>{label}</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -218,7 +390,7 @@ export default function Livi(){
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><span style={{fontSize:18,fontWeight:700,color:T.t}}>🎯 Hot Leads</span><span onClick={()=>setView("pipeline")} style={{fontSize:15,color:T.s,cursor:"pointer"}}>All →</span></div>
           {leads.filter(l=>l.brokerage&&!l.brokerage.includes("LPT")&&l.urgency).sort((a,b)=>({HIGH:0,MEDIUM:1,LOW:2}[a.urgency]||3)-({HIGH:0,MEDIUM:1,LOW:2}[b.urgency]||3)).slice(0,3).map((l,i)=>
-            <div key={i} onClick={()=>setSelLead(l)} style={{display:"flex",justifyContent:"space-between",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}>
+            <div key={i} onClick={()=>setSelLead(l);setView("lead")} style={{display:"flex",justifyContent:"space-between",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}>
               <div><div style={{fontSize:16,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</div><div style={{fontSize:14,color:T.s}}>{l.brokerage?.substring(0,18)}</div></div>
               <UPill u={l.urgency}/>
             </div>
@@ -246,7 +418,7 @@ export default function Livi(){
               <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:13,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
             )}</tr></thead>
             <tbody>{leads.slice(0,8).map((l,i)=>
-              <tr key={i} onClick={()=>setSelLead(l)} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+              <tr key={i} onClick={()=>setSelLead(l);setView("lead")} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
                 <td style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</td>
                 <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.market||"—"}</td>
                 <td style={{padding:"14px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,24)||"—"}</td>
@@ -316,7 +488,7 @@ export default function Livi(){
     return(
       <div draggable onDragStart={()=>setDragLead(l)} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:8,padding:"14px 16px",marginBottom:18,cursor:"grab",transition:"border-color 0.12s"}}
         onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
-        <div onClick={()=>setSelLead(l)} style={{cursor:"pointer"}}>
+        <div onClick={()=>setSelLead(l);setView("lead")} style={{cursor:"pointer"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
             <div style={{fontSize:16,fontWeight:700,color:T.t}}>{l.first_name} {l.last_name}</div>
             <UPill u={l.urgency}/>
@@ -418,7 +590,7 @@ export default function Livi(){
           const contactColor=daysSince===null?T.m:daysSince>7?T.r:daysSince>3?T.y:T.a;
           return(
             <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-              <td onClick={()=>setSelLead(l)} style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t,cursor:"pointer"}}>{l.first_name} {l.last_name}</td>
+              <td onClick={()=>setSelLead(l);setView("lead")} style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t,cursor:"pointer"}}>{l.first_name} {l.last_name}</td>
               <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.market}</td>
               <td style={{padding:"14px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,22)}</td>
               <td style={{padding:"14px"}}><TPill t={l.tier}/></td>
@@ -430,6 +602,45 @@ export default function Livi(){
           );
         })}</tbody></table></div>
       )}
+
+      {/* ━━━ FULL CRM TABLE ━━━ Always visible */}
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginTop:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <span style={{fontSize:18,fontWeight:700,color:T.t}}>📋 All Leads</span>
+          <span style={{fontSize:14,color:T.s}}>{pipeLeads.length} total</span>
+        </div>
+        {pipeLeads.length>0 ? (
+          <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",minWidth:900}}>
+            <thead><tr>{["Name","Email","Phone","Market","Brokerage","Tier","Urgency","Stage","Added","Action"].map(h=>
+              <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap"}}>{h}</th>
+            )}</tr></thead>
+            <tbody>{pipeLeads.map((l,i)=>{
+              const act=stageAction(l);
+              return(
+                <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                  <td onClick={()=>setSelLead(l);setView("lead")} style={{padding:"14px",fontSize:15,fontWeight:600,color:T.t,cursor:"pointer",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
+                  <td style={{padding:"14px",fontSize:13,color:T.bl}}>{l.email?<a href={`mailto:${l.email}`} style={{color:T.bl,textDecoration:"none"}}>{l.email.length>24?l.email.substring(0,24)+"…":l.email}</a>:"—"}</td>
+                  <td style={{padding:"14px",fontSize:14,color:T.s,whiteSpace:"nowrap"}}>{l.phone||"—"}</td>
+                  <td style={{padding:"14px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
+                  <td style={{padding:"14px",fontSize:14,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,20)||"—"}</td>
+                  <td style={{padding:"14px"}}><TPill t={l.tier}/></td>
+                  <td style={{padding:"14px"}}><UPill u={l.urgency}/></td>
+                  <td style={{padding:"14px"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"—"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
+                  <td style={{padding:"14px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{ago(l.created_at)}</td>
+                  <td style={{padding:"14px"}}>{act&&<span onClick={()=>askLivi(act.q)} style={{fontSize:13,color:T.a,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>{act.icon} {act.label}</span>}</td>
+                </tr>
+              );
+            })}</tbody>
+          </table>
+          </div>
+        ) : (
+          <div style={{textAlign:"center",padding:"40px 20px"}}>
+            <div style={{fontSize:28,marginBottom:8}}>📭</div>
+            <div style={{fontSize:16,color:T.s}}>No leads match your filters</div>
+          </div>
+        )}
+      </div>
 
       {/* Quick Add Modal */}
       {showAdd&&(
@@ -484,17 +695,18 @@ export default function Livi(){
         </div>
       ):(
         <div style={{flex:1,display:"flex",overflow:"hidden"}}>
-          {/* Dashboard / Pipeline */}
-          <div style={{flex:1,overflow:"auto",padding:"24px 32px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+          {/* Dashboard / Pipeline / Lead Detail */}
+          <div style={{flex:1,overflow:"auto",padding:view==="lead"?"0":"24px 32px"}}>
+            {view!=="lead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,padding:view==="lead"?"24px 32px 0":0}}>
               <h1 style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":"Lead Pipeline"}</h1>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
                 {view==="home"&&<div onClick={()=>setShowAdd(true)} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
                 <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
               </div>
-            </div>
+            </div>}
             {view==="home"&&<Dash/>}
             {view==="pipeline"&&<Pipeline/>}
+            {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setView("pipeline");}} onAsk={(q)=>{askLivi(q);setView("home");}}/>}
           </div>
 
           {/* Chat Sidebar */}
@@ -511,7 +723,6 @@ export default function Livi(){
         </div>
       )}
 
-      {selLead&&<LeadPanel lead={selLead} onClose={()=>setSelLead(null)} onAsk={askLivi}/>}
     </div>
   );
 }
