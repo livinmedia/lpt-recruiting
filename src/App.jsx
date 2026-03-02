@@ -129,16 +129,85 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,onRefres
 
   const saveResearchToLead=async()=>{
     if(!inlineResponse||saving)return;
-    setSaving(true);setSaveMsg("");
+    setSaving(true);setSaveMsg("Parsing research with AI...");
     try{
-      const body={raw_dossier:inlineResponse,pipeline_stage:lead.pipeline_stage==="new"?"researched":lead.pipeline_stage,updated_at:new Date().toISOString()};
+      // Step 1: Use AI to parse unstructured research into structured fields
+      const parsePrompt=`Extract structured recruiting intelligence from this research dossier about ${lead.first_name||""} ${lead.last_name||""}.
+
+RESEARCH TEXT:
+${inlineResponse}
+
+Return ONLY a JSON object with these fields (use null for anything not found):
+{
+  "production_volume": number or null (annual $ volume),
+  "transaction_count": number or null,
+  "avg_sale_price": number or null,
+  "tier": "Elite" or "Strong" or "Mid" or "Building" or "New" or null,
+  "trend": "Growing" or "Stable" or "Declining" or null,
+  "linkedin_url": string or null,
+  "instagram_handle": string or null,
+  "facebook_url": string or null,
+  "youtube_channel": string or null,
+  "website_url": string or null,
+  "realtor_rating": number or null,
+  "realtor_reviews": number or null,
+  "zillow_rating": number or null,
+  "zillow_reviews": number or null,
+  "google_rating": number or null,
+  "google_reviews": number or null,
+  "pain_points": ["string",...] or [],
+  "ambition_signals": ["string",...] or [],
+  "retention_risks": ["string",...] or [],
+  "outreach_angle": string or null (best recruiting angle),
+  "urgency": "HIGH" or "MEDIUM" or "LOW" or null,
+  "urgency_reason": string or null,
+  "outreach_draft": string or null (suggested first message),
+  "years_licensed": number or null
+}
+Return ONLY JSON. No markdown, no backticks.`;
+
+      const pr=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(import.meta.env.VITE_OPENROUTER_KEY||"")},body:JSON.stringify({model:"deepseek/deepseek-chat-v3-0324",max_tokens:800,messages:[{role:"user",content:parsePrompt}]})});
+      
+      let parsed={};
+      if(pr.ok){
+        const pd=await pr.json();
+        const raw=pd.choices?.[0]?.message?.content||"";
+        const clean=raw.replace(/```json|```/g,"").trim();
+        try{parsed=JSON.parse(clean);}
+        catch{const m=clean.match(/\{[\s\S]*\}/);if(m)parsed=JSON.parse(m[0]);}
+      }
+
+      // Step 2: Build update object — only include non-null parsed fields + raw_dossier
+      const updates={raw_dossier:inlineResponse,pipeline_stage:lead.pipeline_stage==="new"?"researched":lead.pipeline_stage,updated_at:new Date().toISOString()};
+      const fieldNames=[];
+      const allowedFields=["production_volume","transaction_count","avg_sale_price","tier","trend","linkedin_url","instagram_handle","facebook_url","youtube_channel","website_url","realtor_rating","realtor_reviews","zillow_rating","zillow_reviews","google_rating","google_reviews","pain_points","ambition_signals","retention_risks","outreach_angle","urgency","urgency_reason","outreach_draft","years_licensed"];
+      for(const f of allowedFields){
+        if(parsed[f]!==null&&parsed[f]!==undefined&&parsed[f]!==""){
+          updates[f]=parsed[f];
+          fieldNames.push(f);
+        }
+      }
+
+      // Step 3: PATCH to dazet_leads
+      setSaveMsg(`Saving ${fieldNames.length+1} fields...`);
       const r=await fetch(`${SUPA}/dazet_leads?id=eq.${lead.id}`,{
         method:"PATCH",
         headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
-        body:JSON.stringify(body)
+        body:JSON.stringify(updates)
       });
-      if(r.ok){const d=await r.json();setSaveMsg("✓ Research saved to lead");if(onRefreshLead)onRefreshLead();}
-      else{const e=await r.text();setSaveMsg("✕ Error: "+e);}
+      if(r.ok){
+        setSaveMsg(`✓ Saved dossier + ${fieldNames.length} parsed fields`);
+        if(onRefreshLead)onRefreshLead();
+      }else{
+        // Some fields might not exist on dazet_leads — fallback to just raw_dossier
+        const r2=await fetch(`${SUPA}/dazet_leads?id=eq.${lead.id}`,{
+          method:"PATCH",
+          headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
+          body:JSON.stringify({raw_dossier:inlineResponse,pipeline_stage:lead.pipeline_stage==="new"?"researched":lead.pipeline_stage,updated_at:new Date().toISOString()})
+        });
+        if(r2.ok)setSaveMsg("✓ Saved dossier (some fields not available on this table)");
+        else setSaveMsg("✕ Error saving");
+      }
     }catch(e){setSaveMsg("✕ "+e.message);}
     setSaving(false);
   };
@@ -931,7 +1000,14 @@ export default function Livi(){
         {view==="pipeline"&&<><AskLiviBar source="pipeline" prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
         {view==="crm"&&<><AskLiviBar source="crm" prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
         {view==="agents"&&<AgentDirectory/>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setInlineResponse(null);setResponseSource(null);setViewWithHistory("pipeline");}} onAskInline={(q)=>askLiviInline(q,"lead_"+selLead.id)} inlineResponse={responseSource===("lead_"+selLead.id)?inlineResponse:null} inlineLoading={inlineLoading&&responseSource===("lead_"+selLead.id)} onRefreshLead={async()=>{await load();}}/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setInlineResponse(null);setResponseSource(null);setViewWithHistory("pipeline");}} onAskInline={(q)=>askLiviInline(q,"lead_"+selLead.id)} inlineResponse={responseSource===("lead_"+selLead.id)?inlineResponse:null} inlineLoading={inlineLoading&&responseSource===("lead_"+selLead.id)} onRefreshLead={async()=>{
+          await load();
+          // Refresh the selected lead with latest data
+          try{
+            const r=await fetch(`${SUPA}/dazet_leads?id=eq.${selLead.id}&select=*`,{headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`}});
+            if(r.ok){const d=await r.json();if(d[0])setSelLead(d[0]);}
+          }catch{}
+        }}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
