@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const SUPA = "https://zuwvovjhrkzlpdxcpsud.supabase.co/rest/v1";
@@ -76,7 +76,7 @@ function Gauge({score}){
 }
 
 // ━━━ LEAD DETAIL PAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function LeadPage({lead,onBack,onAsk,onAskInline,inlineResponse,inlineLoading}){
+function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading}){
   const [editing,setEditing]=useState(false);
   const [info,setInfo]=useState({first_name:lead.first_name||"",last_name:lead.last_name||"",email:lead.email||"",phone:lead.phone||"",market:lead.market||"",brokerage:lead.brokerage||""});
   const [notes,setNotes]=useState(lead._notes||[]);
@@ -136,11 +136,6 @@ export default function Livi(){
   const [selLead,setSelLead]=useState(null);
   const [loading,setLoading]=useState(true);
   const [search,setSearch]=useState("");
-  const [msgs,setMsgs]=useState([]);
-  const [inp,setInp]=useState("");
-  const [busy,setBusy]=useState(false);
-  const [chatWide,setChatWide]=useState(false);
-  const endRef=useRef(null);
 
   const load=useCallback(async()=>{
     setLoading(true);
@@ -149,44 +144,18 @@ export default function Livi(){
   },[]);
 
   useEffect(()=>{load();const i=setInterval(load,45000);return()=>clearInterval(i);},[load]);
-  useEffect(()=>{endRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
 
-  const send=async(overrideMsg)=>{
-    const txt=overrideMsg||inp.trim();
-    if(!txt||busy)return;
-    if(!overrideMsg)setInp("");
-    const next=[...msgs,{role:"user",content:txt}];
-    setMsgs(next);setBusy(true);
-    try{
-      let sys=SYSTEM;
-      if(leads.length>0){
-        sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
-        sys+=`\n\nAd spend: $20/day Facebook/Instagram for LPT Realty recruiting.`;
-      }
-      const r=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(import.meta.env.VITE_OPENROUTER_KEY||"")},body:JSON.stringify({model:"deepseek/deepseek-chat-v3-0324",max_tokens:1000,messages:[{role:"system",content:sys},...next.map(m=>({role:m.role,content:m.content}))]})});
-      if(!r.ok){const err=await r.text();console.error("API error:",r.status,err);setMsgs(p=>[...p,{role:"assistant",content:`API returned ${r.status}. Add your OpenRouter key as VITE_OPENROUTER_KEY in Vercel env vars.`}]);setBusy(false);return;}
-      const d=await r.json();
-      console.log("LIVI chat response:",JSON.stringify(d).substring(0,500));
-      setMsgs(p=>[...p,{role:"assistant",content:d.choices?.[0]?.message?.content||"No response — check console."}]);
-    }catch(e){console.error("Chat error:",e);setMsgs(p=>[...p,{role:"assistant",content:"Connection error. Check console for details."}]);}
-    setBusy(false);
-  };
-
-  // askLivi: for sidebar/chat - auto-sends the message
-  const askLivi=(q)=>{
-    const next=[...msgs,{role:"user",content:q}];
-    setMsgs(next);setInp("");
-    if(view!=="lead"&&view!=="addlead"){setView("chat");setChatWide(true);}
-    send(q);
-  };
-
-  // askLiviInline: for lead page - returns promise with response text
+  // askLiviInline: inline AI on every page
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
   const askLiviInline=async(q)=>{
     setInlineLoading(true);setInlineResponse(null);
     try{
       let sys=SYSTEM;
+      if(leads.length>0){
+        sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
+        sys+=`\n\nAd spend: $20/day Facebook/Instagram for LPT Realty recruiting.`;
+      }
       if(leads.length>0){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
       }
@@ -221,41 +190,20 @@ export default function Livi(){
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
 
-  // ━━━ CHAT AREA ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  const ChatPanel=({wide})=>(
-    <div style={{display:"flex",flexDirection:"column",height:"100%",background:T.bg}}>
-      <div style={{flex:1,overflow:"auto",padding:wide?"16px 20px":"10px 14px"}}>
-        {msgs.length===0&&(
-          <div style={{textAlign:"center",padding:wide?"40px 20px":"20px 10px"}}>
-            <div style={{width:80,height:56,borderRadius:16,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:30,marginBottom:18}}>L</div>
-            <div style={{fontSize:wide?15:12,fontWeight:800,color:T.t,marginBottom:14}}>Hey, I'm LIVI</div>
-            <div style={{fontSize:wide?11:10,color:T.s,maxWidth:420,margin:"0 auto",lineHeight:1.5}}>Your AI business partner. Leads, marketing, deals, goals — I handle it all.</div>
-            {wide&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:16,maxWidth:500,margin:"16px auto 0"}}>
-              {[["🎯","Who should I call first today?"],["🔍","Find agents leaving Keller Williams"],["📱","Draft a DM for my hottest lead"],["🎨","Write a recruiting reel script"],["💰","What's my cost per recruit so far?"],["📋","Give me 3 outreach angles for expired agents"]].map(([e,t],i)=>
-                <div key={i} onClick={()=>{setInp(t);setTimeout(()=>{const el=document.querySelector('textarea');if(el){el.focus();}},50);}} style={{padding:"12px 16px",borderRadius:7,background:T.card,border:`1px solid ${T.b}`,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}
-                  onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
-                  <span style={{fontSize:19}}>{e}</span><span style={{fontSize:15,color:T.s}}>{t}</span>
-                </div>
-              )}
-            </div>}
+  // ━━━ ASK LIVI BLOCK (inline on every page) ━━━━━━━━
+  const AskLiviBlock=({prompts})=>(
+    <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginTop:20}}>
+      <div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div>
+      <div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
+        {prompts.map(([icon,label,q],i)=>
+          <div key={i} onClick={()=>askLiviInline(q)} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}}
+            onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
+            <span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span>
           </div>
         )}
-        {msgs.map((m,i)=>(
-          <div key={i} style={{display:"flex",gap:14,justifyContent:m.role==="user"?"flex-end":"flex-start",marginBottom:14}}>
-            {m.role==="assistant"&&<div style={{width:wide?26:22,height:wide?26:22,borderRadius:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:wide?11:9,fontWeight:900,color:"#000",flexShrink:0,marginTop:2}}>L</div>}
-            <div style={{maxWidth:wide?"75%":"85%",padding:wide?"10px 14px":"7px 10px",borderRadius:10,fontSize:wide?13:11,lineHeight:1.65,whiteSpace:"pre-wrap",background:m.role==="user"?T.am:T.card,border:`1px solid ${m.role==="user"?T.a+"20":T.b}`,color:T.t}}>{m.content}</div>
-          </div>
-        ))}
-        {busy&&<div style={{display:"flex",gap:14,marginBottom:14}}><div style={{width:wide?26:22,height:wide?26:22,borderRadius:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:wide?11:9,fontWeight:900,color:"#000",flexShrink:0}}>L</div><div style={{padding:"12px 18px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`,fontSize:16,color:T.s}}><span style={{animation:"pulse 1.5s infinite"}}>Thinking...</span></div></div>}
-        <div ref={endRef}/>
       </div>
-      <div style={{padding:wide?"10px 20px 14px":"8px 14px 10px",borderTop:`1px solid ${T.b}`}}>
-        <div style={{display:"flex",gap:6}}>
-          <textarea value={inp} onChange={ev=>setInp(ev.target.value)} onKeyDown={ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();send();}}} placeholder="Ask LIVI anything..." rows={1}
-            style={{flex:1,padding:"12px 16px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:15,fontFamily:"inherit",outline:"none",resize:"none",lineHeight:1.5,minHeight:44}}/>
-          <div onClick={()=>send()} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",background:inp.trim()?T.a:T.d,color:inp.trim()?"#000":T.m,cursor:inp.trim()?"pointer":"default",fontSize:19,fontWeight:800,flexShrink:0}}>↑</div>
-        </div>
-      </div>
+      {inlineLoading&&<div style={{marginTop:16,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
     </div>
   );
 
@@ -281,8 +229,8 @@ export default function Livi(){
       <div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
         {[
           ["➕","Add Lead",()=>setView("addlead"),T.a],
-          ["📱","Draft Outreach",()=>askLivi("Who should I reach out to next? Pick my best lead and draft me a message."),T.bl],
-          ["🔍","Find Agents",()=>askLivi("Find me 5 real estate agents in my target markets who might be looking to switch brokerages. Focus on agents showing frustration or high production at competing brokerages."),T.p],
+          ["📱","Draft Outreach",()=>askLiviInline("Who should I reach out to next? Pick my best lead and draft me a message."),T.bl],
+          ["🔍","Find Agents",()=>askLiviInline("Find me 5 real estate agents in my target markets who might be looking to switch brokerages. Focus on agents showing frustration or high production at competing brokerages."),T.p],
           ["📊","Pipeline Review",()=>setView("pipeline"),T.y]
         ].map(([ic,label,action,c],i)=>
           <div key={i} onClick={action} style={{background:c+"10",border:`1px solid ${c}20`,borderRadius:10,padding:"18px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"all 0.15s"}}
@@ -469,7 +417,7 @@ export default function Livi(){
             <TPill t={l.tier}/>
           </div>
         </div>
-        {act&&<div onClick={()=>{askLivi(act.q);}} style={{marginTop:6,padding:"10px 14px",borderRadius:5,background:T.as,border:`1px solid ${T.a}15`,fontSize:14,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"center",justifyContent:"center"}}>{act.icon} {act.label}</div>}
+        {act&&<div onClick={()=>{askLiviInline(act.q);}} style={{marginTop:6,padding:"10px 14px",borderRadius:5,background:T.as,border:`1px solid ${T.a}15`,fontSize:14,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"center",justifyContent:"center"}}>{act.icon} {act.label}</div>}
       </div>
     );
   };
@@ -567,7 +515,7 @@ export default function Livi(){
               <td style={{padding:"14px"}}><UPill u={l.urgency}/></td>
               <td style={{padding:"14px"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"—"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
               <td style={{padding:"14px",fontSize:14,color:contactColor,fontWeight:daysSince>7?700:400}}>{daysSince!==null?`${daysSince}d ago`:"Never"}</td>
-              <td style={{padding:"14px"}}>{act&&<span onClick={()=>askLivi(act.q)} style={{fontSize:14,color:T.a,cursor:"pointer",fontWeight:600}}>{act.icon} {act.label}</span>}</td>
+              <td style={{padding:"14px"}}>{act&&<span onClick={()=>askLiviInline(act.q)} style={{fontSize:14,color:T.a,cursor:"pointer",fontWeight:600}}>{act.icon} {act.label}</span>}</td>
             </tr>
           );
         })}</tbody></table></div>
@@ -632,7 +580,7 @@ export default function Livi(){
     <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex"}}>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}textarea::placeholder,input::placeholder{color:${T.m}}
 @media(max-width:768px){
-.chat-sidebar{display:none!important}
+
 .app-sidebar{width:56px!important}
 .app-sidebar .logo-btn{width:36px!important;height:36px!important;font-size:14px!important}
 .app-sidebar .nav-btn{width:40px!important;height:40px!important;font-size:16px!important}
@@ -667,8 +615,8 @@ export default function Livi(){
       {/* SIDEBAR */}
       <div className="app-sidebar" style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
         <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
-        {[["home","⬡"],["pipeline","◎"],["crm","📋"],["chat","💬"]].map(([id,ic])=>
-          <div key={id} onClick={()=>{setViewWithHistory(id);if(id==="chat")setChatWide(true);else setChatWide(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
+        {[["home","⬡"],["pipeline","◎"],["crm","📋"]].map(([id,ic])=>
+          <div key={id} onClick={()=>setViewWithHistory(id)} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
         )}
         <div style={{flex:1}}/>
         <div onClick={load} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
@@ -676,68 +624,45 @@ export default function Livi(){
       </div>
 
       {/* MAIN AREA */}
-      {view==="chat"?(
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          <div style={{padding:"18px 28px",borderBottom:`1px solid ${T.b}`,display:"flex",alignItems:"center",gap:14}}>
-            <div style={{width:32,height:32,borderRadius:7,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:900,color:"#000"}}>L</div>
-            <div><div style={{fontSize:19,fontWeight:800}}>LIVI</div><div style={{fontSize:14,color:T.s}}>Your AI business partner</div></div>
+      <div style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
+        {view!=="lead"&&view!=="addlead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+          <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":"LIVI AI"}</h1>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            {(view==="home"||view==="crm")&&<div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
+            <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
           </div>
-          <ChatPanel wide={true}/>
-        </div>
-      ):(
-        <div style={{flex:1,display:"flex",overflow:"hidden"}}>
-          {/* Dashboard / Pipeline / Lead Detail */}
-          <div className="main-scroll" style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
-            {view!=="lead"&&view!=="addlead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-              <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":"LIVI AI"}</h1>
-              <div style={{display:"flex",alignItems:"center",gap:12}}>
-                {(view==="home"||view==="crm")&&<div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
-                <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
+        </div>}
+        {view==="home"&&<><Dash/><AskLiviBlock prompts={[["🎯","Who should I call first?","Who should I call first today? Look at my pipeline and tell me the highest priority lead to contact."],["🔍","Find new agents","Find me 5 real estate agents in my target markets who might be looking to switch brokerages."],["📱","Draft a DM","Draft a recruiting DM for my hottest lead in the pipeline."],["📊","Pipeline review","Review my pipeline and give me a status report. What's working, what needs attention?"],["💰","Cost analysis","What's my cost per lead and cost per recruit so far? How can I optimize?"],["📋","Weekly game plan","Create my recruiting game plan for this week based on my current pipeline."]]}/></>}
+        {view==="pipeline"&&<><Pipeline/><AskLiviBlock prompts={[["📱","Draft outreach for top lead","Look at my pipeline and draft outreach for my highest priority lead."],["🔄","Follow-up suggestions","Which leads in my pipeline need follow-up? Draft messages for each."],["🎯","Pipeline strategy","Analyze my pipeline stages and suggest what I should focus on to move leads forward."],["📊","Conversion tips","Based on my pipeline, what can I do to improve my conversion rate?"]]}/></>}
+        {view==="crm"&&<><CRM/><AskLiviBlock prompts={[["🔍","Find new prospects","Find me 5 real estate agents who might be looking to switch brokerages in my target markets."],["📊","Lead scoring","Score my current leads and tell me who I should prioritize."],["📱","Bulk outreach plan","Create an outreach plan for all my new and researched leads."],["🎯","Market analysis","Which markets should I be targeting for recruiting based on my current leads?"]]}/></>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
+        {view==="addlead"&&(
+          <div style={{flex:1,overflow:"auto",padding:"24px 32px",maxWidth:700}}>
+            <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
+            <h1 style={{fontSize:28,fontWeight:800,margin:"0 0 24px"}}>Add New Lead</h1>
+            <div style={{background:T.card,borderRadius:12,padding:"28px 30px",border:`1px solid ${T.b}`}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}} className="form-grid">
+                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>FIRST NAME</div><input autoComplete="off" value={newLead.first_name} onChange={ev=>setNewLead(p=>({...p,first_name:ev.target.value}))} placeholder="First Name" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
+                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>LAST NAME</div><input autoComplete="off" value={newLead.last_name} onChange={ev=>setNewLead(p=>({...p,last_name:ev.target.value}))} placeholder="Last Name" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
+                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>PHONE</div><input autoComplete="off" value={newLead.phone} onChange={ev=>setNewLead(p=>({...p,phone:ev.target.value}))} placeholder="(555) 123-4567" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
+                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>EMAIL</div><input autoComplete="off" value={newLead.email} onChange={ev=>setNewLead(p=>({...p,email:ev.target.value}))} placeholder="agent@email.com" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
+                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>MARKET</div><input autoComplete="off" value={newLead.market} onChange={ev=>setNewLead(p=>({...p,market:ev.target.value}))} placeholder="Austin, TX" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
+                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>BROKERAGE</div><input autoComplete="off" value={newLead.brokerage} onChange={ev=>setNewLead(p=>({...p,brokerage:ev.target.value}))} placeholder="Current Brokerage" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
               </div>
-            </div>}
-            {view==="home"&&<Dash/>}
-            {view==="pipeline"&&<Pipeline/>}
-            {view==="crm"&&<CRM/>}
-            {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAsk={askLivi} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
-            {view==="addlead"&&(
-              <div style={{flex:1,overflow:"auto",padding:"24px 32px",maxWidth:700}}>
-                <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
-                <h1 style={{fontSize:28,fontWeight:800,margin:"0 0 24px"}}>Add New Lead</h1>
-                <div style={{background:T.card,borderRadius:12,padding:"28px 30px",border:`1px solid ${T.b}`}}>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}} className="form-grid">
-                    <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>FIRST NAME</div><input autoComplete="off" value={newLead.first_name} onChange={ev=>setNewLead(p=>({...p,first_name:ev.target.value}))} placeholder="First Name" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
-                    <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>LAST NAME</div><input autoComplete="off" value={newLead.last_name} onChange={ev=>setNewLead(p=>({...p,last_name:ev.target.value}))} placeholder="Last Name" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
-                    <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>PHONE</div><input autoComplete="off" value={newLead.phone} onChange={ev=>setNewLead(p=>({...p,phone:ev.target.value}))} placeholder="(555) 123-4567" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
-                    <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>EMAIL</div><input autoComplete="off" value={newLead.email} onChange={ev=>setNewLead(p=>({...p,email:ev.target.value}))} placeholder="agent@email.com" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
-                    <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>MARKET</div><input autoComplete="off" value={newLead.market} onChange={ev=>setNewLead(p=>({...p,market:ev.target.value}))} placeholder="Austin, TX" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
-                    <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>BROKERAGE</div><input autoComplete="off" value={newLead.brokerage} onChange={ev=>setNewLead(p=>({...p,brokerage:ev.target.value}))} placeholder="Current Brokerage" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
-                  </div>
-                  <div style={{marginBottom:20}}>
-                    <div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>NOTES</div>
-                    <textarea value={newLead.notes} onChange={ev=>setNewLead(p=>({...p,notes:ev.target.value}))} placeholder="Where you met them, what they said, context..." rows={3} style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",lineHeight:1.5}}/>
-                  </div>
-                  <div style={{display:"flex",gap:12}}>
-                    <div onClick={()=>{if(!newLead.first_name.trim())return;askLivi(`I just met a new recruiting prospect: ${newLead.first_name} ${newLead.last_name}${newLead.brokerage?` from ${newLead.brokerage}`:""}${newLead.market?` in ${newLead.market}`:""}.${newLead.notes?` Notes: ${newLead.notes}`:""} Research them and give me an outreach strategy.`);setNewLead({first_name:"",last_name:"",phone:"",email:"",market:"",brokerage:"",notes:""});}} style={{padding:"14px 28px",borderRadius:8,background:newLead.first_name.trim()?T.a:"#333",color:newLead.first_name.trim()?"#000":T.m,fontSize:16,fontWeight:700,cursor:newLead.first_name.trim()?"pointer":"default"}}>Add & Research with LIVI</div>
-                    <div onClick={()=>{if(!newLead.first_name.trim())return;setNewLead({first_name:"",last_name:"",phone:"",email:"",market:"",brokerage:"",notes:""});setView("pipeline");}} style={{padding:"14px 28px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.s,fontSize:16,fontWeight:700,cursor:"pointer"}}>Add Only</div>
-                  </div>
-                </div>
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>NOTES</div>
+                <textarea value={newLead.notes} onChange={ev=>setNewLead(p=>({...p,notes:ev.target.value}))} placeholder="Where you met them, what they said, context..." rows={3} style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",lineHeight:1.5}}/>
               </div>
-            )}
-          </div>
-
-          {/* Chat Sidebar */}
-          <div className="chat-sidebar" style={{width:420,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column",background:T.bg,flexShrink:0}}>
-            <div style={{padding:"20px 28px",borderBottom:`1px solid ${T.b}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <div style={{width:36,height:36,borderRadius:5,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#000"}}>L</div>
-                <span style={{fontSize:17,fontWeight:700}}>LIVI</span>
+              <div style={{display:"flex",gap:12}}>
+                <div onClick={()=>{if(!newLead.first_name.trim())return;askLiviInline(`I just met a new recruiting prospect: ${newLead.first_name} ${newLead.last_name}${newLead.brokerage?` from ${newLead.brokerage}`:""}${newLead.market?` in ${newLead.market}`:""}.${newLead.notes?` Notes: ${newLead.notes}`:""} Research them and give me an outreach strategy.`);setNewLead({first_name:"",last_name:"",phone:"",email:"",market:"",brokerage:"",notes:""});}} style={{padding:"14px 28px",borderRadius:8,background:newLead.first_name.trim()?T.a:"#333",color:newLead.first_name.trim()?"#000":T.m,fontSize:16,fontWeight:700,cursor:newLead.first_name.trim()?"pointer":"default"}}>Add & Research with LIVI</div>
+                <div onClick={()=>{if(!newLead.first_name.trim())return;setNewLead({first_name:"",last_name:"",phone:"",email:"",market:"",brokerage:"",notes:""});setViewWithHistory("pipeline");}} style={{padding:"14px 28px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.s,fontSize:16,fontWeight:700,cursor:"pointer"}}>Add Only</div>
               </div>
-              <div onClick={()=>{setView("chat");setChatWide(true);}} style={{fontSize:14,color:T.s,cursor:"pointer"}}>Expand ↗</div>
             </div>
-            <ChatPanel wide={false}/>
+            {inlineLoading&&<div style={{marginTop:20,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is researching...</span></div></div>}
+            {inlineResponse&&!inlineLoading&&<div style={{marginTop:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
     </div>
   );
