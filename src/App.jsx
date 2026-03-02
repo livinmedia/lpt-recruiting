@@ -375,60 +375,146 @@ export default function Livi(){
   );
 
   // ━━━ DASHBOARD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const needsFollowUp=leads.filter(l=>l.pipeline_stage&&l.pipeline_stage!=="new"&&l.pipeline_stage!=="recruited"&&l.created_at&&(Date.now()-new Date(l.created_at))>3*86400000);
+  const needsResearch=leads.filter(l=>l.pipeline_stage==="new");
+  const hasMeeting=leads.filter(l=>l.pipeline_stage==="meeting_booked");
+  const inOutreach=leads.filter(l=>l.pipeline_stage==="outreach_sent");
+
   const Dash=()=>(
     <>
+      {/* KPI Cards */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:20}}>
-        {[["◎","Leads",total,today>0?`+${today}`:"",T.bl],["🎯","Targets",targets,urgent>0?`${urgent} hot`:"",T.a],["💰","CPL",`$${cpl}`,"$20/day",T.y],["⚡","AI",`$${apiCost.toFixed(3)}`,`${(tokens/1000).toFixed(1)}K`,T.p]].map(([ic,l,v,s,c],i)=>
+        {[["◎","Leads",total,today>0?`+${today} today`:"",T.bl],["🎯","Targets",targets,urgent>0?`${urgent} hot`:"",T.a],["💰","CPL",`$${cpl}`,"$20/day",T.y],["📅","Meetings",hasMeeting.length,inOutreach.length>0?`${inOutreach.length} awaiting`:"",T.p]].map(([ic,l,v,s,c],i)=>
           <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"22px 24px",display:"flex",alignItems:"center",gap:16}}>
             <div style={{width:52,height:52,borderRadius:10,background:c+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
-            <div><div style={{fontSize:13,color:T.s,letterSpacing:2,fontWeight:700}}>{l.toUpperCase()}</div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:32,fontWeight:800,color:T.t}}>{v}</span>{s&&<span style={{fontSize:15,color:c,fontWeight:600}}>{s}</span>}</div></div>
+            <div><div style={{fontSize:13,color:T.s,letterSpacing:2,fontWeight:700}}>{l.toUpperCase()}</div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:32,fontWeight:800,color:T.t}}>{v}</span>{s&&<span style={{fontSize:14,color:c,fontWeight:600}}>{s}</span>}</div></div>
           </div>
         )}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:16}}>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📊 Pipeline</div><Gauge score={pScore}/></div>
+
+      {/* Quick Actions */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+        {[
+          ["➕","Add Lead",()=>setShowAdd(true),T.a],
+          ["📱","Draft Outreach",()=>askLivi("Who should I reach out to next? Pick my best lead and draft me a message."),T.bl],
+          ["🔍","Find Agents",()=>askLivi("Find me 5 real estate agents in my target markets who might be looking to switch brokerages. Focus on agents showing frustration or high production at competing brokerages."),T.p],
+          ["📊","Pipeline Review",()=>setView("pipeline"),T.y]
+        ].map(([ic,label,action,c],i)=>
+          <div key={i} onClick={action} style={{background:c+"10",border:`1px solid ${c}20`,borderRadius:10,padding:"18px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"all 0.15s"}}
+            onMouseOver={ev=>ev.currentTarget.style.background=c+"20"} onMouseOut={ev=>ev.currentTarget.style.background=c+"10"}>
+            <span style={{fontSize:24}}>{ic}</span>
+            <span style={{fontSize:15,fontWeight:700,color:T.t}}>{label}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Today's Actions + Hot Leads */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+        {/* Today's Action List */}
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><span style={{fontSize:18,fontWeight:700,color:T.t}}>🎯 Hot Leads</span><span onClick={()=>setView("pipeline")} style={{fontSize:15,color:T.s,cursor:"pointer"}}>All →</span></div>
-          {leads.filter(l=>l.brokerage&&!l.brokerage.includes("LPT")&&l.urgency).sort((a,b)=>({HIGH:0,MEDIUM:1,LOW:2}[a.urgency]||3)-({HIGH:0,MEDIUM:1,LOW:2}[b.urgency]||3)).slice(0,3).map((l,i)=>
-            <div key={i} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",justifyContent:"space-between",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}>
-              <div><div style={{fontSize:16,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</div><div style={{fontSize:14,color:T.s}}>{l.brokerage?.substring(0,18)}</div></div>
-              <UPill u={l.urgency}/>
+          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Today's Actions</div>
+          {(needsFollowUp.length>0||needsResearch.length>0||hasMeeting.length>0)?(
+            <div>
+              {hasMeeting.map((l,i)=>
+                <div key={`m${i}`} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.p+"08",border:`1px solid ${T.p}15`,marginBottom:8,cursor:"pointer"}}>
+                  <span style={{fontSize:18}}>🤝</span>
+                  <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600,color:T.t}}>Prep for {l.first_name} {l.last_name}</div><div style={{fontSize:13,color:T.s}}>Meeting booked — prep your talking points</div></div>
+                  <span style={{fontSize:13,color:T.p,fontWeight:600}}>Prep →</span>
+                </div>
+              )}
+              {needsFollowUp.slice(0,3).map((l,i)=>
+                <div key={`f${i}`} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.r+"08",border:`1px solid ${T.r}15`,marginBottom:8,cursor:"pointer"}}>
+                  <span style={{fontSize:18}}>🔄</span>
+                  <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600,color:T.t}}>Follow up with {l.first_name} {l.last_name}</div><div style={{fontSize:13,color:T.s}}>{l.market} · {ago(l.created_at)} since last touch</div></div>
+                  <span style={{fontSize:13,color:T.r,fontWeight:600}}>Overdue</span>
+                </div>
+              )}
+              {needsResearch.slice(0,3).map((l,i)=>
+                <div key={`r${i}`} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:T.bl+"08",border:`1px solid ${T.bl}15`,marginBottom:8,cursor:"pointer"}}>
+                  <span style={{fontSize:18}}>🔍</span>
+                  <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600,color:T.t}}>Research {l.first_name} {l.last_name}</div><div style={{fontSize:13,color:T.s}}>New lead — needs intel before outreach</div></div>
+                  <span style={{fontSize:13,color:T.bl,fontWeight:600}}>Research →</span>
+                </div>
+              )}
+            </div>
+          ):(
+            <div style={{textAlign:"center",padding:"24px",color:T.m}}>
+              <div style={{fontSize:24,marginBottom:8}}>✅</div>
+              <div style={{fontSize:15}}>All caught up! Add new leads or check pipeline.</div>
             </div>
           )}
         </div>
+
+        {/* Hot Leads */}
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
-          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Activity</div>
-          {activity.slice(0,5).map((a,i)=><div key={i} style={{display:"flex",gap:10,padding:"6px 0",alignItems:"flex-start"}}><Dot c={a.status==="success"?T.a:T.r}/><div style={{fontSize:15,color:T.t,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.description}</div><span style={{fontSize:13,color:T.m}}>{ago(a.created_at)}</span></div>)}
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><span style={{fontSize:18,fontWeight:700,color:T.t}}>🔥 Hot Leads</span><span onClick={()=>setView("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>All →</span></div>
+          {leads.filter(l=>l.urgency==="HIGH"||l.urgency==="MEDIUM").sort((a,b)=>({HIGH:0,MEDIUM:1}[a.urgency]||2)-({HIGH:0,MEDIUM:1}[b.urgency]||2)).slice(0,5).map((l,i)=>
+            <div key={i} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}
+              onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
+              <div>
+                <div style={{fontSize:15,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</div>
+                <div style={{fontSize:13,color:T.s}}>{l.brokerage?.substring(0,20)||"Unknown"} · {l.market}</div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <TPill t={l.tier}/>
+                <UPill u={l.urgency}/>
+              </div>
+            </div>
+          )}
+          {leads.filter(l=>l.urgency==="HIGH"||l.urgency==="MEDIUM").length===0&&(
+            <div style={{textAlign:"center",padding:"24px",color:T.m}}>
+              <div style={{fontSize:24,marginBottom:8}}>🎯</div>
+              <div style={{fontSize:15}}>No hot leads yet. Run ads or add leads manually.</div>
+            </div>
+          )}
         </div>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📈 Funnel</div><ResponsiveContainer width="100%" height={180}><BarChart data={stages} layout="vertical" barSize={16}><XAxis type="number" hide/><YAxis type="category" dataKey="l" tick={{fontSize:14,fill:T.s}} width={80} axisLine={false} tickLine={false}/><Bar dataKey="count" radius={[0,4,4,0]}>{stages.map((d,i)=><Cell key={i} fill={d.c}/>)}</Bar></BarChart></ResponsiveContainer></div>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>🏆 Tiers</div>{tierData.length>0?<div style={{display:"flex",alignItems:"center",gap:20}}><ResponsiveContainer width={140} height={140}><PieChart><Pie data={tierData} cx="50%" cy="50%" innerRadius={32} outerRadius={56} dataKey="value" strokeWidth={0}>{tierData.map((_,i)=><Cell key={i} fill={PC[i%PC.length]}/>)}</Pie></PieChart></ResponsiveContainer><div>{tierData.map((d,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}><div style={{width:10,height:10,borderRadius:3,background:PC[i%PC.length]}}/><span style={{fontSize:16,color:T.t}}>{d.name} <span style={{color:T.s}}>{d.value}</span></span></div>)}</div></div>:<div style={{fontSize:16,color:T.m,textAlign:"center",padding:20}}>Building...</div>}</div>
       </div>
 
-      {/* New Leads */}
-      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginTop:16}}>
+      {/* Pipeline + Activity */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📈 Pipeline</div><Gauge score={pScore}/><div style={{marginTop:12}}><ResponsiveContainer width="100%" height={160}><BarChart data={stages} layout="vertical" barSize={14}><XAxis type="number" hide/><YAxis type="category" dataKey="l" tick={{fontSize:13,fill:T.s}} width={76} axisLine={false} tickLine={false}/><Bar dataKey="count" radius={[0,4,4,0]}>{stages.map((d,i)=><Cell key={i} fill={d.c}/>)}</Bar></BarChart></ResponsiveContainer></div></div>
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
+          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Recent Activity</div>
+          {activity.length>0?activity.slice(0,8).map((a,i)=>
+            <div key={i} style={{display:"flex",gap:10,padding:"8px 0",alignItems:"flex-start",borderBottom:i<7?`1px solid ${T.b}`:"none"}}>
+              <Dot c={a.status==="success"?T.a:T.r}/>
+              <div style={{flex:1}}><div style={{fontSize:14,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.description}</div></div>
+              <span style={{fontSize:12,color:T.m,flexShrink:0}}>{ago(a.created_at)}</span>
+            </div>
+          ):(
+            <div style={{textAlign:"center",padding:"24px",color:T.m}}>
+              <div style={{fontSize:24,marginBottom:8}}>📋</div>
+              <div style={{fontSize:15}}>Activity will appear as LIVI works</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* New Leads Table */}
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <span style={{fontSize:18,fontWeight:700,color:T.t}}>🆕 New Leads</span>
-          <span onClick={()=>setView("pipeline")} style={{fontSize:15,color:T.s,cursor:"pointer"}}>View Pipeline →</span>
+          <span style={{fontSize:18,fontWeight:700,color:T.t}}>🆕 Recent Leads</span>
+          <span onClick={()=>setView("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>View All →</span>
         </div>
         {leads.length>0 ? (
+          <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse"}}>
-            <thead><tr>{["Name","Market","Brokerage","Source","Tier","Urgency","Added"].map(h=>
-              <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:13,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
+            <thead><tr>{["Name","Market","Brokerage","Tier","Urgency","Stage","Added"].map(h=>
+              <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
             )}</tr></thead>
-            <tbody>{leads.slice(0,8).map((l,i)=>
+            <tbody>{leads.slice(0,6).map((l,i)=>
               <tr key={i} onClick={()=>{setSelLead(l);setView("lead");}} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-                <td style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</td>
-                <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.market||"—"}</td>
-                <td style={{padding:"14px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,24)||"—"}</td>
-                <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.source||"Ad"}</td>
+                <td style={{padding:"14px",fontSize:15,fontWeight:600,color:T.t,whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
+                <td style={{padding:"14px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
+                <td style={{padding:"14px",fontSize:14,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,22)||"—"}</td>
                 <td style={{padding:"14px"}}><TPill t={l.tier}/></td>
                 <td style={{padding:"14px"}}><UPill u={l.urgency}/></td>
-                <td style={{padding:"14px",fontSize:14,color:T.m}}>{ago(l.created_at)}</td>
+                <td style={{padding:"14px"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"—"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
+                <td style={{padding:"14px",fontSize:13,color:T.m}}>{ago(l.created_at)}</td>
               </tr>
             )}</tbody>
           </table>
+          </div>
         ) : (
           <div style={{textAlign:"center",padding:"40px 20px"}}>
             <div style={{fontSize:32,marginBottom:10}}>📭</div>
@@ -652,8 +738,8 @@ export default function Livi(){
               <span onClick={()=>setShowAdd(false)} style={{cursor:"pointer",color:T.s}}>✕</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-              {[["first_name","First Name"],["last_name","Last Name"],["phone","Phone"],["email","Email"],["market","Market"],["brokerage","Current Brokerage"]].map(([k,p])=>
-                <input key={k} value={newLead[k]} onChange={ev=>setNewLead(pr=>({...pr,[k]:ev.target.value}))} placeholder={p} style={{padding:"12px 16px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
+              {[["first_name","First Name"],["last_name","Last Name"],["phone","Phone"],["email","Email"],["market","Market"],["brokerage","Current Brokerage"]].map(([k,p],idx)=>
+                <input key={idx} autoComplete="off" spellCheck="false" value={newLead[k]} onChange={ev=>{const v=ev.target.value;setNewLead(pr=>({...pr,[k]:v}));}} placeholder={p} style={{padding:"12px 16px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
               )}
             </div>
             <textarea value={newLead.notes} onChange={ev=>setNewLead(pr=>({...pr,notes:ev.target.value}))} placeholder="Notes (where you met them, etc.)" rows={2} style={{width:"100%",padding:"12px 16px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",resize:"none",marginBottom:18,boxSizing:"border-box"}}/>
