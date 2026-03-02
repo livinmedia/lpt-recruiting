@@ -200,12 +200,15 @@ export default function Livi(){
       </div>
       {inlineLoading&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
       {inlineResponse&&!inlineLoading&&(()=>{
-        const matchedLead=leads.find(l=>inlineResponse.toLowerCase().includes((l.first_name+" "+l.last_name).toLowerCase()));
+        const respLower=inlineResponse.toLowerCase();
+        const matchedLeads=leads.filter(l=>respLower.includes((l.first_name+" "+l.last_name).toLowerCase()));
         return <div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><div style={{display:"flex",gap:12}}><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse)}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span><span onClick={()=>setInlineResponse(null)} style={{fontSize:12,color:T.s,cursor:"pointer"}}>✕ Close</span></div></div>
-          {matchedLead&&<div onClick={()=>{setSelLead(matchedLead);setViewWithHistory("lead")}} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 14px",borderRadius:6,background:T.a+"12",border:`1px solid ${T.a}25`,cursor:"pointer",marginBottom:12}}>
-            <span style={{fontSize:14}}>👤</span><span style={{fontSize:13,fontWeight:700,color:T.a}}>{matchedLead.first_name} {matchedLead.last_name}</span><span style={{fontSize:12,color:T.s}}>— {matchedLead.market||"Unknown"}</span><span style={{fontSize:12,color:T.a}}>Open →</span>
-          </div>}
+          {matchedLeads.length>0&&<div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>{matchedLeads.map((ml,idx)=>
+            <div key={idx} onClick={()=>{setSelLead(ml);setViewWithHistory("lead")}} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 14px",borderRadius:6,background:T.a+"12",border:`1px solid ${T.a}25`,cursor:"pointer"}}>
+              <span style={{fontSize:14}}>👤</span><span style={{fontSize:13,fontWeight:700,color:T.a}}>{ml.first_name} {ml.last_name}</span><span style={{fontSize:12,color:T.s}}>— {ml.market||"Unknown"}</span><span style={{fontSize:12,color:T.a}}>Open →</span>
+            </div>
+          )}</div>}
           <pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre>
         </div>;
       })()}
