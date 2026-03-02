@@ -47,7 +47,23 @@ const PC = [T.a,T.bl,T.y,T.p,T.r,T.c];
 
 function ago(d){if(!d)return"";const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return"now";if(s<3600)return Math.floor(s/60)+"m";if(s<86400)return Math.floor(s/3600)+"h";return Math.floor(s/86400)+"d";}
 
-async function sq(tbl,p=""){try{const r=await fetch(`${SUPA}/${tbl}?${p}`,{headers:{apikey:KEY,Authorization:`Bearer ${KEY}`}});return r.ok?await r.json():[];}catch{return[];}}
+async function sq(tbl,p=""){
+  try{
+    const url=`${SUPA}/${tbl}?${p}`;
+    const r=await fetch(url,{
+      headers:{
+        apikey:KEY,
+        Authorization:`Bearer ${KEY}`,
+        'Content-Type':'application/json',
+        'Accept':'application/json'
+      }
+    });
+    if(!r.ok){console.error(`Supabase ${tbl} error:`,r.status,r.statusText);return[];}
+    const d=await r.json();
+    console.log(`Loaded ${tbl}:`,d.length,'rows');
+    return d;
+  }catch(e){console.error(`Supabase ${tbl} fetch failed:`,e);return[];}
+}
 
 function Pill({text,color}){return <span style={{fontSize:14,fontWeight:700,padding:"4px 10px",borderRadius:4,background:color+"18",color,letterSpacing:0.4}}>{text}</span>;}
 function UPill({u}){return <Pill text={u||"—"} color={{HIGH:T.r,MEDIUM:T.y,LOW:T.a}[u]||T.s}/>;}
@@ -474,7 +490,7 @@ export default function Livi(){
               <h1 style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":"Lead Pipeline"}</h1>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
                 {view==="home"&&<div onClick={()=>setShowAdd(true)} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
-                <div style={{fontSize:14,color:T.m}}>LIVI AI · by LIVIN</div>
+                <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
               </div>
             </div>
             {view==="home"&&<Dash/>}
