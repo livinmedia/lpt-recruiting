@@ -6,34 +6,39 @@ const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 
 // LIVI AI Platform — Agent Directory (352K+ real agents)
 const LIVI_SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
-const LIVI_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAzNDgsImV4cCI6MjA4NzkxNjM0OH0.tJx4WvhZLuTlPZ7TSGx7FU92XxtJqLEvOF7s5TyMxnY";
+const LIVI_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
 
-async function agentSearch({state,brokerage,name,city,limit=50,offset=0}={}) {
+async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}={}) {
   let params = [];
   if(state) params.push(`state=eq.${state}`);
   if(brokerage) params.push(`brokerage_name=ilike.*${encodeURIComponent(brokerage)}*`);
   if(name) params.push(`full_name=ilike.*${encodeURIComponent(name)}*`);
   if(city) params.push(`city=ilike.*${encodeURIComponent(city)}*`);
-  params.push(`order=full_name.asc`);
+  if(newDays) {
+    const d = new Date(); d.setDate(d.getDate() - newDays);
+    params.push(`original_license_date=gte.${d.toISOString().split("T")[0]}`);
+    params.push(`order=original_license_date.desc`);
+  } else {
+    params.push(`order=full_name.asc`);
+  }
   params.push(`limit=${limit}`);
   params.push(`offset=${offset}`);
-  params.push(`select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration`);
+  params.push(`select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration,original_license_date`);
   try {
-    const r = await fetch(`${LIVI_SUPA}/agent_directory?${params.join("&")}`,{
+    const url = `${LIVI_SUPA}/agent_directory?${params.join("&")}`;
+    console.log("Agent search URL:", url);
+    const r = await fetch(url,{
       headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Prefer":"count=exact"}
     });
+    if(!r.ok) { console.error("Agent search HTTP error:", r.status, await r.text()); return { data: [], total: 0 }; }
     const total = parseInt(r.headers.get("content-range")?.split("/")?.[1] || "0");
     const data = await r.json();
-    return { data, total };
+    console.log("Agent search results:", data.length, "total:", total);
+    return { data: Array.isArray(data) ? data : [], total };
   } catch(e) { console.error("Agent search error:", e); return { data: [], total: 0 }; }
 }
 
-async function agentStats() {
-  try {
-    const r = await fetch(`${LIVI_SUPA}/rpc/`,{method:"POST",headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({})});
-    return {};
-  } catch { return {}; }
-}
+
 
 const T = {
   bg:"#04060A",side:"#070A10",card:"#0B0F17",hover:"#101520",
@@ -165,21 +170,36 @@ function AgentDirectory(){
   const [total,setTotal]=useState(0);
   const [loading,setLoading]=useState(false);
   const [searched,setSearched]=useState(false);
-  const [filters,setFilters]=useState({state:"",brokerage:"",name:"",city:""});
+  const [filters,setFilters]=useState({state:"",brokerage:"",name:"",city:"",newDays:""});
   const [page,setPage]=useState(0);
   const [added,setAdded]=useState({});
+  const [error,setError]=useState(null);
   const PER=50;
 
-  const doSearch=async(pg=0)=>{
-    if(!filters.state&&!filters.brokerage&&!filters.name&&!filters.city) return;
-    setLoading(true); setPage(pg);
-    const {data,total:t}=await agentSearch({...filters,limit:PER,offset:pg*PER});
-    setResults(data||[]); setTotal(t); setSearched(true); setLoading(false);
+  const doSearch=async(filtersOverride,pg=0)=>{
+    const f = filtersOverride || filters;
+    if(!f.state&&!f.brokerage&&!f.name&&!f.city&&!f.newDays) return;
+    setLoading(true); setPage(pg); setError(null);
+    try {
+      const {data,total:t}=await agentSearch({...f,limit:PER,offset:pg*PER});
+      setResults(data||[]); setTotal(t); setSearched(true);
+    } catch(e) {
+      console.error("Search failed:", e);
+      setError("Search failed. Please try again.");
+      setResults([]); setTotal(0);
+    }
+    setLoading(false);
+  };
+
+  const updateAndSearch=(newFilters)=>{
+    const f = {...filters,...newFilters};
+    setFilters(f);
+    doSearch(f,0);
   };
 
   const addToPipeline=async(agent)=>{
     try {
-      const body={first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage:agent.brokerage_name||"",market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),source:"Agent Directory",pipeline_stage:"new",tier:"New",urgency:"LOW",notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}`};
+      const body={first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage:agent.brokerage_name||"",market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),source:"Agent Directory",pipeline_stage:"new",tier:"New",urgency:"LOW",notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`};
       const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));}
     } catch(e) { console.error("Add to pipeline error:", e); }
@@ -187,20 +207,29 @@ function AgentDirectory(){
 
   const topBrokerages=[
     {label:"eXp Realty",q:"EXP REALTY"},{label:"Compass",q:"COMPASS"},{label:"Real Broker",q:"REAL BROKER"},
-    {label:"Fathom",q:"FATHOM"},{label:"Douglas Elliman",q:"DOUGLAS ELLIMAN"},{label:"Corcoran",q:"CORCORAN"},
-    {label:"Keller Williams",q:"KELLER WILLIAMS"},{label:"Coldwell Banker",q:"COLDWELL BANKER"},
+    {label:"Fathom",q:"FATHOM"},{label:"Keller Williams",q:"KELLER WILLIAMS"},{label:"Coldwell Banker",q:"COLDWELL BANKER"},
     {label:"HomeSmart",q:"HOMESMART"},{label:"LPT Realty",q:"LPT REALTY"}
   ];
+
+  const fmtDate=(d)=>{if(!d)return"";const dt=new Date(d+"T00:00:00");const now=new Date();const diff=Math.floor((now-dt)/(1000*86400));if(diff<1)return"Today";if(diff<7)return diff+"d ago";if(diff<30)return Math.floor(diff/7)+"w ago";return dt.toLocaleDateString("en-US",{month:"short",day:"numeric",year:dt.getFullYear()!==now.getFullYear()?"numeric":undefined});};
 
   return (
     <>
       {/* Stats banner */}
-      <div style={{display:"flex",gap:16,marginBottom:20}}>
-        {[["🇺🇸","352,338","Licensed Agents",T.a],["🏢","51,057","Brokerages",T.bl],["📍","3","States Live",T.p]].map(([ic,v,l,c],i)=>
-          <div key={i} style={{flex:1,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"18px 22px",display:"flex",alignItems:"center",gap:14}}>
+      <div style={{display:"flex",gap:16,marginBottom:20,flexWrap:"wrap"}}>
+        {[["🇺🇸","352,338","Licensed Agents",T.a],["🏢","51,057","Brokerages",T.bl],["📍","3","States Live",T.p],["🆕","~1,000/mo","New TX Agents",T.y]].map(([ic,v,l,c],i)=>
+          <div key={i} style={{flex:"1 1 140px",background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"18px 22px",display:"flex",alignItems:"center",gap:14}}>
             <div style={{fontSize:24}}>{ic}</div>
-            <div><div style={{fontSize:24,fontWeight:800,color:T.t}}>{v}</div><div style={{fontSize:12,color:c,fontWeight:700,letterSpacing:1}}>{l.toUpperCase()}</div></div>
+            <div><div style={{fontSize:22,fontWeight:800,color:T.t}}>{v}</div><div style={{fontSize:11,color:c,fontWeight:700,letterSpacing:1}}>{l.toUpperCase()}</div></div>
           </div>
+        )}
+      </div>
+
+      {/* New Agents quick filters */}
+      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+        <div style={{fontSize:14,fontWeight:700,color:T.t,display:"flex",alignItems:"center",gap:6}}>🆕 Newly Licensed:</div>
+        {[{l:"Last 7 days",d:"7"},{l:"Last 30 days",d:"30"},{l:"Last 90 days",d:"90"},{l:"Last 6 months",d:"180"},{l:"This year",d:"365"}].map(b=>
+          <div key={b.d} onClick={()=>updateAndSearch({newDays:b.d,state:filters.state||"TX"})} style={{padding:"7px 16px",borderRadius:7,background:filters.newDays===b.d?T.y+"25":T.d,border:`1px solid ${filters.newDays===b.d?T.y+"50":T.b}`,color:filters.newDays===b.d?T.y:T.s,fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{b.l}</div>
         )}
       </div>
 
@@ -218,38 +247,44 @@ function AgentDirectory(){
           </div>
           <div>
             <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>BROKERAGE</div>
-            <input value={filters.brokerage} onChange={e=>setFilters(p=>({...p,brokerage:e.target.value}))} placeholder="eXp, Compass, KW..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <input value={filters.brokerage} onChange={e=>setFilters(p=>({...p,brokerage:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")doSearch()}} placeholder="eXp, Compass, KW..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
           <div>
             <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>AGENT NAME</div>
-            <input value={filters.name} onChange={e=>setFilters(p=>({...p,name:e.target.value}))} placeholder="Search by name..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <input value={filters.name} onChange={e=>setFilters(p=>({...p,name:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")doSearch()}} placeholder="Search by name..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
           <div>
-            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>CITY</div>
-            <input value={filters.city} onChange={e=>setFilters(p=>({...p,city:e.target.value}))} placeholder="Austin, Brooklyn..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>CITY / COUNTY</div>
+            <input value={filters.city} onChange={e=>setFilters(p=>({...p,city:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")doSearch()}} placeholder="Austin, Brooklyn..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
-          <div onClick={()=>doSearch(0)} style={{padding:"12px 28px",borderRadius:8,background:T.a,color:"#000",fontSize:15,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",height:"fit-content"}}>🔍 Search</div>
+          <div style={{display:"flex",gap:8}}>
+            <div onClick={()=>doSearch()} style={{padding:"12px 28px",borderRadius:8,background:T.a,color:"#000",fontSize:15,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",height:"fit-content"}}>🔍 Search</div>
+            {searched&&<div onClick={()=>{setFilters({state:"",brokerage:"",name:"",city:"",newDays:""});setSearched(false);setResults([]);setTotal(0);}} style={{padding:"12px 16px",borderRadius:8,background:T.d,color:T.s,fontSize:15,fontWeight:700,cursor:"pointer",height:"fit-content"}}>✕</div>}
+          </div>
         </div>
 
         {/* Quick brokerage buttons */}
         <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:14}}>
           {topBrokerages.map(b=>
-            <div key={b.q} onClick={async()=>{const f={...filters,brokerage:b.q};setFilters(f);setLoading(true);setPage(0);const {data,total:t}=await agentSearch({...f,limit:PER,offset:0});setResults(data||[]);setTotal(t);setSearched(true);setLoading(false);}} style={{padding:"6px 14px",borderRadius:6,background:filters.brokerage===b.q?T.am:T.d,border:`1px solid ${filters.brokerage===b.q?T.a+"40":T.b}`,color:filters.brokerage===b.q?T.a:T.s,fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{b.label}</div>
+            <div key={b.q} onClick={()=>updateAndSearch({brokerage:b.q})} style={{padding:"6px 14px",borderRadius:6,background:filters.brokerage===b.q?T.am:T.d,border:`1px solid ${filters.brokerage===b.q?T.a+"40":T.b}`,color:filters.brokerage===b.q?T.a:T.s,fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{b.label}</div>
           )}
         </div>
       </div>
+
+      {/* Error */}
+      {error && <div style={{padding:"16px 20px",borderRadius:10,background:T.r+"15",border:`1px solid ${T.r}30`,color:T.r,marginBottom:16,fontSize:14}}>{error}</div>}
 
       {/* Results */}
       {loading && <div style={{textAlign:"center",padding:40}}><div style={{fontSize:24,animation:"pulse 1s infinite"}}>🔍</div><div style={{color:T.s,marginTop:8}}>Searching 352K+ agents...</div></div>}
 
       {searched && !loading && (
         <div style={{background:T.card,borderRadius:12,border:`1px solid ${T.b}`,overflow:"hidden"}}>
-          <div style={{padding:"16px 24px",borderBottom:`1px solid ${T.b}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{fontSize:14,color:T.s}}>{total.toLocaleString()} agents found</div>
-            {total>PER && <div style={{display:"flex",gap:8}}>
-              {page>0 && <div onClick={()=>doSearch(page-1)} style={{padding:"6px 14px",borderRadius:6,background:T.d,color:T.s,fontSize:13,cursor:"pointer"}}>← Prev</div>}
+          <div style={{padding:"16px 24px",borderBottom:`1px solid ${T.b}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+            <div style={{fontSize:14,color:T.s}}><span style={{fontWeight:700,color:T.t}}>{total.toLocaleString()}</span> agents found{filters.newDays?<span style={{color:T.y,fontWeight:600}}> · newly licensed (last {filters.newDays}d)</span>:""}</div>
+            {total>PER && <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              {page>0 && <div onClick={()=>doSearch(null,page-1)} style={{padding:"6px 14px",borderRadius:6,background:T.d,color:T.s,fontSize:13,cursor:"pointer"}}>← Prev</div>}
               <div style={{padding:"6px 14px",fontSize:13,color:T.t}}>Page {page+1} of {Math.ceil(total/PER)}</div>
-              {(page+1)*PER<total && <div onClick={()=>doSearch(page+1)} style={{padding:"6px 14px",borderRadius:6,background:T.d,color:T.s,fontSize:13,cursor:"pointer"}}>Next →</div>}
+              {(page+1)*PER<total && <div onClick={()=>doSearch(null,page+1)} style={{padding:"6px 14px",borderRadius:6,background:T.d,color:T.s,fontSize:13,cursor:"pointer"}}>Next →</div>}
             </div>}
           </div>
           {results.length===0 ? (
@@ -257,23 +292,24 @@ function AgentDirectory(){
           ) : (
             <table className="crm-table" style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
               <thead><tr style={{borderBottom:`1px solid ${T.b}`}}>
-                {["Agent","License","Brokerage","Location","Type",""].map((h,i)=>
-                  <th key={i} style={{padding:"12px 16px",textAlign:"left",fontSize:11,color:T.m,fontWeight:700,letterSpacing:1.5}}>{h}</th>
+                {["Agent","License","Brokerage","Location","Type",filters.newDays?"Licensed":"",""].map((h,i)=>
+                  h!=null&&<th key={i} style={{padding:"12px 16px",textAlign:"left",fontSize:11,color:T.m,fontWeight:700,letterSpacing:1.5}}>{h}</th>
                 )}
               </tr></thead>
               <tbody>
                 {results.map((a,i)=>
                   <tr key={a.id||i} style={{borderBottom:`1px solid ${T.b}`,transition:"background 0.1s"}} onMouseOver={e=>e.currentTarget.style.background=T.hover} onMouseOut={e=>e.currentTarget.style.background="transparent"}>
                     <td style={{padding:"14px 16px"}}>
-                      <div style={{fontWeight:700,color:T.t}}>{a.full_name}</div>
+                      <div style={{fontWeight:700,color:T.t}}>{a.full_name||"—"}</div>
                       <div style={{fontSize:12,color:T.s}}>{a.state}</div>
                     </td>
-                    <td style={{padding:"14px 16px",color:T.s,fontSize:13,fontFamily:"monospace"}}>{a.license_number}</td>
+                    <td style={{padding:"14px 16px",color:T.s,fontSize:13,fontFamily:"monospace"}}>{a.license_number||"—"}</td>
                     <td style={{padding:"14px 16px"}}>
                       <div style={{color:T.t,fontWeight:600,maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.brokerage_name||"—"}</div>
                     </td>
                     <td style={{padding:"14px 16px",color:T.s}}>{a.city||a.county||"—"}</td>
-                    <td style={{padding:"14px 16px"}}><span style={{fontSize:12,padding:"3px 8px",borderRadius:4,background:a.license_type?.includes("Broker")?T.p+"20":T.bl+"20",color:a.license_type?.includes("Broker")?T.p:T.bl,fontWeight:600}}>{a.license_type?.includes("Broker")?"Broker":"Agent"}</span></td>
+                    <td style={{padding:"14px 16px"}}><span style={{fontSize:12,padding:"3px 8px",borderRadius:4,background:(a.license_type||"").includes("Broker")?T.p+"20":T.bl+"20",color:(a.license_type||"").includes("Broker")?T.p:T.bl,fontWeight:600}}>{(a.license_type||"").includes("Broker")?"Broker":"Agent"}</span></td>
+                    {filters.newDays&&<td style={{padding:"14px 16px"}}>{a.original_license_date?<span style={{fontSize:12,padding:"3px 8px",borderRadius:4,background:T.y+"20",color:T.y,fontWeight:600}}>{fmtDate(a.original_license_date)}</span>:"—"}</td>}
                     <td style={{padding:"14px 16px",textAlign:"right"}}>
                       {added[a.license_number] ? (
                         <span style={{fontSize:13,color:T.a,fontWeight:600}}>✓ Added</span>
@@ -286,6 +322,12 @@ function AgentDirectory(){
               </tbody>
             </table>
           )}
+          {/* Bottom pagination */}
+          {total>PER && <div style={{padding:"16px 24px",borderTop:`1px solid ${T.b}`,display:"flex",justifyContent:"center",gap:8}}>
+            {page>0 && <div onClick={()=>doSearch(null,page-1)} style={{padding:"8px 18px",borderRadius:6,background:T.d,color:T.s,fontSize:13,cursor:"pointer"}}>← Previous</div>}
+            <div style={{padding:"8px 18px",fontSize:13,color:T.t}}>Page {page+1} of {Math.ceil(total/PER)}</div>
+            {(page+1)*PER<total && <div onClick={()=>doSearch(null,page+1)} style={{padding:"8px 18px",borderRadius:6,background:T.d,color:T.s,fontSize:13,cursor:"pointer"}}>Next →</div>}
+          </div>}
         </div>
       )}
 
@@ -296,8 +338,8 @@ function AgentDirectory(){
           <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>352,338 Real Licensed Agents</div>
           <div style={{fontSize:15,color:T.s,maxWidth:500,margin:"0 auto",lineHeight:1.6}}>Search by state, brokerage, name, or city. Every record is from official state licensing boards — Texas TREC, New York DOS, Connecticut DCP. Add agents directly to your recruiting pipeline.</div>
           <div style={{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:10,marginTop:24}}>
-            {[{l:"eXp agents in TX",f:{state:"TX",brokerage:"EXP REALTY",name:"",city:""}},{l:"Compass in NY",f:{state:"NY",brokerage:"COMPASS",name:"",city:""}},{l:"Keller Williams TX",f:{state:"TX",brokerage:"KELLER WILLIAMS",name:"",city:""}},{l:"All LPT Realty",f:{state:"",brokerage:"LPT REALTY",name:"",city:""}}].map((ex,i)=>
-              <div key={i} onClick={async()=>{setFilters(ex.f);setLoading(true);setPage(0);const {data,total:t}=await agentSearch({...ex.f,limit:PER,offset:0});setResults(data||[]);setTotal(t);setSearched(true);setLoading(false);}} style={{padding:"10px 18px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:600,cursor:"pointer"}}>{ex.l}</div>
+            {[{l:"🆕 New TX agents (30d)",f:{state:"TX",brokerage:"",name:"",city:"",newDays:"30"}},{l:"eXp agents in TX",f:{state:"TX",brokerage:"EXP REALTY",name:"",city:"",newDays:""}},{l:"Compass in NY",f:{state:"NY",brokerage:"COMPASS",name:"",city:"",newDays:""}},{l:"All LPT Realty",f:{state:"",brokerage:"LPT REALTY",name:"",city:"",newDays:""}}].map((ex,i)=>
+              <div key={i} onClick={()=>{setFilters(ex.f);doSearch(ex.f,0);}} style={{padding:"10px 18px",borderRadius:8,background:i===0?T.y+"20":T.am,color:i===0?T.y:T.a,fontSize:14,fontWeight:600,cursor:"pointer",border:`1px solid ${i===0?T.y+"30":T.a+"20"}`}}>{ex.l}</div>
             )}
           </div>
         </div>
