@@ -163,7 +163,7 @@ export default function Livi(){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
         sys+=`\n\nAd spend: $20/day Facebook/Instagram for LPT Realty recruiting.`;
       }
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages:next.map(m=>({role:m.role,content:m.content}))})});
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-dangerous-direct-browser-access":"true","anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages:next.map(m=>({role:m.role,content:m.content}))})});
       if(!r.ok){const err=await r.text();console.error("API error:",r.status,err);setMsgs(p=>[...p,{role:"assistant",content:`API returned ${r.status}. To enable LIVI chat, add your Anthropic API key as VITE_ANTHROPIC_KEY in Vercel environment variables.`}]);setBusy(false);return;}
       const d=await r.json();
       setMsgs(p=>[...p,{role:"assistant",content:d.content?.map(c=>c.text||"").join("\n")||"Try again."}]);
@@ -189,7 +189,7 @@ export default function Livi(){
       if(leads.length>0){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
       }
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,system:sys,messages:[{role:"user",content:q}]})});
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-dangerous-direct-browser-access":"true","anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,system:sys,messages:[{role:"user",content:q}]})});
       if(!r.ok){setInlineResponse("API error — add your Anthropic API key to Vercel env vars to enable LIVI.");setInlineLoading(false);return;}
       const d=await r.json();
       setInlineResponse(d.content?.map(c=>c.text||"").join("\n")||"No response.");
@@ -250,8 +250,8 @@ export default function Livi(){
       <div style={{padding:wide?"10px 20px 14px":"8px 14px 10px",borderTop:`1px solid ${T.b}`}}>
         <div style={{display:"flex",gap:6}}>
           <textarea value={inp} onChange={ev=>setInp(ev.target.value)} onKeyDown={ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();send();}}} placeholder="Ask LIVI anything..." rows={1}
-            style={{flex:1,padding:"14px 18px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:wide?13:11,fontFamily:"inherit",outline:"none",resize:"none",lineHeight:1.4,minHeight:48,maxHeight:120}}/>
-          <div onClick={send} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",background:inp.trim()?T.a:T.d,color:inp.trim()?"#000":T.m,cursor:inp.trim()?"pointer":"default",fontSize:19,fontWeight:800,flexShrink:0}}>↑</div>
+            style={{flex:1,padding:"12px 16px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:15,fontFamily:"inherit",outline:"none",resize:"none",lineHeight:1.5,minHeight:44}}/>
+          <div onClick={()=>send()} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",background:inp.trim()?T.a:T.d,color:inp.trim()?"#000":T.m,cursor:inp.trim()?"pointer":"default",fontSize:19,fontWeight:800,flexShrink:0}}>↑</div>
         </div>
       </div>
     </div>
@@ -571,48 +571,59 @@ export default function Livi(){
         })}</tbody></table></div>
       )}
 
-      {/* ━━━ FULL CRM TABLE ━━━ Always visible */}
-      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginTop:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <span style={{fontSize:18,fontWeight:700,color:T.t}}>📋 All Leads</span>
-          <span style={{fontSize:14,color:T.s}}>{pipeLeads.length} total</span>
-        </div>
-        {pipeLeads.length>0 ? (
-          <div style={{overflowX:"auto"}}>
-          <table className="crm-table" style={{width:"100%",borderCollapse:"collapse",minWidth:900}}>
-            <thead><tr>{["Name","Email","Phone","Market","Brokerage","Tier","Urgency","Stage","Added","Action"].map(h=>
-              <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap"}}>{h}</th>
-            )}</tr></thead>
-            <tbody>{pipeLeads.map((l,i)=>{
-              const act=stageAction(l);
-              return(
-                <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-                  <td onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{padding:"14px",fontSize:15,fontWeight:600,color:T.t,cursor:"pointer",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
-                  <td style={{padding:"14px",fontSize:13,color:T.bl}}>{l.email?<a href={`mailto:${l.email}`} style={{color:T.bl,textDecoration:"none"}}>{l.email.length>24?l.email.substring(0,24)+"…":l.email}</a>:"—"}</td>
-                  <td style={{padding:"14px",fontSize:14,color:T.s,whiteSpace:"nowrap"}}>{l.phone||"—"}</td>
-                  <td style={{padding:"14px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
-                  <td style={{padding:"14px",fontSize:14,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,20)||"—"}</td>
-                  <td style={{padding:"14px"}}><TPill t={l.tier}/></td>
-                  <td style={{padding:"14px"}}><UPill u={l.urgency}/></td>
-                  <td style={{padding:"14px"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"—"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
-                  <td style={{padding:"14px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{ago(l.created_at)}</td>
-                  <td style={{padding:"14px"}}>{act&&<span onClick={()=>askLivi(act.q)} style={{fontSize:13,color:T.a,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>{act.icon} {act.label}</span>}</td>
-                </tr>
-              );
-            })}</tbody>
-          </table>
-          </div>
-        ) : (
-          <div style={{textAlign:"center",padding:"40px 20px"}}>
-            <div style={{fontSize:28,marginBottom:8}}>📭</div>
-            <div style={{fontSize:16,color:T.s}}>No leads match your filters</div>
-          </div>
-        )}
-      </div>
-
     </>
     );
   };
+
+  // ━━━ CRM VIEW ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const [crmSearch,setCrmSearch]=useState("");
+  const [crmSort,setCrmSort]=useState("newest");
+  const crmLeads=leads.filter(l=>{
+    if(crmSearch){const s=crmSearch.toLowerCase();if(!(l.first_name?.toLowerCase().includes(s)||l.last_name?.toLowerCase().includes(s)||l.email?.toLowerCase().includes(s)||l.phone?.includes(s)||l.market?.toLowerCase().includes(s)||l.brokerage?.toLowerCase().includes(s)))return false;}
+    return true;
+  }).sort((a,b)=>{
+    if(crmSort==="newest")return new Date(b.created_at||0)-new Date(a.created_at||0);
+    if(crmSort==="oldest")return new Date(a.created_at||0)-new Date(b.created_at||0);
+    if(crmSort==="name")return(a.first_name||"").localeCompare(b.first_name||"");
+    if(crmSort==="urgency")return({HIGH:0,MEDIUM:1,LOW:2}[a.urgency]||3)-({HIGH:0,MEDIUM:1,LOW:2}[b.urgency]||3);
+    return 0;
+  });
+  const CRM=()=>(
+    <>
+      <div style={{display:"flex",gap:12,marginBottom:20,alignItems:"center",flexWrap:"wrap"}}>
+        <input value={crmSearch} onChange={ev=>setCrmSearch(ev.target.value)} placeholder="Search leads..." style={{padding:"12px 18px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",width:280}}/>
+        <select value={crmSort} onChange={ev=>setCrmSort(ev.target.value)} style={{padding:"10px 14px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}>
+          {[["newest","🕐 Newest"],["oldest","⏳ Oldest"],["name","🔤 Name"],["urgency","🔥 Urgency"]].map(([v,l])=><option key={v} value={v} style={{background:T.card}}>{l}</option>)}
+        </select>
+        <div style={{flex:1}}/>
+        <span style={{fontSize:14,color:T.s}}>{crmLeads.length} leads</span>
+        <div onClick={()=>setViewWithHistory("addlead")} style={{padding:"10px 18px",borderRadius:6,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer"}}>+ Add Lead</div>
+      </div>
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,overflow:"hidden"}}>
+        <div style={{overflowX:"auto"}}>
+        <table className="crm-table" style={{width:"100%",borderCollapse:"collapse",minWidth:1000}}>
+          <thead><tr>{["Name","Email","Phone","Market","Brokerage","Tier","Urgency","Stage","Source","Added"].map(h=>
+            <th key={h} style={{textAlign:"left",padding:"14px 16px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
+          )}</tr></thead>
+          <tbody>{crmLeads.length>0?crmLeads.map((l,i)=>
+            <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+              <td onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{padding:"14px 16px",fontSize:15,fontWeight:600,color:T.t,cursor:"pointer",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
+              <td style={{padding:"14px 16px",fontSize:14,color:T.bl}}>{l.email?<a href={`mailto:${l.email}`} style={{color:T.bl,textDecoration:"none"}}>{l.email.length>26?l.email.substring(0,26)+"…":l.email}</a>:"—"}</td>
+              <td style={{padding:"14px 16px",fontSize:14,color:T.s,whiteSpace:"nowrap"}}>{l.phone||"—"}</td>
+              <td style={{padding:"14px 16px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
+              <td style={{padding:"14px 16px",fontSize:14,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,22)||"—"}</td>
+              <td style={{padding:"14px 16px"}}><TPill t={l.tier}/></td>
+              <td style={{padding:"14px 16px"}}><UPill u={l.urgency}/></td>
+              <td style={{padding:"14px 16px"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"—"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
+              <td style={{padding:"14px 16px",fontSize:13,color:T.s}}>{l.source||"Ad"}</td>
+              <td style={{padding:"14px 16px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{ago(l.created_at)}</td>
+            </tr>
+          ):<tr><td colSpan={10} style={{textAlign:"center",padding:"60px 20px",color:T.m,fontSize:16}}>No leads found</td></tr>}</tbody>
+        </table>
+        </div>
+      </div>
+    </>
+  );
 
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   return(
@@ -654,7 +665,7 @@ export default function Livi(){
       {/* SIDEBAR */}
       <div className="app-sidebar" style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
         <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
-        {[["home","⬡"],["pipeline","◎"],["chat","💬"]].map(([id,ic])=>
+        {[["home","⬡"],["pipeline","◎"],["crm","📋"],["chat","💬"]].map(([id,ic])=>
           <div key={id} onClick={()=>{setViewWithHistory(id);if(id==="chat")setChatWide(true);else setChatWide(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
         )}
         <div style={{flex:1}}/>
@@ -676,14 +687,15 @@ export default function Livi(){
           {/* Dashboard / Pipeline / Lead Detail */}
           <div className="main-scroll" style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
             {view!=="lead"&&view!=="addlead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-              <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":"Lead Pipeline"}</h1>
+              <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":"LIVI AI"}</h1>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
-                {view==="home"&&<div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
+                {(view==="home"||view==="crm")&&<div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
                 <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
               </div>
             </div>}
             {view==="home"&&<Dash/>}
             {view==="pipeline"&&<Pipeline/>}
+            {view==="crm"&&<CRM/>}
             {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAsk={askLivi} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
             {view==="addlead"&&(
               <div style={{flex:1,overflow:"auto",padding:"24px 32px",maxWidth:700}}>
