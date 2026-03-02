@@ -129,7 +129,7 @@ function LeadPage({lead,onBack,onAsk}){
       )}</div>
 
       {/* Tabs */}
-      <div style={{display:"flex",gap:4,marginBottom:24,borderBottom:`1px solid ${T.b}`,paddingBottom:0}}>
+      <div className="lead-tabs" style={{display:"flex",gap:4,marginBottom:24,borderBottom:`1px solid ${T.b}`,paddingBottom:0}}>
         {tabs.map(([id,label])=>
           <div key={id} onClick={()=>setTab(id)} style={{padding:"12px 20px",fontSize:15,fontWeight:tab===id?700:500,color:tab===id?T.a:T.s,borderBottom:tab===id?`2px solid ${T.a}`:"2px solid transparent",cursor:"pointer",marginBottom:-1}}>{label}</div>
         )}
@@ -137,7 +137,7 @@ function LeadPage({lead,onBack,onAsk}){
 
       {/* ━━━ OVERVIEW TAB ━━━ */}
       {tab==="overview"&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+        <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
           {/* Contact Info */}
           <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}>
             <div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:16}}>📇 Contact Info</div>
@@ -383,17 +383,17 @@ export default function Livi(){
   const Dash=()=>(
     <>
       {/* KPI Cards */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:20}}>
+      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:20}}>
         {[["◎","Leads",total,today>0?`+${today} today`:"",T.bl],["🎯","Targets",targets,urgent>0?`${urgent} hot`:"",T.a],["💰","CPL",`$${cpl}`,"$20/day",T.y],["📅","Meetings",hasMeeting.length,inOutreach.length>0?`${inOutreach.length} awaiting`:"",T.p]].map(([ic,l,v,s,c],i)=>
-          <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"22px 24px",display:"flex",alignItems:"center",gap:16}}>
-            <div style={{width:52,height:52,borderRadius:10,background:c+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
-            <div><div style={{fontSize:13,color:T.s,letterSpacing:2,fontWeight:700}}>{l.toUpperCase()}</div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:32,fontWeight:800,color:T.t}}>{v}</span>{s&&<span style={{fontSize:14,color:c,fontWeight:600}}>{s}</span>}</div></div>
+          <div key={i} className="kpi-card" style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"22px 24px",display:"flex",alignItems:"center",gap:16}}>
+            <div className="kpi-icon" style={{width:52,height:52,borderRadius:10,background:c+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
+            <div><div className="kpi-label" style={{fontSize:13,color:T.s,letterSpacing:2,fontWeight:700}}>{l.toUpperCase()}</div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span className="kpi-val" style={{fontSize:32,fontWeight:800,color:T.t}}>{v}</span>{s&&<span className="kpi-sub" style={{fontSize:14,color:c,fontWeight:600}}>{s}</span>}</div></div>
           </div>
         )}
       </div>
 
       {/* Quick Actions */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+      <div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
         {[
           ["➕","Add Lead",()=>setShowAdd(true),T.a],
           ["📱","Draft Outreach",()=>askLivi("Who should I reach out to next? Pick my best lead and draft me a message."),T.bl],
@@ -409,7 +409,7 @@ export default function Livi(){
       </div>
 
       {/* Today's Actions + Hot Leads */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+      <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
         {/* Today's Action List */}
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
           <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Today's Actions</div>
@@ -644,7 +644,7 @@ export default function Livi(){
 
       {/* Kanban View */}
       {pipeView==="kanban"&&(
-        <div style={{display:"flex",gap:10,overflow:"auto",paddingBottom:8}}>
+        <div className="kanban-wrap" style={{display:"flex",gap:10,overflow:"auto",paddingBottom:8}}>
           {STAGES.map(stg=>{
             const colLeads=pipeLeads.filter(l=>l.pipeline_stage===stg.id);
             return(
@@ -697,7 +697,7 @@ export default function Livi(){
         </div>
         {pipeLeads.length>0 ? (
           <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",minWidth:900}}>
+          <table className="crm-table" style={{width:"100%",borderCollapse:"collapse",minWidth:900}}>
             <thead><tr>{["Name","Email","Phone","Market","Brokerage","Tier","Urgency","Stage","Added","Action"].map(h=>
               <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap"}}>{h}</th>
             )}</tr></thead>
@@ -732,15 +732,19 @@ export default function Livi(){
       {showAdd&&(
         <div style={{position:"fixed",inset:0,zIndex:90,display:"flex",alignItems:"center",justifyContent:"center"}}>
           <div onClick={()=>setShowAdd(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)"}}/>
-          <div style={{position:"relative",width:420,background:T.side,borderRadius:12,border:`1px solid ${T.b}`,padding:"20px 22px"}}>
+          <div className="modal-box" style={{position:"relative",width:420,background:T.side,borderRadius:12,border:`1px solid ${T.b}`,padding:"20px 22px"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}>
               <span style={{fontSize:19,fontWeight:800,color:T.t}}>Quick Add Lead</span>
               <span onClick={()=>setShowAdd(false)} style={{cursor:"pointer",color:T.s}}>✕</span>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-              {[["first_name","First Name"],["last_name","Last Name"],["phone","Phone"],["email","Email"],["market","Market"],["brokerage","Current Brokerage"]].map(([k,p],idx)=>
-                <input key={idx} autoComplete="off" spellCheck="false" value={newLead[k]} onChange={ev=>{const v=ev.target.value;setNewLead(pr=>({...pr,[k]:v}));}} placeholder={p} style={{padding:"12px 16px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
-              )}
+            <div className="form-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+              <input autoComplete="off" value={newLead.first_name} onChange={ev=>setNewLead(p=>({...p,first_name:ev.target.value}))} placeholder="First Name" style={{padding:"14px 16px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
+              <input autoComplete="off" value={newLead.last_name} onChange={ev=>setNewLead(p=>({...p,last_name:ev.target.value}))} placeholder="Last Name" style={{padding:"14px 16px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
+              <input autoComplete="off" value={newLead.phone} onChange={ev=>setNewLead(p=>({...p,phone:ev.target.value}))} placeholder="Phone" style={{padding:"14px 16px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
+              <input autoComplete="off" value={newLead.email} onChange={ev=>setNewLead(p=>({...p,email:ev.target.value}))} placeholder="Email" style={{padding:"14px 16px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
+              <input autoComplete="off" value={newLead.market} onChange={ev=>setNewLead(p=>({...p,market:ev.target.value}))} placeholder="Market" style={{padding:"14px 16px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
+              <input autoComplete="off" value={newLead.brokerage} onChange={ev=>setNewLead(p=>({...p,brokerage:ev.target.value}))} placeholder="Current Brokerage" style={{padding:"14px 16px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit"}}/>
+            </div>
             </div>
             <textarea value={newLead.notes} onChange={ev=>setNewLead(pr=>({...pr,notes:ev.target.value}))} placeholder="Notes (where you met them, etc.)" rows={2} style={{width:"100%",padding:"12px 16px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",resize:"none",marginBottom:18,boxSizing:"border-box"}}/>
             <div style={{display:"flex",gap:14,justifyContent:"flex-end"}}>
@@ -757,13 +761,45 @@ export default function Livi(){
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   return(
     <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex"}}>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}textarea::placeholder,input::placeholder{color:${T.m}}@media(max-width:768px){.chat-sidebar{display:none!important}.nav-sidebar{width:56px!important}.main-content{padding:16px!important}}`}</style>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}textarea::placeholder,input::placeholder{color:${T.m}}
+@media(max-width:768px){
+.chat-sidebar{display:none!important}
+.app-sidebar{width:56px!important}
+.app-sidebar .logo-btn{width:36px!important;height:36px!important;font-size:14px!important}
+.app-sidebar .nav-btn{width:40px!important;height:40px!important;font-size:16px!important}
+.main-scroll{padding:14px 12px!important}
+.kpi-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
+.kpi-card{padding:14px 16px!important}
+.kpi-card .kpi-icon{width:40px!important;height:40px!important;font-size:18px!important}
+.kpi-card .kpi-val{font-size:24px!important}
+.kpi-card .kpi-label{font-size:11px!important}
+.kpi-card .kpi-sub{font-size:12px!important}
+.quick-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
+.quick-grid>div{padding:14px 12px!important}
+.quick-grid>div span:first-child{font-size:20px!important}
+.quick-grid>div span:last-child{font-size:13px!important}
+.two-col{grid-template-columns:1fr!important}
+.three-col{grid-template-columns:1fr!important}
+.four-col{grid-template-columns:1fr 1fr!important}
+.section-card{padding:16px 18px!important}
+.section-title{font-size:16px!important}
+.page-title{font-size:24px!important}
+.lead-header h1{font-size:24px!important}
+.lead-tabs{overflow-x:auto}
+.lead-tabs>div{padding:10px 14px!important;font-size:13px!important;white-space:nowrap}
+.kanban-wrap{flex-direction:column!important}
+.kanban-wrap>div{min-width:100%!important}
+.crm-table{font-size:13px!important}
+.crm-table td,.crm-table th{padding:10px 8px!important}
+.modal-box{width:90vw!important;max-width:400px!important;padding:16px 18px!important}
+.modal-box .form-grid{grid-template-columns:1fr!important}
+}`}</style>
 
       {/* SIDEBAR */}
-      <div style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
-        <div style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
+      <div className="app-sidebar" style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
+        <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
         {[["home","⬡"],["pipeline","◎"],["chat","💬"]].map(([id,ic])=>
-          <div key={id} onClick={()=>{setView(id);if(id==="chat")setChatWide(true);else setChatWide(false);}} title={id} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
+          <div key={id} onClick={()=>{setView(id);if(id==="chat")setChatWide(true);else setChatWide(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
         )}
         <div style={{flex:1}}/>
         <div onClick={load} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
@@ -782,9 +818,9 @@ export default function Livi(){
       ):(
         <div style={{flex:1,display:"flex",overflow:"hidden"}}>
           {/* Dashboard / Pipeline / Lead Detail */}
-          <div style={{flex:1,overflow:"auto",padding:view==="lead"?"0":"24px 32px"}}>
+          <div className="main-scroll" style={{flex:1,overflow:"auto",padding:view==="lead"?"0":"24px 32px"}}>
             {view!=="lead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,padding:view==="lead"?"24px 32px 0":0}}>
-              <h1 style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":"Lead Pipeline"}</h1>
+              <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":"Lead Pipeline"}</h1>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
                 {view==="home"&&<div onClick={()=>setShowAdd(true)} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
                 <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
