@@ -163,8 +163,8 @@ export default function Livi(){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
         sys+=`\n\nAd spend: $20/day Facebook/Instagram for LPT Realty recruiting.`;
       }
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-dangerous-direct-browser-access":"true","anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages:next.map(m=>({role:m.role,content:m.content}))})});
-      if(!r.ok){const err=await r.text();console.error("API error:",r.status,err);setMsgs(p=>[...p,{role:"assistant",content:`API returned ${r.status}. To enable LIVI chat, add your Anthropic API key as VITE_ANTHROPIC_KEY in Vercel environment variables.`}]);setBusy(false);return;}
+      const r=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(import.meta.env.VITE_OPENROUTER_KEY||"")},body:JSON.stringify({model:"deepseek/deepseek-chat-v3-0324",max_tokens:1000,messages:[{role:"system",content:sys},...next.map(m=>({role:m.role,content:m.content}))]})});
+      if(!r.ok){const err=await r.text();console.error("API error:",r.status,err);setMsgs(p=>[...p,{role:"assistant",content:`API returned ${r.status}. To enable LIVI chat, add your Anthropic API key as VITE_OPENROUTER_KEY in Vercel environment variables.`}]);setBusy(false);return;}
       const d=await r.json();
       setMsgs(p=>[...p,{role:"assistant",content:d.content?.map(c=>c.text||"").join("\n")||"Try again."}]);
     }catch(e){console.error("Chat error:",e);setMsgs(p=>[...p,{role:"assistant",content:"Connection error. Check console for details."}]);}
@@ -189,7 +189,7 @@ export default function Livi(){
       if(leads.length>0){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
       }
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-dangerous-direct-browser-access":"true","anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,system:sys,messages:[{role:"user",content:q}]})});
+      const r=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(import.meta.env.VITE_OPENROUTER_KEY||"")},body:JSON.stringify({model:"deepseek/deepseek-chat-v3-0324",max_tokens:1500,messages:[{role:"system",content:sys},{role:"user",content:q}]})});
       if(!r.ok){setInlineResponse("API error — add your Anthropic API key to Vercel env vars to enable LIVI.");setInlineLoading(false);return;}
       const d=await r.json();
       setInlineResponse(d.content?.map(c=>c.text||"").join("\n")||"No response.");
