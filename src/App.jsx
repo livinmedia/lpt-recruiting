@@ -390,7 +390,7 @@ export default function Livi(){
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><span style={{fontSize:18,fontWeight:700,color:T.t}}>🎯 Hot Leads</span><span onClick={()=>setView("pipeline")} style={{fontSize:15,color:T.s,cursor:"pointer"}}>All →</span></div>
           {leads.filter(l=>l.brokerage&&!l.brokerage.includes("LPT")&&l.urgency).sort((a,b)=>({HIGH:0,MEDIUM:1,LOW:2}[a.urgency]||3)-({HIGH:0,MEDIUM:1,LOW:2}[b.urgency]||3)).slice(0,3).map((l,i)=>
-            <div key={i} onClick={()=>setSelLead(l);setView("lead")} style={{display:"flex",justifyContent:"space-between",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}>
+            <div key={i} onClick={()=>{setSelLead(l);setView("lead");}} style={{display:"flex",justifyContent:"space-between",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}>
               <div><div style={{fontSize:16,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</div><div style={{fontSize:14,color:T.s}}>{l.brokerage?.substring(0,18)}</div></div>
               <UPill u={l.urgency}/>
             </div>
@@ -418,7 +418,7 @@ export default function Livi(){
               <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:13,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
             )}</tr></thead>
             <tbody>{leads.slice(0,8).map((l,i)=>
-              <tr key={i} onClick={()=>setSelLead(l);setView("lead")} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+              <tr key={i} onClick={()=>{setSelLead(l);setView("lead");}} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
                 <td style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</td>
                 <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.market||"—"}</td>
                 <td style={{padding:"14px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,24)||"—"}</td>
@@ -488,7 +488,7 @@ export default function Livi(){
     return(
       <div draggable onDragStart={()=>setDragLead(l)} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:8,padding:"14px 16px",marginBottom:18,cursor:"grab",transition:"border-color 0.12s"}}
         onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
-        <div onClick={()=>setSelLead(l);setView("lead")} style={{cursor:"pointer"}}>
+        <div onClick={()=>{setSelLead(l);setView("lead");}} style={{cursor:"pointer"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
             <div style={{fontSize:16,fontWeight:700,color:T.t}}>{l.first_name} {l.last_name}</div>
             <UPill u={l.urgency}/>
@@ -590,7 +590,7 @@ export default function Livi(){
           const contactColor=daysSince===null?T.m:daysSince>7?T.r:daysSince>3?T.y:T.a;
           return(
             <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-              <td onClick={()=>setSelLead(l);setView("lead")} style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t,cursor:"pointer"}}>{l.first_name} {l.last_name}</td>
+              <td onClick={()=>{setSelLead(l);setView("lead");}} style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t,cursor:"pointer"}}>{l.first_name} {l.last_name}</td>
               <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.market}</td>
               <td style={{padding:"14px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,22)}</td>
               <td style={{padding:"14px"}}><TPill t={l.tier}/></td>
@@ -619,7 +619,7 @@ export default function Livi(){
               const act=stageAction(l);
               return(
                 <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-                  <td onClick={()=>setSelLead(l);setView("lead")} style={{padding:"14px",fontSize:15,fontWeight:600,color:T.t,cursor:"pointer",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
+                  <td onClick={()=>{setSelLead(l);setView("lead");}} style={{padding:"14px",fontSize:15,fontWeight:600,color:T.t,cursor:"pointer",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</td>
                   <td style={{padding:"14px",fontSize:13,color:T.bl}}>{l.email?<a href={`mailto:${l.email}`} style={{color:T.bl,textDecoration:"none"}}>{l.email.length>24?l.email.substring(0,24)+"…":l.email}</a>:"—"}</td>
                   <td style={{padding:"14px",fontSize:14,color:T.s,whiteSpace:"nowrap"}}>{l.phone||"—"}</td>
                   <td style={{padding:"14px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
@@ -671,7 +671,7 @@ export default function Livi(){
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   return(
     <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex"}}>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}textarea::placeholder,input::placeholder{color:${T.m}}`}</style>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}textarea::placeholder,input::placeholder{color:${T.m}}@media(max-width:768px){.chat-sidebar{display:none!important}.nav-sidebar{width:56px!important}.main-content{padding:16px!important}}`}</style>
 
       {/* SIDEBAR */}
       <div style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
@@ -710,7 +710,7 @@ export default function Livi(){
           </div>
 
           {/* Chat Sidebar */}
-          <div style={{width:420,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column",background:T.bg,flexShrink:0}}>
+          <div className="chat-sidebar" style={{width:420,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column",background:T.bg,flexShrink:0}}>
             <div style={{padding:"20px 28px",borderBottom:`1px solid ${T.b}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{display:"flex",alignItems:"center",gap:6}}>
                 <div style={{width:36,height:36,borderRadius:5,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#000"}}>L</div>
