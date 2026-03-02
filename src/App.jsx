@@ -4,6 +4,37 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 const SUPA = "https://zuwvovjhrkzlpdxcpsud.supabase.co/rest/v1";
 const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1d3Zvdmpocmt6bHBkeGNwc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTMyOTAsImV4cCI6MjA4NzcyOTI5MH0.SmOAe8yeEa79hrSkwMLLq5z70Fmoxznvhs0YNOxa-no";
 
+// LIVI AI Platform — Agent Directory (352K+ real agents)
+const LIVI_SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
+const LIVI_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAzNDgsImV4cCI6MjA4NzkxNjM0OH0.tJx4WvhZLuTlPZ7TSGx7FU92XxtJqLEvOF7s5TyMxnY";
+
+async function agentSearch({state,brokerage,name,city,limit=50,offset=0}={}) {
+  let params = [];
+  if(state) params.push(`state=eq.${state}`);
+  if(brokerage) params.push(`brokerage_name=ilike.*${encodeURIComponent(brokerage)}*`);
+  if(name) params.push(`full_name=ilike.*${encodeURIComponent(name)}*`);
+  if(city) params.push(`city=ilike.*${encodeURIComponent(city)}*`);
+  params.push(`order=full_name.asc`);
+  params.push(`limit=${limit}`);
+  params.push(`offset=${offset}`);
+  params.push(`select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration`);
+  try {
+    const r = await fetch(`${LIVI_SUPA}/agent_directory?${params.join("&")}`,{
+      headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Prefer":"count=exact"}
+    });
+    const total = parseInt(r.headers.get("content-range")?.split("/")?.[1] || "0");
+    const data = await r.json();
+    return { data, total };
+  } catch(e) { console.error("Agent search error:", e); return { data: [], total: 0 }; }
+}
+
+async function agentStats() {
+  try {
+    const r = await fetch(`${LIVI_SUPA}/rpc/`,{method:"POST",headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({})});
+    return {};
+  } catch { return {}; }
+}
+
 const T = {
   bg:"#04060A",side:"#070A10",card:"#0B0F17",hover:"#101520",
   b:"rgba(255,255,255,0.04)",bh:"rgba(255,255,255,0.08)",
@@ -76,7 +107,7 @@ function Gauge({score}){
 }
 
 // ━━━ LEAD DETAIL PAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,onCloseResponse}){
+function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading}){
   const [editing,setEditing]=useState(false);
   const [info,setInfo]=useState({first_name:lead.first_name||"",last_name:lead.last_name||"",email:lead.email||"",phone:lead.phone||"",market:lead.market||"",brokerage:lead.brokerage||""});
   const [notes,setNotes]=useState(lead._notes||[]);
@@ -115,7 +146,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,onCloseR
 
       <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginBottom:24}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>onAskInline(q)} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
       {inlineLoading&&<div style={{marginTop:16,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><div style={{display:"flex",gap:12}}><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse)}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span><span onClick={onCloseResponse} style={{fontSize:12,color:T.s,cursor:"pointer"}}>✕ Close</span></div></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
       </div>
 
       <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
@@ -125,6 +156,153 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,onCloseR
 
       <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🔍 Intel Dossier</div>{lead.raw_dossier?<pre style={{fontSize:14,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{lead.raw_dossier}</pre>:<div style={{textAlign:"center",padding:"24px"}}><div style={{fontSize:14,color:T.m,marginBottom:12}}>No intel yet</div><div onClick={()=>onAskInline(`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find production, reviews, social media, outreach angle.`)} style={{display:"inline-block",padding:"10px 20px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer"}}>🔍 Ask LIVI to Research</div></div>}</div>
     </div>
+  );
+}
+
+// ━━━ AGENT DIRECTORY (352K+ real agents) ━━━━━━━━━━━━━━
+function AgentDirectory(){
+  const [results,setResults]=useState([]);
+  const [total,setTotal]=useState(0);
+  const [loading,setLoading]=useState(false);
+  const [searched,setSearched]=useState(false);
+  const [filters,setFilters]=useState({state:"",brokerage:"",name:"",city:""});
+  const [page,setPage]=useState(0);
+  const [added,setAdded]=useState({});
+  const PER=50;
+
+  const doSearch=async(pg=0)=>{
+    if(!filters.state&&!filters.brokerage&&!filters.name&&!filters.city) return;
+    setLoading(true); setPage(pg);
+    const {data,total:t}=await agentSearch({...filters,limit:PER,offset:pg*PER});
+    setResults(data||[]); setTotal(t); setSearched(true); setLoading(false);
+  };
+
+  const addToPipeline=async(agent)=>{
+    try {
+      const body={first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage:agent.brokerage_name||"",market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),source:"Agent Directory",pipeline_stage:"new",tier:"New",urgency:"LOW",notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}`};
+      const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
+      if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));}
+    } catch(e) { console.error("Add to pipeline error:", e); }
+  };
+
+  const topBrokerages=[
+    {label:"eXp Realty",q:"EXP REALTY"},{label:"Compass",q:"COMPASS"},{label:"Real Broker",q:"REAL BROKER"},
+    {label:"Fathom",q:"FATHOM"},{label:"Douglas Elliman",q:"DOUGLAS ELLIMAN"},{label:"Corcoran",q:"CORCORAN"},
+    {label:"Keller Williams",q:"KELLER WILLIAMS"},{label:"Coldwell Banker",q:"COLDWELL BANKER"},
+    {label:"HomeSmart",q:"HOMESMART"},{label:"LPT Realty",q:"LPT REALTY"}
+  ];
+
+  return (
+    <>
+      {/* Stats banner */}
+      <div style={{display:"flex",gap:16,marginBottom:20}}>
+        {[["🇺🇸","352,338","Licensed Agents",T.a],["🏢","51,057","Brokerages",T.bl],["📍","3","States Live",T.p]].map(([ic,v,l,c],i)=>
+          <div key={i} style={{flex:1,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"18px 22px",display:"flex",alignItems:"center",gap:14}}>
+            <div style={{fontSize:24}}>{ic}</div>
+            <div><div style={{fontSize:24,fontWeight:800,color:T.t}}>{v}</div><div style={{fontSize:12,color:c,fontWeight:700,letterSpacing:1}}>{l.toUpperCase()}</div></div>
+          </div>
+        )}
+      </div>
+
+      {/* Search bar */}
+      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginBottom:20}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr auto",gap:12,alignItems:"end"}} className="four-col">
+          <div>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>STATE</div>
+            <select value={filters.state} onChange={e=>setFilters(p=>({...p,state:e.target.value}))} style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}>
+              <option value="" style={{background:T.card}}>All States</option>
+              <option value="TX" style={{background:T.card}}>Texas (189K)</option>
+              <option value="NY" style={{background:T.card}}>New York (144K)</option>
+              <option value="CT" style={{background:T.card}}>Connecticut (20K)</option>
+            </select>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>BROKERAGE</div>
+            <input value={filters.brokerage} onChange={e=>setFilters(p=>({...p,brokerage:e.target.value}))} placeholder="eXp, Compass, KW..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>AGENT NAME</div>
+            <input value={filters.name} onChange={e=>setFilters(p=>({...p,name:e.target.value}))} placeholder="Search by name..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>CITY</div>
+            <input value={filters.city} onChange={e=>setFilters(p=>({...p,city:e.target.value}))} placeholder="Austin, Brooklyn..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+          </div>
+          <div onClick={()=>doSearch(0)} style={{padding:"12px 28px",borderRadius:8,background:T.a,color:"#000",fontSize:15,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",height:"fit-content"}}>🔍 Search</div>
+        </div>
+
+        {/* Quick brokerage buttons */}
+        <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:14}}>
+          {topBrokerages.map(b=>
+            <div key={b.q} onClick={async()=>{const f={...filters,brokerage:b.q};setFilters(f);setLoading(true);setPage(0);const {data,total:t}=await agentSearch({...f,limit:PER,offset:0});setResults(data||[]);setTotal(t);setSearched(true);setLoading(false);}} style={{padding:"6px 14px",borderRadius:6,background:filters.brokerage===b.q?T.am:T.d,border:`1px solid ${filters.brokerage===b.q?T.a+"40":T.b}`,color:filters.brokerage===b.q?T.a:T.s,fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{b.label}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Results */}
+      {loading && <div style={{textAlign:"center",padding:40}}><div style={{fontSize:24,animation:"pulse 1s infinite"}}>🔍</div><div style={{color:T.s,marginTop:8}}>Searching 352K+ agents...</div></div>}
+
+      {searched && !loading && (
+        <div style={{background:T.card,borderRadius:12,border:`1px solid ${T.b}`,overflow:"hidden"}}>
+          <div style={{padding:"16px 24px",borderBottom:`1px solid ${T.b}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{fontSize:14,color:T.s}}>{total.toLocaleString()} agents found</div>
+            {total>PER && <div style={{display:"flex",gap:8}}>
+              {page>0 && <div onClick={()=>doSearch(page-1)} style={{padding:"6px 14px",borderRadius:6,background:T.d,color:T.s,fontSize:13,cursor:"pointer"}}>← Prev</div>}
+              <div style={{padding:"6px 14px",fontSize:13,color:T.t}}>Page {page+1} of {Math.ceil(total/PER)}</div>
+              {(page+1)*PER<total && <div onClick={()=>doSearch(page+1)} style={{padding:"6px 14px",borderRadius:6,background:T.d,color:T.s,fontSize:13,cursor:"pointer"}}>Next →</div>}
+            </div>}
+          </div>
+          {results.length===0 ? (
+            <div style={{textAlign:"center",padding:40,color:T.m}}>No agents found. Try broadening your search.</div>
+          ) : (
+            <table className="crm-table" style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+              <thead><tr style={{borderBottom:`1px solid ${T.b}`}}>
+                {["Agent","License","Brokerage","Location","Type",""].map((h,i)=>
+                  <th key={i} style={{padding:"12px 16px",textAlign:"left",fontSize:11,color:T.m,fontWeight:700,letterSpacing:1.5}}>{h}</th>
+                )}
+              </tr></thead>
+              <tbody>
+                {results.map((a,i)=>
+                  <tr key={a.id||i} style={{borderBottom:`1px solid ${T.b}`,transition:"background 0.1s"}} onMouseOver={e=>e.currentTarget.style.background=T.hover} onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                    <td style={{padding:"14px 16px"}}>
+                      <div style={{fontWeight:700,color:T.t}}>{a.full_name}</div>
+                      <div style={{fontSize:12,color:T.s}}>{a.state}</div>
+                    </td>
+                    <td style={{padding:"14px 16px",color:T.s,fontSize:13,fontFamily:"monospace"}}>{a.license_number}</td>
+                    <td style={{padding:"14px 16px"}}>
+                      <div style={{color:T.t,fontWeight:600,maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.brokerage_name||"—"}</div>
+                    </td>
+                    <td style={{padding:"14px 16px",color:T.s}}>{a.city||a.county||"—"}</td>
+                    <td style={{padding:"14px 16px"}}><span style={{fontSize:12,padding:"3px 8px",borderRadius:4,background:a.license_type?.includes("Broker")?T.p+"20":T.bl+"20",color:a.license_type?.includes("Broker")?T.p:T.bl,fontWeight:600}}>{a.license_type?.includes("Broker")?"Broker":"Agent"}</span></td>
+                    <td style={{padding:"14px 16px",textAlign:"right"}}>
+                      {added[a.license_number] ? (
+                        <span style={{fontSize:13,color:T.a,fontWeight:600}}>✓ Added</span>
+                      ) : (
+                        <div onClick={()=>addToPipeline(a)} style={{padding:"6px 14px",borderRadius:6,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",display:"inline-block"}}>+ Pipeline</div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Pre-search state */}
+      {!searched && !loading && (
+        <div style={{textAlign:"center",padding:"60px 20px"}}>
+          <div style={{fontSize:48,marginBottom:16}}>🔍</div>
+          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>352,338 Real Licensed Agents</div>
+          <div style={{fontSize:15,color:T.s,maxWidth:500,margin:"0 auto",lineHeight:1.6}}>Search by state, brokerage, name, or city. Every record is from official state licensing boards — Texas TREC, New York DOS, Connecticut DCP. Add agents directly to your recruiting pipeline.</div>
+          <div style={{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:10,marginTop:24}}>
+            {[{l:"eXp agents in TX",f:{state:"TX",brokerage:"EXP REALTY",name:"",city:""}},{l:"Compass in NY",f:{state:"NY",brokerage:"COMPASS",name:"",city:""}},{l:"Keller Williams TX",f:{state:"TX",brokerage:"KELLER WILLIAMS",name:"",city:""}},{l:"All LPT Realty",f:{state:"",brokerage:"LPT REALTY",name:"",city:""}}].map((ex,i)=>
+              <div key={i} onClick={async()=>{setFilters(ex.f);setLoading(true);setPage(0);const {data,total:t}=await agentSearch({...ex.f,limit:PER,offset:0});setResults(data||[]);setTotal(t);setSearched(true);setLoading(false);}} style={{padding:"10px 18px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:600,cursor:"pointer"}}>{ex.l}</div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -155,6 +333,9 @@ export default function Livi(){
       if(leads.length>0){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
         sys+=`\n\nAd spend: $20/day Facebook/Instagram for LPT Realty recruiting.`;
+      }
+      if(leads.length>0){
+        sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
       }
       const r=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(import.meta.env.VITE_OPENROUTER_KEY||"")},body:JSON.stringify({model:"deepseek/deepseek-chat-v3-0324",max_tokens:1500,messages:[{role:"system",content:sys},{role:"user",content:q}]})});
       if(!r.ok){const err=await r.text();console.error("LIVI inline error:",r.status,err);setInlineResponse(`API error ${r.status} — check your OpenRouter key in Vercel env vars.`);setInlineLoading(false);return;}
@@ -193,25 +374,13 @@ export default function Livi(){
       <div className="quick-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
         {prompts.map(([icon,label,q,c],i)=>
           <div key={i} onClick={()=>askLiviInline(q)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
-            onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20"}} onMouseOut={ev=>{ev.currentTarget.style.background=(c||T.bl)+"10"}}>
+            onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20";}} onMouseOut={ev=>ev.currentTarget.style.background=(c||T.bl)+"10";}>
             <span style={{fontSize:24}}>{icon}</span><span style={{fontSize:15,fontWeight:700,color:T.t}}>{label}</span>
           </div>
         )}
       </div>
       {inlineLoading&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&(()=>{
-        const respLower=inlineResponse.toLowerCase();
-        const matchedLeads=leads.filter(l=>respLower.includes((l.first_name+" "+l.last_name).toLowerCase()));
-        return <div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><div style={{display:"flex",gap:12}}><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse)}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span><span onClick={()=>setInlineResponse(null)} style={{fontSize:12,color:T.s,cursor:"pointer"}}>✕ Close</span></div></div>
-          {matchedLeads.length>0&&<div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>{matchedLeads.map((ml,idx)=>
-            <div key={idx} onClick={()=>{setSelLead(ml);setViewWithHistory("lead")}} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 14px",borderRadius:6,background:T.a+"12",border:`1px solid ${T.a}25`,cursor:"pointer"}}>
-              <span style={{fontSize:14}}>👤</span><span style={{fontSize:13,fontWeight:700,color:T.a}}>{ml.first_name} {ml.last_name}</span><span style={{fontSize:12,color:T.s}}>— {ml.market||"Unknown"}</span><span style={{fontSize:12,color:T.a}}>Open →</span>
-            </div>
-          )}</div>}
-          <pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre>
-        </div>;
-      })()}
+      {inlineResponse&&!inlineLoading&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
     </>
   );
 
@@ -260,7 +429,7 @@ export default function Livi(){
         {[
           ["➕","Add Lead",()=>setView("addlead"),T.a],
           ["📱","Draft Outreach",()=>askLiviInline("Who should I reach out to next? Pick my best lead and draft me a message."),T.bl],
-          ["🔍","Find Agents",()=>askLiviInline("Find me 5 real estate agents in my target markets who might be looking to switch brokerages. Focus on agents showing frustration or high production at competing brokerages."),T.p],
+          ["🔍","Find Agents",()=>setViewWithHistory("agents"),T.p],
           ["📊","Pipeline Review",()=>setView("pipeline"),T.y]
         ].map(([ic,label,action,c],i)=>
           <div key={i} onClick={action} style={{background:c+"10",border:`1px solid ${c}20`,borderRadius:10,padding:"18px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"all 0.15s"}}
@@ -643,7 +812,7 @@ export default function Livi(){
       {/* SIDEBAR */}
       <div className="app-sidebar" style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
         <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
-        {[["home","⬡"],["pipeline","◎"],["crm","📋"]].map(([id,ic])=>
+        {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"]].map(([id,ic])=>
           <div key={id} onClick={()=>setViewWithHistory(id)} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
         )}
         <div style={{flex:1}}/>
@@ -654,7 +823,7 @@ export default function Livi(){
       {/* MAIN AREA */}
       <div style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
         {view!=="lead"&&view!=="addlead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-          <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":"LIVI AI"}</h1>
+          <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":"LIVI AI"}</h1>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             {<div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
             <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
@@ -663,7 +832,8 @@ export default function Livi(){
         {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents in my target markets who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.`,T.y]]}/><Dash/></>}
         {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
         {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} onCloseResponse={()=>setInlineResponse(null)}/>}
+        {view==="agents"&&<AgentDirectory/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
