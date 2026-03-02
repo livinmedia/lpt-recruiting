@@ -217,11 +217,40 @@ export default function Livi(){
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}><div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:20}}>📈 Funnel</div><ResponsiveContainer width="100%" height={150}><BarChart data={stages} layout="vertical" barSize={14}><XAxis type="number" hide/><YAxis type="category" dataKey="l" tick={{fontSize:13,fill:T.s}} width={70} axisLine={false} tickLine={false}/><Bar dataKey="count" radius={[0,4,4,0]}>{stages.map((d,i)=><Cell key={i} fill={d.c}/>)}</Bar></BarChart></ResponsiveContainer></div>
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}><div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:20}}>🏆 Tiers</div>{tierData.length>0?<div style={{display:"flex",alignItems:"center",gap:14}}><ResponsiveContainer width={120} height={120}><PieChart><Pie data={tierData} cx="50%" cy="50%" innerRadius={28} outerRadius={48} dataKey="value" strokeWidth={0}>{tierData.map((_,i)=><Cell key={i} fill={PC[i%PC.length]}/>)}</Pie></PieChart></ResponsiveContainer><div>{tierData.map((d,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:14,marginBottom:2}}><div style={{width:8,height:8,borderRadius:3,background:PC[i%PC.length]}}/><span style={{fontSize:14,color:T.t}}>{d.name} <span style={{color:T.s}}>{d.value}</span></span></div>)}</div></div>:<div style={{fontSize:15,color:T.m,textAlign:"center",padding:14}}>Building...</div>}</div>
       </div>
+
+      {/* New Leads */}
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px",marginTop:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <span style={{fontSize:16,fontWeight:700,color:T.t}}>🆕 New Leads</span>
+          <span onClick={()=>setView("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>View Pipeline →</span>
+        </div>
+        {leads.length>0 ? (
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead><tr>{["Name","Market","Brokerage","Source","Tier","Urgency","Added"].map(h=>
+              <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
+            )}</tr></thead>
+            <tbody>{leads.slice(0,8).map((l,i)=>
+              <tr key={i} onClick={()=>setSelLead(l)} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                <td style={{padding:"12px",fontSize:15,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</td>
+                <td style={{padding:"12px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
+                <td style={{padding:"12px",fontSize:14,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,24)||"—"}</td>
+                <td style={{padding:"12px",fontSize:14,color:T.s}}>{l.source||"Ad"}</td>
+                <td style={{padding:"12px"}}><TPill t={l.tier}/></td>
+                <td style={{padding:"12px"}}><UPill u={l.urgency}/></td>
+                <td style={{padding:"12px",fontSize:13,color:T.m}}>{ago(l.created_at)}</td>
+              </tr>
+            )}</tbody>
+          </table>
+        ) : (
+          <div style={{textAlign:"center",padding:"40px 20px"}}>
+            <div style={{fontSize:32,marginBottom:10}}>📭</div>
+            <div style={{fontSize:16,color:T.s,marginBottom:6}}>No leads yet</div>
+            <div style={{fontSize:14,color:T.m}}>Leads from your Facebook ads and manual adds will show up here</div>
+          </div>
+        )}
+      </div>
     </>
   );
-
-  // ━━━ PIPELINE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // ━━━ PIPELINE STATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const [pipeView,setPipeView]=useState("kanban");
   const [filters,setFilters]=useState({market:"",tier:"",urgency:"",brokerage:""});
   const [sortBy,setSortBy]=useState("urgency");
