@@ -156,9 +156,6 @@ export default function Livi(){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
         sys+=`\n\nAd spend: $20/day Facebook/Instagram for LPT Realty recruiting.`;
       }
-      if(leads.length>0){
-        sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
-      }
       const r=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(import.meta.env.VITE_OPENROUTER_KEY||"")},body:JSON.stringify({model:"deepseek/deepseek-chat-v3-0324",max_tokens:1500,messages:[{role:"system",content:sys},{role:"user",content:q}]})});
       if(!r.ok){const err=await r.text();console.error("LIVI inline error:",r.status,err);setInlineResponse(`API error ${r.status} — check your OpenRouter key in Vercel env vars.`);setInlineLoading(false);return;}
       const d=await r.json();
@@ -196,7 +193,7 @@ export default function Livi(){
       <div className="quick-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
         {prompts.map(([icon,label,q,c],i)=>
           <div key={i} onClick={()=>askLiviInline(q)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
-            onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20";}} onMouseOut={ev=>ev.currentTarget.style.background=(c||T.bl)+"10";}>
+            onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20"}} onMouseOut={ev=>{ev.currentTarget.style.background=(c||T.bl)+"10"}}>
             <span style={{fontSize:24}}>{icon}</span><span style={{fontSize:15,fontWeight:700,color:T.t}}>{label}</span>
           </div>
         )}
