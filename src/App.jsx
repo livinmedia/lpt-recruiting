@@ -192,22 +192,18 @@ export default function Livi(){
 
   // ━━━ ASK LIVI BAR (top of every page) ━━━━━━━━━━━━
   const AskLiviBar=({prompts})=>(
-    <div style={{background:T.card,borderRadius:12,padding:"16px 20px",border:`1px solid ${T.b}`,marginBottom:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginRight:4}}>
-          <div style={{width:28,height:28,borderRadius:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,color:"#000"}}>L</div>
-          <span style={{fontSize:14,fontWeight:700,color:T.t}}>Ask LIVI</span>
-        </div>
-        {prompts.map(([icon,label,q],i)=>
-          <div key={i} onClick={()=>askLiviInline(q)} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"10px 16px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:8,opacity:inlineLoading?0.5:1,transition:"all 0.12s"}}
-            onMouseOver={ev=>{if(!inlineLoading){ev.currentTarget.style.borderColor=T.bh;ev.currentTarget.style.background=T.hover;}}} onMouseOut={ev=>{ev.currentTarget.style.borderColor=T.b;ev.currentTarget.style.background=T.d;}}>
-            <span style={{fontSize:16}}>{icon}</span><span style={{fontSize:13,color:T.s,fontWeight:600}}>{label}</span>
+    <>
+      <div className="quick-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
+        {prompts.map(([icon,label,q,c],i)=>
+          <div key={i} onClick={()=>askLiviInline(q)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
+            onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20";}} onMouseOut={ev=>ev.currentTarget.style.background=(c||T.bl)+"10";}>
+            <span style={{fontSize:24}}>{icon}</span><span style={{fontSize:15,fontWeight:700,color:T.t}}>{label}</span>
           </div>
         )}
       </div>
-      {inlineLoading&&<div style={{marginTop:12,padding:"14px 18px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&<div style={{marginTop:12,padding:"18px 22px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
-    </div>
+      {inlineLoading&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
+    </>
   );
 
   // ━━━ ADD LEAD TO SUPABASE ━━━━━━━━━━━━━━━━━━━━━━━
@@ -655,9 +651,9 @@ export default function Livi(){
             <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
           </div>
         </div>}
-        {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to call first","Who should I call first today? Look at my pipeline and tell me the highest priority lead to contact."],["📱","Draft outreach","Draft a recruiting DM for my hottest lead in the pipeline."],["🔍","Find agents","Find me 5 real estate agents in my target markets who might be looking to switch brokerages."],["📋","Game plan","Create my recruiting game plan for this week based on my current pipeline."]]}/><Dash/></>}
-        {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft outreach","Look at my pipeline and draft outreach for my highest priority lead."],["🔄","Follow-ups","Which leads need follow-up? Draft messages for each."],["🎯","Strategy","Analyze my pipeline and suggest what I should focus on."],["📊","Conversion tips","Based on my pipeline, what can I do to improve conversion?"]]}/><Pipeline/></>}
-        {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find prospects","Find me 5 real estate agents who might be looking to switch brokerages."],["📊","Score leads","Score my current leads and tell me who to prioritize."],["📱","Outreach plan","Create an outreach plan for all my new and researched leads."],["🎯","Market analysis","Which markets should I be targeting for recruiting?"]]}/><CRM/></>}
+        {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents in my target markets who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.`,T.y]]}/><Dash/></>}
+        {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
+        {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
         {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
