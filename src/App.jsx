@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const SUPA = "https://zuwvovjhrkzlpdxcpsud.supabase.co/rest/v1";
-const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1d3Zvdmpocmt6bHBkeGNwc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2MTI4OTAsImV4cCI6MjA1NjE4ODg5MH0.V4GsJyyMnOHaEwSsfGgttX3JqgTRwMFJNOxOeOSYdJM";
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1d3Zvdmpocmt6bHBkeGNwc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTMyOTAsImV4cCI6MjA4NzcyOTI5MH0.SmOAe8yeEa79hrSkwMLLq5z70Fmoxznvhs0YNOxa-no";
 
 const T = {
   bg:"#04060A",side:"#070A10",card:"#0B0F17",hover:"#101520",
@@ -51,18 +51,18 @@ async function sq(tbl,p=""){
   try{
     const url=`${SUPA}/${tbl}?${p}`;
     const r=await fetch(url,{
+      method:'GET',
       headers:{
-        apikey:KEY,
-        Authorization:`Bearer ${KEY}`,
-        'Content-Type':'application/json',
-        'Accept':'application/json'
+        'apikey':KEY,
+        'Authorization':`Bearer ${KEY}`,
+        'Prefer':'return=representation'
       }
     });
-    if(!r.ok){console.error(`Supabase ${tbl} error:`,r.status,r.statusText);return[];}
+    if(!r.ok){console.error(`Supabase ${tbl}:`,r.status,await r.text());return[];}
     const d=await r.json();
-    console.log(`Loaded ${tbl}:`,d.length,'rows');
+    console.log(`${tbl}:`,d.length,'rows');
     return d;
-  }catch(e){console.error(`Supabase ${tbl} fetch failed:`,e);return[];}
+  }catch(e){console.error(`Fetch ${tbl} failed:`,e.message);return[];}
 }
 
 function Pill({text,color}){return <span style={{fontSize:14,fontWeight:700,padding:"4px 10px",borderRadius:4,background:color+"18",color,letterSpacing:0.4}}>{text}</span>;}
