@@ -189,55 +189,55 @@ export default function Livi(){
   // ━━━ DASHBOARD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const Dash=()=>(
     <>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:18}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:20}}>
         {[["◎","Leads",total,today>0?`+${today}`:"",T.bl],["🎯","Targets",targets,urgent>0?`${urgent} hot`:"",T.a],["💰","CPL",`$${cpl}`,"$20/day",T.y],["⚡","AI",`$${apiCost.toFixed(3)}`,`${(tokens/1000).toFixed(1)}K`,T.p]].map(([ic,l,v,s,c],i)=>
-          <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"18px 20px",display:"flex",alignItems:"center",gap:14}}>
-            <div style={{width:44,height:44,borderRadius:7,background:c+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{ic}</div>
-            <div><div style={{fontSize:13,color:T.s,letterSpacing:1.5,fontWeight:700}}>{l.toUpperCase()}</div><div style={{display:"flex",alignItems:"baseline",gap:3}}><span style={{fontSize:26,fontWeight:800,color:T.t}}>{v}</span>{s&&<span style={{fontSize:14,color:c,fontWeight:600}}>{s}</span>}</div></div>
+          <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"22px 24px",display:"flex",alignItems:"center",gap:16}}>
+            <div style={{width:52,height:52,borderRadius:10,background:c+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
+            <div><div style={{fontSize:13,color:T.s,letterSpacing:2,fontWeight:700}}>{l.toUpperCase()}</div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:32,fontWeight:800,color:T.t}}>{v}</span>{s&&<span style={{fontSize:15,color:c,fontWeight:600}}>{s}</span>}</div></div>
           </div>
         )}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:14}}>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}><div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:20}}>📊 Pipeline</div><Gauge score={pScore}/></div>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:20}}><span style={{fontSize:16,fontWeight:700,color:T.t}}>🎯 Hot Leads</span><span onClick={()=>setView("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>All →</span></div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:16}}>
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📊 Pipeline</div><Gauge score={pScore}/></div>
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><span style={{fontSize:18,fontWeight:700,color:T.t}}>🎯 Hot Leads</span><span onClick={()=>setView("pipeline")} style={{fontSize:15,color:T.s,cursor:"pointer"}}>All →</span></div>
           {leads.filter(l=>l.brokerage&&!l.brokerage.includes("LPT")&&l.urgency).sort((a,b)=>({HIGH:0,MEDIUM:1,LOW:2}[a.urgency]||3)-({HIGH:0,MEDIUM:1,LOW:2}[b.urgency]||3)).slice(0,3).map((l,i)=>
-            <div key={i} onClick={()=>setSelLead(l)} style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderRadius:5,background:T.d,border:`1px solid ${T.b}`,marginBottom:20,cursor:"pointer"}}>
-              <div><div style={{fontSize:15,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</div><div style={{fontSize:13,color:T.s}}>{l.brokerage?.substring(0,18)}</div></div>
+            <div key={i} onClick={()=>setSelLead(l)} style={{display:"flex",justifyContent:"space-between",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}>
+              <div><div style={{fontSize:16,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</div><div style={{fontSize:14,color:T.s}}>{l.brokerage?.substring(0,18)}</div></div>
               <UPill u={l.urgency}/>
             </div>
           )}
         </div>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}>
-          <div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:20}}>📋 Activity</div>
-          {activity.slice(0,5).map((a,i)=><div key={i} style={{display:"flex",gap:10,padding:"5px 0",alignItems:"flex-start"}}><Dot c={a.status==="success"?T.a:T.r}/><div style={{fontSize:14,color:T.t,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.description}</div><span style={{fontSize:12,color:T.m}}>{ago(a.created_at)}</span></div>)}
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
+          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Activity</div>
+          {activity.slice(0,5).map((a,i)=><div key={i} style={{display:"flex",gap:10,padding:"6px 0",alignItems:"flex-start"}}><Dot c={a.status==="success"?T.a:T.r}/><div style={{fontSize:15,color:T.t,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.description}</div><span style={{fontSize:13,color:T.m}}>{ago(a.created_at)}</span></div>)}
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}><div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:20}}>📈 Funnel</div><ResponsiveContainer width="100%" height={150}><BarChart data={stages} layout="vertical" barSize={14}><XAxis type="number" hide/><YAxis type="category" dataKey="l" tick={{fontSize:13,fill:T.s}} width={70} axisLine={false} tickLine={false}/><Bar dataKey="count" radius={[0,4,4,0]}>{stages.map((d,i)=><Cell key={i} fill={d.c}/>)}</Bar></BarChart></ResponsiveContainer></div>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}><div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:20}}>🏆 Tiers</div>{tierData.length>0?<div style={{display:"flex",alignItems:"center",gap:14}}><ResponsiveContainer width={120} height={120}><PieChart><Pie data={tierData} cx="50%" cy="50%" innerRadius={28} outerRadius={48} dataKey="value" strokeWidth={0}>{tierData.map((_,i)=><Cell key={i} fill={PC[i%PC.length]}/>)}</Pie></PieChart></ResponsiveContainer><div>{tierData.map((d,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:14,marginBottom:2}}><div style={{width:8,height:8,borderRadius:3,background:PC[i%PC.length]}}/><span style={{fontSize:14,color:T.t}}>{d.name} <span style={{color:T.s}}>{d.value}</span></span></div>)}</div></div>:<div style={{fontSize:15,color:T.m,textAlign:"center",padding:14}}>Building...</div>}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📈 Funnel</div><ResponsiveContainer width="100%" height={180}><BarChart data={stages} layout="vertical" barSize={16}><XAxis type="number" hide/><YAxis type="category" dataKey="l" tick={{fontSize:14,fill:T.s}} width={80} axisLine={false} tickLine={false}/><Bar dataKey="count" radius={[0,4,4,0]}>{stages.map((d,i)=><Cell key={i} fill={d.c}/>)}</Bar></BarChart></ResponsiveContainer></div>
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>🏆 Tiers</div>{tierData.length>0?<div style={{display:"flex",alignItems:"center",gap:20}}><ResponsiveContainer width={140} height={140}><PieChart><Pie data={tierData} cx="50%" cy="50%" innerRadius={32} outerRadius={56} dataKey="value" strokeWidth={0}>{tierData.map((_,i)=><Cell key={i} fill={PC[i%PC.length]}/>)}</Pie></PieChart></ResponsiveContainer><div>{tierData.map((d,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}><div style={{width:10,height:10,borderRadius:3,background:PC[i%PC.length]}}/><span style={{fontSize:16,color:T.t}}>{d.name} <span style={{color:T.s}}>{d.value}</span></span></div>)}</div></div>:<div style={{fontSize:16,color:T.m,textAlign:"center",padding:20}}>Building...</div>}</div>
       </div>
 
       {/* New Leads */}
-      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px",marginTop:14}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <span style={{fontSize:16,fontWeight:700,color:T.t}}>🆕 New Leads</span>
-          <span onClick={()=>setView("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>View Pipeline →</span>
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginTop:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <span style={{fontSize:18,fontWeight:700,color:T.t}}>🆕 New Leads</span>
+          <span onClick={()=>setView("pipeline")} style={{fontSize:15,color:T.s,cursor:"pointer"}}>View Pipeline →</span>
         </div>
         {leads.length>0 ? (
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <thead><tr>{["Name","Market","Brokerage","Source","Tier","Urgency","Added"].map(h=>
-              <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
+              <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:13,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
             )}</tr></thead>
             <tbody>{leads.slice(0,8).map((l,i)=>
               <tr key={i} onClick={()=>setSelLead(l)} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-                <td style={{padding:"12px",fontSize:15,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</td>
-                <td style={{padding:"12px",fontSize:14,color:T.s}}>{l.market||"—"}</td>
-                <td style={{padding:"12px",fontSize:14,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,24)||"—"}</td>
-                <td style={{padding:"12px",fontSize:14,color:T.s}}>{l.source||"Ad"}</td>
-                <td style={{padding:"12px"}}><TPill t={l.tier}/></td>
-                <td style={{padding:"12px"}}><UPill u={l.urgency}/></td>
-                <td style={{padding:"12px",fontSize:13,color:T.m}}>{ago(l.created_at)}</td>
+                <td style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</td>
+                <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.market||"—"}</td>
+                <td style={{padding:"14px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,24)||"—"}</td>
+                <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.source||"Ad"}</td>
+                <td style={{padding:"14px"}}><TPill t={l.tier}/></td>
+                <td style={{padding:"14px"}}><UPill u={l.urgency}/></td>
+                <td style={{padding:"14px",fontSize:14,color:T.m}}>{ago(l.created_at)}</td>
               </tr>
             )}</tbody>
           </table>
@@ -316,10 +316,34 @@ export default function Livi(){
     );
   };
 
-  const Pipeline=()=>(
+  const Pipeline=()=>{
+    const overdue=leads.filter(l=>l.pipeline_stage&&l.pipeline_stage!=="new"&&l.pipeline_stage!=="recruited"&&l.created_at&&(Date.now()-new Date(l.created_at))>7*86400000);
+    const pipelineValue=leads.filter(l=>l.production_volume).reduce((s,l)=>s+parseFloat(l.production_volume||0),0);
+    return(
     <>
+      {/* CRM Summary */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+        {[["Total Leads",pipeLeads.length,T.bl],["In Pipeline",pipeLeads.filter(l=>l.pipeline_stage!=="new"&&l.pipeline_stage!=="recruited").length,T.p],["Overdue (7d+)",overdue.length,overdue.length>0?T.r:T.s],["Recruited",pipeLeads.filter(l=>l.pipeline_stage==="recruited").length,T.a]].map(([l,v,c],i)=>
+          <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 20px",textAlign:"center"}}>
+            <div style={{fontSize:28,fontWeight:800,color:c}}>{v}</div>
+            <div style={{fontSize:13,color:T.s,marginTop:4}}>{l}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Overdue Alert */}
+      {overdue.length>0&&(
+        <div style={{background:T.r+"10",border:`1px solid ${T.r}25`,borderRadius:10,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:20}}>⚠️</span>
+            <div><div style={{fontSize:16,fontWeight:700,color:T.r}}>{overdue.length} leads need follow-up</div><div style={{fontSize:14,color:T.s}}>Haven't been contacted in 7+ days</div></div>
+          </div>
+          <div onClick={()=>{setSortBy("oldest");setFilters({market:"",tier:"",urgency:"",brokerage:""});}} style={{padding:"10px 16px",borderRadius:6,background:T.r+"20",fontSize:14,fontWeight:700,color:T.r,cursor:"pointer"}}>Show Overdue</div>
+        </div>
+      )}
+
       {/* Toolbar */}
-      <div style={{display:"flex",gap:10,marginBottom:18,alignItems:"center",flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
         <input value={search} onChange={ev=>setSearch(ev.target.value)} placeholder="Search..." style={{padding:"12px 18px",borderRadius:7,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",width:220}}/>
         <Sel value={filters.market} onChange={v=>setFilters(p=>({...p,market:v}))} options={allMarkets} placeholder="Market"/>
         <Sel value={filters.tier} onChange={v=>setFilters(p=>({...p,tier:v}))} options={["Elite","Strong","Mid","Building","New"]} placeholder="Tier"/>
@@ -372,17 +396,20 @@ export default function Livi(){
 
       {/* Table View */}
       {pipeView==="table"&&(
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr>{["Name","Market","Brokerage","Tier","Urgency","Stage","Action"].map(h=><th key={h} style={{textAlign:"left",padding:"10px 14px",fontSize:13,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>)}</tr></thead><tbody>{pipeLeads.map((l,i)=>{
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"20px 22px"}}><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr>{["Name","Market","Brokerage","Tier","Urgency","Stage","Last Contact","Action"].map(h=><th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:13,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>)}</tr></thead><tbody>{pipeLeads.map((l,i)=>{
           const act=stageAction(l);
+          const daysSince=l.outreach_sent_at?Math.floor((Date.now()-new Date(l.outreach_sent_at))/86400000):null;
+          const contactColor=daysSince===null?T.m:daysSince>7?T.r:daysSince>3?T.y:T.a;
           return(
             <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-              <td onClick={()=>setSelLead(l)} style={{padding:"12px",fontSize:16,fontWeight:600,color:T.t,cursor:"pointer"}}>{l.first_name} {l.last_name}</td>
-              <td style={{padding:"12px",fontSize:15,color:T.s}}>{l.market}</td>
-              <td style={{padding:"12px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,22)}</td>
-              <td style={{padding:"12px"}}><TPill t={l.tier}/></td>
-              <td style={{padding:"12px"}}><UPill u={l.urgency}/></td>
-              <td style={{padding:"12px"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"—"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
-              <td style={{padding:"12px"}}>{act&&<span onClick={()=>askLivi(act.q)} style={{fontSize:14,color:T.a,cursor:"pointer",fontWeight:600}}>{act.icon} {act.label}</span>}</td>
+              <td onClick={()=>setSelLead(l)} style={{padding:"14px",fontSize:16,fontWeight:600,color:T.t,cursor:"pointer"}}>{l.first_name} {l.last_name}</td>
+              <td style={{padding:"14px",fontSize:15,color:T.s}}>{l.market}</td>
+              <td style={{padding:"14px",fontSize:15,color:l.brokerage?.includes("LPT")?T.a:T.t}}>{l.brokerage?.substring(0,22)}</td>
+              <td style={{padding:"14px"}}><TPill t={l.tier}/></td>
+              <td style={{padding:"14px"}}><UPill u={l.urgency}/></td>
+              <td style={{padding:"14px"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"—"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
+              <td style={{padding:"14px",fontSize:14,color:contactColor,fontWeight:daysSince>7?700:400}}>{daysSince!==null?`${daysSince}d ago`:"Never"}</td>
+              <td style={{padding:"14px"}}>{act&&<span onClick={()=>askLivi(act.q)} style={{fontSize:14,color:T.a,cursor:"pointer",fontWeight:600}}>{act.icon} {act.label}</span>}</td>
             </tr>
           );
         })}</tbody></table></div>
@@ -411,7 +438,8 @@ export default function Livi(){
         </div>
       )}
     </>
-  );
+    );
+  };
 
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   return(
@@ -442,9 +470,12 @@ export default function Livi(){
         <div style={{flex:1,display:"flex",overflow:"hidden"}}>
           {/* Dashboard / Pipeline */}
           <div style={{flex:1,overflow:"auto",padding:"24px 32px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-              <h1 style={{fontSize:28,fontWeight:800,margin:0}}>{view==="home"?"Command Center":"Lead Pipeline"}</h1>
-              <div style={{fontSize:13,color:T.m}}>LIVI AI · by LIVIN</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+              <h1 style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":"Lead Pipeline"}</h1>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                {view==="home"&&<div onClick={()=>setShowAdd(true)} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
+                <div style={{fontSize:14,color:T.m}}>LIVI AI · by LIVIN</div>
+              </div>
             </div>
             {view==="home"&&<Dash/>}
             {view==="pipeline"&&<Pipeline/>}
