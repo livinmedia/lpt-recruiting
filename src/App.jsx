@@ -396,9 +396,9 @@ function ContentTab(){
 
   const markPosted=async(id)=>{
     try{
-      await fetch(`${SUPA}/daily_content?id=eq.${id}`,{
+      await fetch(`${LIVI_SUPA}/daily_content?id=eq.${id}`,{
         method:"PATCH",
-        headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
+        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
         body:JSON.stringify({is_posted:true,posted_at:new Date().toISOString()})
       });
       setContent(p=>p.map(c=>c.id===id?{...c,is_posted:true,posted_at:new Date().toISOString()}:c));
