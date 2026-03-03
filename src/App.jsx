@@ -361,8 +361,8 @@ function ContentTab(){
   const loadContent=async(date)=>{
     setLoading(true);
     try{
-      const r=await fetch(`${SUPA}/daily_content?content_date=eq.${date}&order=platform.asc,created_at.asc`,{
-        headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`}
+      const r=await fetch(`${LIVI_SUPA}/daily_content?content_date=eq.${date}&order=platform.asc,created_at.asc`,{
+        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}
       });
       if(r.ok){const d=await r.json();setContent(d);}
     }catch(e){console.error("Load content error:",e);}
