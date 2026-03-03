@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/join", "destination": "/join/index.html" },
+    { "source": "/((?!join|assets).*)", "destination": "/index.html" }
+  ]
+}
