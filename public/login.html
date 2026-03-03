@@ -98,9 +98,10 @@ input::placeholder{color:var(--muted)}
 </main>
 
 <script>
-// Supabase will be initialized here when credentials are added
-// const { createClient } = supabase;
-// const client = createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+const SUPABASE_URL = 'https://usknntguurefeyzusbdh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function showError(msg) {
   const el = document.getElementById('error-msg');
@@ -124,16 +125,15 @@ async function handleLogin(e) {
   btn.disabled = true;
   btn.textContent = 'Signing in...';
 
-  // TODO: Replace with actual Supabase auth when credentials are configured
-  // const { data, error } = await client.auth.signInWithPassword({ email, password });
-  // if (error) { showError(error.message); }
-  // else { window.location.href = '/'; }
-
-  // Placeholder: redirect to app after short delay
-  setTimeout(() => {
-    showSuccess('✓ Redirecting to dashboard...');
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error) {
+    showError(error.message);
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  } else {
+    showSuccess('✓ Signed in! Redirecting...');
     setTimeout(() => { window.location.href = '/'; }, 800);
-  }, 600);
+  }
 }
 </script>
 </body>

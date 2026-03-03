@@ -119,8 +119,10 @@ input::placeholder{color:var(--muted)}
 </main>
 
 <script>
-// const { createClient } = supabase;
-// const client = createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+const SUPABASE_URL = 'https://usknntguurefeyzusbdh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function showError(msg) {
   const el = document.getElementById('error-msg');
@@ -141,6 +143,7 @@ async function handleSignup(e) {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const firstName = document.getElementById('first-name').value.trim();
+  const lastName = document.getElementById('last-name').value.trim();
 
   if (password.length < 8) {
     showError('Password must be at least 8 characters.');
@@ -150,19 +153,20 @@ async function handleSignup(e) {
   btn.disabled = true;
   btn.textContent = 'Creating account...';
 
-  // TODO: Replace with actual Supabase auth when credentials are configured
-  // const { data, error } = await client.auth.signUp({
-  //   email, password,
-  //   options: { data: { first_name: firstName } }
-  // });
-  // if (error) { showError(error.message); btn.disabled=false; btn.textContent='✨ Create Free Account'; }
-  // else { showSuccess('✓ Account created! Check your email to confirm.'); }
+  const { data, error } = await client.auth.signUp({
+    email,
+    password,
+    options: { data: { first_name: firstName, last_name: lastName } }
+  });
 
-  // Placeholder
-  setTimeout(() => {
-    showSuccess(`✓ Welcome, ${firstName || 'there'}! Redirecting to dashboard...`);
-    setTimeout(() => { window.location.href = '/'; }, 1200);
-  }, 700);
+  if (error) {
+    showError(error.message);
+    btn.disabled = false;
+    btn.textContent = '✨ Create Free Account';
+  } else {
+    showSuccess(`✓ Welcome, ${firstName || 'there'}! Check your email to confirm your account.`);
+    setTimeout(() => { window.location.href = '/'; }, 1500);
+  }
 }
 </script>
 </body>
