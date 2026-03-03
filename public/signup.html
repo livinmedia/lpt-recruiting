@@ -90,15 +90,16 @@ input::placeholder{color:var(--muted)}
     <div class="msg-box error" id="error-msg"></div>
     <div class="msg-box success" id="success-msg"></div>
 
+    <div class="card-content">
     <form id="signup-form" onsubmit="handleSignup(event)">
       <div class="form-row">
         <div class="form-group">
-          <label for="first-name">First Name</label>
-          <input type="text" id="first-name" placeholder="Anthony" required autocomplete="given-name"/>
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" placeholder="Anthony" required autocomplete="given-name"/>
         </div>
         <div class="form-group">
-          <label for="last-name">Last Name</label>
-          <input type="text" id="last-name" placeholder="Dazet" autocomplete="family-name"/>
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" placeholder="Dazet" autocomplete="family-name"/>
         </div>
       </div>
       <div class="form-group">
@@ -115,6 +116,7 @@ input::placeholder{color:var(--muted)}
     <p class="terms-note">By signing up you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
     <div class="divider">or</div>
     <div class="auth-switch">Already have an account? <a href="/login">Sign in</a></div>
+    </div>
   </div>
 </main>
 
@@ -139,37 +141,23 @@ function showSuccess(msg) {
 
 async function handleSignup(e) {
   e.preventDefault();
-  const btn = document.getElementById('submit-btn');
-  const email = document.getElementById('email').value.trim();
+  const firstName = document.getElementById('firstName').value;
+  const lastName = document.getElementById('lastName').value;
+  const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  const firstName = document.getElementById('first-name').value.trim();
-  const lastName = document.getElementById('last-name').value.trim();
-
-  if (password.length < 8) {
-    showError('Password must be at least 8 characters.');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Creating account...';
 
   const { data, error } = await client.auth.signUp({
-    email: email,
-    password: password,
-    options: {
-      data: {
-        full_name: firstName + ' ' + lastName
-      }
-    }
+    email,
+    password,
+    options: { data: { full_name: firstName + ' ' + lastName } }
   });
 
   if (error) {
     showError(error.message);
-    btn.disabled = false;
-    btn.textContent = '✨ Create Free Account';
-  } else {
-    showSuccess('Account created! Check your email to confirm.');
+    return;
   }
+
+  document.querySelector('.card-content').innerHTML = '<h2 style="color:#00E5A0">Check your email!</h2><p>We sent a confirmation link to ' + email + '</p><a href="/login">Go to Login</a>';
 }
 </script>
 </body>
