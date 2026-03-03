@@ -434,12 +434,11 @@ function ContentTab(){
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:20}} className="kpi-grid">
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}} className="kpi-grid">
         {[
           ["📝","Total Posts",totalPosts,T.bl],
           ["📘","Facebook",content.filter(c=>c.platform==="facebook").length,"#1877F2"],
           ["📸","Instagram",content.filter(c=>c.platform==="instagram").length,"#E1306C"],
-          ["🎬","YouTube",content.filter(c=>c.platform==="youtube").length,"#FF0000"],
           ["✅","Posted",posted,T.a]
         ].map(([ic,l,v,c],i)=>
           <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 20px",textAlign:"center"}}>
@@ -451,7 +450,7 @@ function ContentTab(){
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:20}}>
-        {[["all","All",T.t],["facebook","📘 Facebook","#1877F2"],["instagram","📸 Instagram","#E1306C"],["youtube","🎬 YouTube","#FF0000"]].map(([id,label,c])=>
+        {[["all","All",T.t],["facebook","📘 Facebook","#1877F2"],["instagram","📸 Instagram","#E1306C"]].map(([id,label,c])=>
           <div key={id} onClick={()=>setFilter(id)} style={{padding:"10px 18px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{label}</div>
         )}
       </div>
@@ -471,20 +470,15 @@ function ContentTab(){
           </div>
         </div>
       ):(
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,alignItems:"start"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24,alignItems:"start"}}>
           {filtered.map((post,i)=>{
             const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
+            const urlRegex=/(https?:\/\/[^\s]+)/g;
+            const bodyText=post.body||"";
+            const urls=bodyText.match(urlRegex)||[];
+            const bodyWithoutUrls=bodyText.replace(urlRegex,"").trim();
             return(
-              <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,overflow:"hidden",opacity:post.is_posted?0.7:1,transition:"all 0.15s",display:"flex",flexDirection:"column"}}>
-
-                {/* Image — top of card */}
-                {post.image_url
-                  ? <img src={post.image_url} alt={post.headline||post.platform} style={{width:"100%",height:200,objectFit:"cover",display:"block",flexShrink:0}}/>
-                  : <div style={{height:200,background:T.m+"15",border:`1px dashed ${T.m}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:12,color:T.m,gap:6,padding:"0 16px",textAlign:"center"}}>
-                      <span style={{fontSize:20}}>🖼</span>
-                      {post.media_suggestion||"Image coming soon"}
-                    </div>
-                }
+              <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,opacity:post.is_posted?0.7:1,transition:"all 0.15s",display:"flex",flexDirection:"column"}}>
 
                 <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",flex:1}}>
 
@@ -504,8 +498,15 @@ function ContentTab(){
                 {/* Headline */}
                 {post.headline&&<div style={{fontSize:14,fontWeight:800,color:T.t,marginBottom:10,lineHeight:1.4}}>{post.headline}</div>}
 
-                {/* Body preview — 4 lines max */}
-                <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:12,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{post.body}</div>
+                {/* Full body text */}
+                <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:urls.length>0?8:12,whiteSpace:"pre-wrap",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{bodyWithoutUrls}</div>
+
+                {/* Extracted URLs as clickable links */}
+                {urls.length>0&&(
+                  <div style={{marginBottom:12,display:"flex",flexDirection:"column",gap:4}}>
+                    {urls.map((url,j)=><a key={j} href={url} target="_blank" rel="noreferrer" style={{fontSize:13,color:T.a,textDecoration:"none",wordBreak:"break-all"}}>{url}</a>)}
+                  </div>
+                )}
 
                 {/* Buttons pinned to bottom */}
                 <div style={{marginTop:"auto",display:"flex",gap:8}}>
