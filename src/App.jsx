@@ -226,7 +226,7 @@ function AgentDirectory(){
       </div>
 
       {/* New Agents quick filters */}
-      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+      <div className="newly-licensed-row" style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
         <div style={{fontSize:14,fontWeight:700,color:T.t,display:"flex",alignItems:"center",gap:6}}>🆕 Newly Licensed:</div>
         {[{l:"Last 7 days",d:"7"},{l:"Last 30 days",d:"30"},{l:"Last 90 days",d:"90"},{l:"Last 6 months",d:"180"},{l:"This year",d:"365"}].map(b=>
           <div key={b.d} onClick={()=>updateAndSearch({newDays:b.d,state:filters.state||"TX"})} style={{padding:"7px 16px",borderRadius:7,background:filters.newDays===b.d?T.y+"25":T.d,border:`1px solid ${filters.newDays===b.d?T.y+"50":T.b}`,color:filters.newDays===b.d?T.y:T.s,fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{b.l}</div>
@@ -436,7 +436,7 @@ function ContentTab(){
         </div>
         <div className="content-ctrl-row" style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
           <input type="date" value={selectedDate} onChange={ev=>setSelectedDate(ev.target.value)} style={{padding:"10px 14px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}/>
-          <div onClick={generating?null:generateContent} style={{padding:"12px 20px",borderRadius:8,background:generating?T.d:T.am,color:generating?T.m:T.a,fontSize:14,fontWeight:700,cursor:generating?"wait":"pointer",display:"flex",alignItems:"center",gap:8}}>
+          <div className="generate-btn" onClick={generating?null:generateContent} style={{padding:"12px 20px",borderRadius:8,background:generating?T.d:T.am,color:generating?T.m:T.a,fontSize:14,fontWeight:700,cursor:generating?"wait":"pointer",display:"flex",alignItems:"center",gap:8}}>
             {generating?"⏳ Generating (~30s)...":"✨ Generate Fresh Content"}
           </div>
         </div>
@@ -457,9 +457,9 @@ function ContentTab(){
         )}
       </div>
 
-      <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+      <div className="content-filter-tabs" style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
         {[["all","All",T.t],["facebook","📘 Facebook","#1877F2"],["instagram","📸 Instagram","#E1306C"]].map(([id,label,c])=>
-          <div key={id} onClick={()=>setFilter(id)} style={{padding:"10px 18px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{label}</div>
+          <div key={id} onClick={()=>setFilter(id)} style={{padding:"10px 18px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.12s",display:"flex",alignItems:"center",justifyContent:"center"}}>{label}</div>
         )}
       </div>
 
@@ -1122,8 +1122,8 @@ html,body{overflow-x:hidden}
 .content-header-outer{flex-direction:column!important;align-items:stretch!important;gap:10px!important}
 .content-ctrl-row{width:100%!important}
 
-/* ── Page header actions: tighter button padding ── */
-.page-header-actions>div:first-child{padding:10px 14px!important;font-size:14px!important}
+/* ── Hide new-lead button + lead count on mobile ── */
+.page-header-actions{display:none!important}
 
 /* ── AskLivi bar: single column ── */
 .ask-livi-grid{grid-template-columns:1fr!important}
@@ -1147,6 +1147,19 @@ html,body{overflow-x:hidden}
 .crm-toolbar{flex-direction:column!important;align-items:stretch!important;gap:8px!important}
 .crm-toolbar input,.crm-toolbar select{width:100%!important}
 .crm-spacer{display:none!important}
+
+/* ── Generate button: center content ── */
+.generate-btn{justify-content:center!important}
+
+/* ── Content stats: equal column widths ── */
+.kpi-grid>div{min-width:0!important}
+
+/* ── Content filter tabs: fill row equally ── */
+.content-filter-tabs{gap:0!important}
+.content-filter-tabs>div{flex:1!important}
+
+/* ── Agent directory: Newly Licensed label on its own line ── */
+.newly-licensed-row>div:first-child{width:100%!important}
 
 /* ── Word wrap ── */
 *{word-break:break-word;overflow-wrap:anywhere}
