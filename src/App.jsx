@@ -257,7 +257,7 @@ function AgentDirectory(){
             <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>CITY / COUNTY</div>
             <input value={filters.city} onChange={e=>setFilters(p=>({...p,city:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")doSearch()}} placeholder="Austin, Brooklyn..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
-          <div style={{display:"flex",gap:8}}>
+          <div className="agent-search-btns" style={{display:"flex",gap:8}}>
             <div onClick={()=>doSearch()} style={{padding:"12px 28px",borderRadius:8,background:T.a,color:"#000",fontSize:15,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",height:"fit-content"}}>🔍 Search</div>
             {searched&&<div onClick={()=>{setFilters({state:"",brokerage:"",name:"",city:"",newDays:""});setSearched(false);setResults([]);setTotal(0);}} style={{padding:"12px 16px",borderRadius:8,background:T.d,color:T.s,fontSize:15,fontWeight:700,cursor:"pointer",height:"fit-content"}}>✕</div>}
           </div>
@@ -610,7 +610,7 @@ export default function Livi(){
   // ━━━ ASK LIVI BAR (top of every page) ━━━━━━━━━━━━
   const AskLiviBar=({prompts})=>(
     <>
-      <div className="quick-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
+      <div className="ask-livi-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
         {prompts.map(([icon,label,q,c],i)=>
           <div key={i} onClick={()=>askLiviInline(q)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
             onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20"}} onMouseOut={ev=>ev.currentTarget.style.background=(c||T.bl)+"10"}>
@@ -883,7 +883,7 @@ export default function Livi(){
     return(
     <>
       {/* CRM Summary */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+      <div className="pipe-stats" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
         {[["Total Leads",pipeLeads.length,T.bl],["In Pipeline",pipeLeads.filter(l=>l.pipeline_stage!=="new"&&l.pipeline_stage!=="recruited").length,T.p],["Overdue (7d+)",overdue.length,overdue.length>0?T.r:T.s],["Recruited",pipeLeads.filter(l=>l.pipeline_stage==="recruited").length,T.a]].map(([l,v,c],i)=>
           <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 20px",textAlign:"center"}}>
             <div style={{fontSize:28,fontWeight:800,color:c}}>{v}</div>
@@ -904,13 +904,13 @@ export default function Livi(){
       )}
 
       {/* Toolbar */}
-      <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
+      <div className="pipe-toolbar" style={{display:"flex",gap:10,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
         <input value={search} onChange={ev=>setSearch(ev.target.value)} placeholder="Search..." style={{padding:"12px 18px",borderRadius:7,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",width:220}}/>
         <Sel value={filters.market} onChange={v=>setFilters(p=>({...p,market:v}))} options={allMarkets} placeholder="Market"/>
         <Sel value={filters.tier} onChange={v=>setFilters(p=>({...p,tier:v}))} options={["Elite","Strong","Mid","Building","New"]} placeholder="Tier"/>
         <Sel value={filters.urgency} onChange={v=>setFilters(p=>({...p,urgency:v}))} options={["HIGH","MEDIUM","LOW"]} placeholder="Urgency"/>
         <Sel value={filters.brokerage} onChange={v=>setFilters(p=>({...p,brokerage:v}))} options={allBrokerages} placeholder="Brokerage"/>
-        <div style={{flex:1}}/>
+        <div className="pipe-spacer" style={{flex:1}}/>
         <select value={sortBy} onChange={ev=>setSortBy(ev.target.value)} style={{padding:"10px 14px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit"}}>
           {[["urgency","🔥 Hot First"],["tier","🏆 Top Tier"],["newest","🕐 Newest"],["oldest","⏳ Oldest"]].map(([v,l])=><option key={v} value={v} style={{background:T.card}}>{l}</option>)}
         </select>
@@ -994,12 +994,12 @@ export default function Livi(){
   });
   const CRM=()=>(
     <>
-      <div style={{display:"flex",gap:12,marginBottom:20,alignItems:"center",flexWrap:"wrap"}}>
+      <div className="crm-toolbar" style={{display:"flex",gap:12,marginBottom:20,alignItems:"center",flexWrap:"wrap"}}>
         <input value={crmSearch} onChange={ev=>setCrmSearch(ev.target.value)} placeholder="Search leads..." style={{padding:"12px 18px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",width:280}}/>
         <select value={crmSort} onChange={ev=>setCrmSort(ev.target.value)} style={{padding:"10px 14px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}>
           {[["newest","🕐 Newest"],["oldest","⏳ Oldest"],["name","🔤 Name"],["urgency","🔥 Urgency"]].map(([v,l])=><option key={v} value={v} style={{background:T.card}}>{l}</option>)}
         </select>
-        <div style={{flex:1}}/>
+        <div className="crm-spacer" style={{flex:1}}/>
         <span style={{fontSize:14,color:T.s}}>{crmLeads.length} leads</span>
       </div>
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,overflow:"hidden"}}>
@@ -1089,7 +1089,7 @@ html,body{overflow-x:hidden}
 /* ── Layout grids ── */
 .two-col{grid-template-columns:1fr!important}
 .three-col{grid-template-columns:1fr!important}
-.four-col{grid-template-columns:1fr 1fr!important}
+.four-col{grid-template-columns:1fr!important}
 .section-card{padding:16px 18px!important}
 .section-title{font-size:16px!important}
 .page-title{font-size:22px!important}
@@ -1124,6 +1124,29 @@ html,body{overflow-x:hidden}
 
 /* ── Page header actions: tighter button padding ── */
 .page-header-actions>div:first-child{padding:10px 14px!important;font-size:14px!important}
+
+/* ── AskLivi bar: single column ── */
+.ask-livi-grid{grid-template-columns:1fr!important}
+
+/* ── Pipeline stats: stay 4-across but tighter ── */
+.pipe-stats{gap:4px!important}
+.pipe-stats>div{padding:8px 4px!important}
+.pipe-stats>div>div:first-child{font-size:18px!important}
+.pipe-stats>div>div:last-child{font-size:9px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+
+/* ── Pipeline toolbar: full-width stack ── */
+.pipe-toolbar{flex-direction:column!important;align-items:stretch!important;gap:8px!important}
+.pipe-toolbar input,.pipe-toolbar select{width:100%!important}
+.pipe-spacer{display:none!important}
+
+/* ── Agent directory: search button full-width ── */
+.agent-search-btns{width:100%!important}
+.agent-search-btns>div:first-child{flex:1!important}
+
+/* ── CRM toolbar: full-width stack ── */
+.crm-toolbar{flex-direction:column!important;align-items:stretch!important;gap:8px!important}
+.crm-toolbar input,.crm-toolbar select{width:100%!important}
+.crm-spacer{display:none!important}
 
 /* ── Word wrap ── */
 *{word-break:break-word;overflow-wrap:anywhere}
