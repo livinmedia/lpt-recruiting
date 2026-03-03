@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-const SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
-const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
+const SUPA = "https://zuwvovjhrkzlpdxcpsud.supabase.co/rest/v1";
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1d3Zvdmpocmt6bHBkeGNwc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTMyOTAsImV4cCI6MjA4NzcyOTI5MH0.SmOAe8yeEa79hrSkwMLLq5z70Fmoxznvhs0YNOxa-no";
 
-// LIVI AI Platform — Agent Directory (848K+ real agents)
+// LIVI AI Platform — Agent Directory (352K+ real agents)
 const LIVI_SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
 const LIVI_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
 
@@ -112,10 +112,8 @@ function Gauge({score}){
 }
 
 // ━━━ LEAD DETAIL PAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,onRefreshLead}){
+function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading}){
   const [editing,setEditing]=useState(false);
-  const [saving,setSaving]=useState(false);
-  const [saveMsg,setSaveMsg]=useState("");
   const [info,setInfo]=useState({first_name:lead.first_name||"",last_name:lead.last_name||"",email:lead.email||"",phone:lead.phone||"",market:lead.market||"",brokerage:lead.brokerage||""});
   const [notes,setNotes]=useState(lead._notes||[]);
   const [newNote,setNewNote]=useState("");
@@ -126,118 +124,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,onRefres
   const addNote=()=>{if(!newNote.trim())return;setNotes(p=>[{text:newNote.trim(),date:new Date().toISOString(),id:Date.now()},...p]);setNewNote("");};
   const addComm=()=>{if(!commNote.trim())return;setCommLog(p=>[{type:commType,note:commNote.trim(),date:new Date().toISOString(),id:Date.now()},...p]);setCommNote("");};
   const commIcons={call:"📞",text:"💬",email:"📧",meeting:"🤝",dm:"📱",linkedin:"💼"};
-
-  const saveResearchToLead=async()=>{
-    if(!inlineResponse||saving)return;
-    setSaving(true);setSaveMsg("Parsing research with AI...");
-    try{
-      // Step 1: Use AI to parse unstructured research into structured fields
-      const parsePrompt=`Extract structured recruiting intelligence from this research dossier about ${lead.first_name||""} ${lead.last_name||""}.
-
-RESEARCH TEXT:
-${inlineResponse}
-
-Return ONLY a JSON object with these fields (use null for anything not found):
-{
-  "production_volume": number or null (annual $ volume),
-  "transaction_count": number or null,
-  "avg_sale_price": number or null,
-  "tier": "Elite" or "Strong" or "Mid" or "Building" or "New" or null,
-  "trend": "Growing" or "Stable" or "Declining" or null,
-  "linkedin_url": string or null,
-  "instagram_handle": string or null,
-  "facebook_url": string or null,
-  "youtube_channel": string or null,
-  "website_url": string or null,
-  "realtor_rating": number or null,
-  "realtor_reviews": number or null,
-  "zillow_rating": number or null,
-  "zillow_reviews": number or null,
-  "google_rating": number or null,
-  "google_reviews": number or null,
-  "pain_points": ["string",...] or [],
-  "ambition_signals": ["string",...] or [],
-  "retention_risks": ["string",...] or [],
-  "outreach_angle": string or null (best recruiting angle),
-  "urgency": "HIGH" or "MEDIUM" or "LOW" or null,
-  "urgency_reason": string or null,
-  "outreach_draft": string or null (suggested first message),
-  "years_licensed": number or null
-}
-Return ONLY JSON. No markdown, no backticks.`;
-
-      const pr=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(import.meta.env.VITE_OPENROUTER_KEY||"")},body:JSON.stringify({model:"deepseek/deepseek-chat-v3-0324",max_tokens:800,messages:[{role:"user",content:parsePrompt}]})});
-      
-      let parsed={};
-      if(pr.ok){
-        const pd=await pr.json();
-        const raw=pd.choices?.[0]?.message?.content||"";
-        const clean=raw.replace(/```json|```/g,"").trim();
-        try{parsed=JSON.parse(clean);}
-        catch{const m=clean.match(/\{[\s\S]*\}/);if(m)parsed=JSON.parse(m[0]);}
-      }
-
-      // Step 2: Build update object — only include non-null parsed fields + raw_dossier
-      const updates={raw_dossier:inlineResponse,pipeline_stage:lead.pipeline_stage==="new"?"researched":lead.pipeline_stage,updated_at:new Date().toISOString()};
-      const fieldNames=[];
-      const allowedFields=["production_volume","transaction_count","avg_sale_price","tier","trend","linkedin_url","instagram_handle","facebook_url","youtube_channel","website_url","realtor_rating","realtor_reviews","zillow_rating","zillow_reviews","google_rating","google_reviews","pain_points","ambition_signals","retention_risks","outreach_angle","urgency","urgency_reason","outreach_draft","years_licensed"];
-      for(const f of allowedFields){
-        if(parsed[f]!==null&&parsed[f]!==undefined&&parsed[f]!==""){
-          updates[f]=parsed[f];
-          fieldNames.push(f);
-        }
-      }
-
-      // Step 3: PATCH to leads
-      setSaveMsg(`Saving ${fieldNames.length+1} fields...`);
-      const r=await fetch(`${SUPA}/leads?id=eq.${lead.id}`,{
-        method:"PATCH",
-        headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
-        body:JSON.stringify(updates)
-      });
-      if(r.ok){
-        setSaveMsg(`✓ Saved dossier + ${fieldNames.length} parsed fields`);
-        if(onRefreshLead)onRefreshLead();
-      }else{
-        // Some fields might not exist on leads — fallback to just raw_dossier
-        const r2=await fetch(`${SUPA}/leads?id=eq.${lead.id}`,{
-          method:"PATCH",
-          headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
-          body:JSON.stringify({raw_dossier:inlineResponse,pipeline_stage:lead.pipeline_stage==="new"?"researched":lead.pipeline_stage,updated_at:new Date().toISOString()})
-        });
-        if(r2.ok)setSaveMsg("✓ Saved dossier (some fields not available on this table)");
-        else setSaveMsg("✕ Error saving");
-      }
-    }catch(e){setSaveMsg("✕ "+e.message);}
-    setSaving(false);
-  };
-
   const EF=({label,field})=>(<div style={{marginBottom:14}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:4}}>{label}</div>{editing?<input value={info[field]} onChange={ev=>setInfo(p=>({...p,[field]:ev.target.value}))} style={{width:"100%",padding:"10px 14px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>:<div style={{fontSize:16,color:T.t}}>{info[field]||"—"}</div>}</div>);
-
-  const SocialLinks=()=>{
-    const links=[[lead.linkedin_url,"LinkedIn",T.bl],[lead.instagram_handle?`https://instagram.com/${lead.instagram_handle.replace("@","")}`:"","Instagram","#E1306C"],[lead.facebook_url,"Facebook","#1877F2"],[lead.youtube_channel,"YouTube",T.r],[lead.tiktok_handle?`https://tiktok.com/@${lead.tiktok_handle.replace("@","")}`:"","TikTok","#69C9D0"],[lead.twitter_handle?`https://x.com/${lead.twitter_handle.replace("@","")}`:"","X/Twitter",T.s],[lead.website_url,"Website",T.a]].filter(([url])=>url);
-    if(!links.length)return null;
-    return(<div style={{marginTop:12}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:8}}>SOCIAL & WEB</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{links.map(([url,label,c])=><a key={label} href={url} target="_blank" rel="noreferrer" style={{padding:"6px 12px",borderRadius:6,background:c+"15",color:c,fontSize:13,fontWeight:600,textDecoration:"none"}}>{label}</a>)}</div></div>);
-  };
-
-  const ProductionCard=()=>{
-    if(!lead.production_volume&&!lead.transaction_count&&!lead.avg_sale_price)return null;
-    return(<div style={{background:T.card,borderRadius:12,padding:"20px 22px",border:`1px solid ${T.b}`,marginBottom:16}}><div style={{fontSize:15,fontWeight:700,color:T.t,marginBottom:12}}>📊 Production</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>{[["Volume",lead.production_volume?`$${Number(lead.production_volume).toLocaleString()}`:"—",T.a],["Transactions",lead.transaction_count||"—",T.bl],["Avg Sale",lead.avg_sale_price?`$${Number(lead.avg_sale_price).toLocaleString()}`:"—",T.y]].map(([l,v,c])=><div key={l} style={{textAlign:"center"}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,marginBottom:4}}>{l.toUpperCase()}</div><div style={{fontSize:18,fontWeight:800,color:c}}>{v}</div></div>)}</div></div>);
-  };
-
-  const ReviewsCard=()=>{
-    const revs=[[lead.realtor_rating,lead.realtor_reviews,"Realtor.com"],[lead.zillow_rating,lead.zillow_reviews,"Zillow"],[lead.google_rating,lead.google_reviews,"Google"]].filter(([r,c])=>r||c);
-    if(!revs.length)return null;
-    return(<div style={{background:T.card,borderRadius:12,padding:"20px 22px",border:`1px solid ${T.b}`,marginBottom:16}}><div style={{fontSize:15,fontWeight:700,color:T.t,marginBottom:12}}>⭐ Reviews</div><div style={{display:"grid",gridTemplateColumns:`repeat(${revs.length},1fr)`,gap:12}}>{revs.map(([rating,count,src])=><div key={src} style={{textAlign:"center"}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,marginBottom:4}}>{src.toUpperCase()}</div><div style={{fontSize:20,fontWeight:800,color:T.y}}>{rating||"—"}<span style={{fontSize:12,color:T.s,fontWeight:400}}>/5</span></div>{count&&<div style={{fontSize:12,color:T.s}}>{count} reviews</div>}</div>)}</div></div>);
-  };
-
-  const IntelCard=()=>{
-    const pp=lead.pain_points&&(Array.isArray(lead.pain_points)?lead.pain_points:typeof lead.pain_points==="string"?JSON.parse(lead.pain_points||"[]"):[]);
-    const as=lead.ambition_signals&&(Array.isArray(lead.ambition_signals)?lead.ambition_signals:typeof lead.ambition_signals==="string"?JSON.parse(lead.ambition_signals||"[]"):[]);
-    const rr=lead.retention_risks&&(Array.isArray(lead.retention_risks)?lead.retention_risks:typeof lead.retention_risks==="string"?JSON.parse(lead.retention_risks||"[]"):[]);
-    if((!pp||!pp.length)&&(!as||!as.length)&&(!rr||!rr.length))return null;
-    return(<div style={{background:T.card,borderRadius:12,padding:"20px 22px",border:`1px solid ${T.b}`,marginBottom:16}}><div style={{fontSize:15,fontWeight:700,color:T.t,marginBottom:12}}>🧠 Intel</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>{pp&&pp.length>0&&<div><div style={{fontSize:11,color:T.r,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>PAIN POINTS</div>{pp.map((p,i)=><div key={i} style={{fontSize:13,color:T.t,lineHeight:1.6,padding:"4px 0"}}>• {typeof p==="string"?p:p.label||JSON.stringify(p)}</div>)}</div>}{as&&as.length>0&&<div><div style={{fontSize:11,color:T.a,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>AMBITION SIGNALS</div>{as.map((a,i)=><div key={i} style={{fontSize:13,color:T.t,lineHeight:1.6,padding:"4px 0"}}>• {typeof a==="string"?a:a.label||JSON.stringify(a)}</div>)}</div>}{rr&&rr.length>0&&<div><div style={{fontSize:11,color:T.y,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>RETENTION RISKS</div>{rr.map((r,i)=><div key={i} style={{fontSize:13,color:T.t,lineHeight:1.6,padding:"4px 0"}}>• {typeof r==="string"?r:r.label||JSON.stringify(r)}</div>)}</div>}</div></div>);
-  };
   return(
     <div style={{flex:1,overflow:"auto",padding:"24px 32px"}}>
       <div onClick={onBack} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back to Pipeline</div>
@@ -253,7 +140,7 @@ Return ONLY JSON. No markdown, no backticks.`;
           <EF label="EMAIL" field="email"/><EF label="PHONE" field="phone"/><EF label="BROKERAGE" field="brokerage"/><EF label="MARKET" field="market"/>
           {lead.license_number&&<div style={{marginBottom:14}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:4}}>LICENSE</div><div style={{fontSize:16,color:T.t}}>{lead.license_number}</div></div>}
           <div style={{marginBottom:14}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:4}}>SOURCE</div><div style={{fontSize:16,color:T.t}}>{lead.source||"Ad"}</div></div>
-          {(lead.youtube_channel||lead.linkedin_url||lead.website_url||lead.instagram_handle||lead.facebook_url||lead.tiktok_handle||lead.twitter_handle)&&<SocialLinks/>}
+          {(lead.youtube_channel||lead.linkedin_url||lead.website_url)&&<div style={{marginTop:8}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:8}}>LINKS</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{lead.youtube_channel&&<a href={lead.youtube_channel} target="_blank" rel="noreferrer" style={{padding:"6px 12px",borderRadius:6,background:T.r+"15",color:T.r,fontSize:13,fontWeight:600,textDecoration:"none"}}>YouTube</a>}{lead.linkedin_url&&<a href={lead.linkedin_url} target="_blank" rel="noreferrer" style={{padding:"6px 12px",borderRadius:6,background:T.bl+"15",color:T.bl,fontSize:13,fontWeight:600,textDecoration:"none"}}>LinkedIn</a>}{lead.website_url&&<a href={lead.website_url} target="_blank" rel="noreferrer" style={{padding:"6px 12px",borderRadius:6,background:T.a+"15",color:T.a,fontSize:13,fontWeight:600,textDecoration:"none"}}>Website</a>}</div></div>}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:16}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>{[["TIER",lead.tier,T.p],["URGENCY",lead.urgency,{HIGH:T.r,MEDIUM:T.y,LOW:T.a}[lead.urgency]||T.s],["TREND",lead.trend||"—",T.bl]].map(([l,v,c])=><div key={l} style={{background:T.card,borderRadius:10,padding:"16px",border:`1px solid ${T.b}`,textAlign:"center"}}><div style={{fontSize:11,color:T.m,letterSpacing:2,marginBottom:4}}>{l}</div><div style={{fontSize:20,fontWeight:800,color:c}}>{v||"—"}</div></div>)}</div>
@@ -262,14 +149,9 @@ Return ONLY JSON. No markdown, no backticks.`;
         </div>
       </div>
 
-      <ProductionCard/>
-      <ReviewsCard/>
-      <IntelCard/>
-
-      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginBottom:24}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>onAskInline(q)} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
-      <div onClick={()=>onAskInline(`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find production, reviews, social media, outreach angle.`)} style={{marginTop:10,padding:"14px 20px",borderRadius:8,background:T.am,border:`1px solid ${T.a}20`,cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,opacity:inlineLoading?0.5:1}}><span style={{fontSize:18}}>🔍</span><span style={{fontSize:15,color:T.a,fontWeight:700}}>Ask LIVI to Research</span></div>
+      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginBottom:24}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>onAskInline(q)} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
       {inlineLoading&&<div style={{marginTop:16,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><div style={{display:"flex",gap:10}}><span onClick={saveResearchToLead} style={{fontSize:12,color:saving?T.m:T.bl,cursor:saving?"wait":"pointer",fontWeight:600}}>{saving?"⏳ Saving...":"💾 Save to Lead"}</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div></div>{saveMsg&&<div style={{fontSize:12,color:saveMsg.startsWith("✓")?T.a:T.r,marginBottom:8,fontWeight:600}}>{saveMsg}</div>}<pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
       </div>
 
       <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
@@ -318,7 +200,7 @@ function AgentDirectory(){
   const addToPipeline=async(agent)=>{
     try {
       const body={first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage:agent.brokerage_name||"",market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),source:"Agent Directory",pipeline_stage:"new",tier:"New",urgency:"LOW",notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`};
-      const r=await fetch(`${SUPA}/leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
+      const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));}
     } catch(e) { console.error("Add to pipeline error:", e); }
   };
@@ -335,7 +217,7 @@ function AgentDirectory(){
     <>
       {/* Stats banner */}
       <div style={{display:"flex",gap:16,marginBottom:20,flexWrap:"wrap"}}>
-        {[["🇺🇸","848,000+","Licensed Agents",T.a],["🏢","100K+","Brokerages",T.bl],["📍","4","States Live",T.p],["🆕","Auto-Sync","Weekly Updates",T.y]].map(([ic,v,l,c],i)=>
+        {[["🇺🇸","352,338","Licensed Agents",T.a],["🏢","51,057","Brokerages",T.bl],["📍","3","States Live",T.p],["🆕","~1,000/mo","New TX Agents",T.y]].map(([ic,v,l,c],i)=>
           <div key={i} style={{flex:"1 1 140px",background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"18px 22px",display:"flex",alignItems:"center",gap:14}}>
             <div style={{fontSize:24}}>{ic}</div>
             <div><div style={{fontSize:22,fontWeight:800,color:T.t}}>{v}</div><div style={{fontSize:11,color:c,fontWeight:700,letterSpacing:1}}>{l.toUpperCase()}</div></div>
@@ -358,7 +240,6 @@ function AgentDirectory(){
             <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>STATE</div>
             <select value={filters.state} onChange={e=>setFilters(p=>({...p,state:e.target.value}))} style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}>
               <option value="" style={{background:T.card}}>All States</option>
-              <option value="FL" style={{background:T.card}}>Florida (496K)</option>
               <option value="TX" style={{background:T.card}}>Texas (189K)</option>
               <option value="NY" style={{background:T.card}}>New York (144K)</option>
               <option value="CT" style={{background:T.card}}>Connecticut (20K)</option>
@@ -454,13 +335,200 @@ function AgentDirectory(){
       {!searched && !loading && (
         <div style={{textAlign:"center",padding:"60px 20px"}}>
           <div style={{fontSize:48,marginBottom:16}}>🔍</div>
-          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>848,000+ Real Licensed Agents</div>
-          <div style={{fontSize:15,color:T.s,maxWidth:500,margin:"0 auto",lineHeight:1.6}}>Search by state, brokerage, name, or city. Every record is from official state licensing boards — Florida DBPR, Texas TREC, New York DOS, Connecticut DCP. Auto-synced weekly. Add agents directly to your recruiting pipeline.</div>
+          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>352,338 Real Licensed Agents</div>
+          <div style={{fontSize:15,color:T.s,maxWidth:500,margin:"0 auto",lineHeight:1.6}}>Search by state, brokerage, name, or city. Every record is from official state licensing boards — Texas TREC, New York DOS, Connecticut DCP. Add agents directly to your recruiting pipeline.</div>
           <div style={{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:10,marginTop:24}}>
             {[{l:"🆕 New TX agents (30d)",f:{state:"TX",brokerage:"",name:"",city:"",newDays:"30"}},{l:"eXp agents in TX",f:{state:"TX",brokerage:"EXP REALTY",name:"",city:"",newDays:""}},{l:"Compass in NY",f:{state:"NY",brokerage:"COMPASS",name:"",city:"",newDays:""}},{l:"All LPT Realty",f:{state:"",brokerage:"LPT REALTY",name:"",city:"",newDays:""}}].map((ex,i)=>
               <div key={i} onClick={()=>{setFilters(ex.f);doSearch(ex.f,0);}} style={{padding:"10px 18px",borderRadius:8,background:i===0?T.y+"20":T.am,color:i===0?T.y:T.a,fontSize:14,fontWeight:600,cursor:"pointer",border:`1px solid ${i===0?T.y+"30":T.a+"20"}`}}>{ex.l}</div>
             )}
           </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
+// ━━━ CONTENT TAB (Today's Content Menu) ━━━━━━━━━━━━━━
+function ContentTab(){
+  const [content,setContent]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [generating,setGenerating]=useState(false);
+  const [selectedDate,setSelectedDate]=useState(new Date().toISOString().split("T")[0]);
+  const [copied,setCopied]=useState({});
+  const [filter,setFilter]=useState("all");
+
+  const loadContent=async(date)=>{
+    setLoading(true);
+    try{
+      const r=await fetch(`${SUPA}/daily_content?content_date=eq.${date}&order=platform.asc,created_at.asc`,{
+        headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`}
+      });
+      if(r.ok){const d=await r.json();setContent(d);}
+    }catch(e){console.error("Load content error:",e);}
+    setLoading(false);
+  };
+
+  useEffect(()=>{loadContent(selectedDate);},[selectedDate]);
+
+  const generateContent=async()=>{
+    setGenerating(true);
+    try{
+      const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-content",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({date:selectedDate,force:true})
+      });
+      if(r.ok){
+        setTimeout(()=>loadContent(selectedDate),15000);
+        setTimeout(()=>{loadContent(selectedDate);setGenerating(false);},30000);
+        return;
+      }
+    }catch(e){console.error("Generate error:",e);}
+    setGenerating(false);
+  };
+
+  const copyPost=(id,text)=>{
+    navigator.clipboard?.writeText(text);
+    setCopied(p=>({...p,[id]:true}));
+    setTimeout(()=>setCopied(p=>({...p,[id]:false})),2000);
+  };
+
+  const markPosted=async(id)=>{
+    try{
+      await fetch(`${SUPA}/daily_content?id=eq.${id}`,{
+        method:"PATCH",
+        headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
+        body:JSON.stringify({is_posted:true,posted_at:new Date().toISOString()})
+      });
+      setContent(p=>p.map(c=>c.id===id?{...c,is_posted:true,posted_at:new Date().toISOString()}:c));
+    }catch(e){console.error("Mark posted error:",e);}
+  };
+
+  const platformConfig={
+    facebook:{icon:"📘",label:"Facebook",color:"#1877F2",bg:"#1877F210"},
+    instagram:{icon:"📸",label:"Instagram",color:"#E1306C",bg:"#E1306C10"},
+    youtube:{icon:"🎬",label:"YouTube",color:"#FF0000",bg:"#FF000010"}
+  };
+
+  const filtered=filter==="all"?content:content.filter(c=>c.platform===filter);
+  const posted=content.filter(c=>c.is_posted).length;
+  const totalPosts=content.length;
+
+  const dateObj=new Date(selectedDate+"T12:00:00");
+  const dayLabel=dateObj.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  const isToday=selectedDate===new Date().toISOString().split("T")[0];
+
+  return(
+    <>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div>
+          <div style={{fontSize:14,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:4}}>
+            {isToday?"TODAY'S CONTENT MENU":"CONTENT FOR"}
+          </div>
+          <div style={{fontSize:18,color:T.s}}>{dayLabel}</div>
+        </div>
+        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+          <input type="date" value={selectedDate} onChange={ev=>setSelectedDate(ev.target.value)} style={{padding:"10px 14px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}/>
+          <div onClick={generating?null:generateContent} style={{padding:"12px 20px",borderRadius:8,background:generating?T.d:T.am,color:generating?T.m:T.a,fontSize:14,fontWeight:700,cursor:generating?"wait":"pointer",display:"flex",alignItems:"center",gap:8}}>
+            {generating?"⏳ Generating (~30s)...":"✨ Generate Fresh Content"}
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:20}} className="kpi-grid">
+        {[
+          ["📝","Total Posts",totalPosts,T.bl],
+          ["📘","Facebook",content.filter(c=>c.platform==="facebook").length,"#1877F2"],
+          ["📸","Instagram",content.filter(c=>c.platform==="instagram").length,"#E1306C"],
+          ["🎬","YouTube",content.filter(c=>c.platform==="youtube").length,"#FF0000"],
+          ["✅","Posted",posted,T.a]
+        ].map(([ic,l,v,c],i)=>
+          <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 20px",textAlign:"center"}}>
+            <div style={{fontSize:20,marginBottom:4}}>{ic}</div>
+            <div style={{fontSize:24,fontWeight:800,color:c}}>{v}</div>
+            <div style={{fontSize:11,color:T.s,letterSpacing:1,marginTop:2}}>{l.toUpperCase()}</div>
+          </div>
+        )}
+      </div>
+
+      <div style={{display:"flex",gap:8,marginBottom:20}}>
+        {[["all","All",T.t],["facebook","📘 Facebook","#1877F2"],["instagram","📸 Instagram","#E1306C"],["youtube","🎬 YouTube","#FF0000"]].map(([id,label,c])=>
+          <div key={id} onClick={()=>setFilter(id)} style={{padding:"10px 18px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{label}</div>
+        )}
+      </div>
+
+      {loading?(
+        <div style={{textAlign:"center",padding:60}}>
+          <div style={{fontSize:32,animation:"pulse 1s infinite"}}>📝</div>
+          <div style={{color:T.s,marginTop:12}}>Loading content...</div>
+        </div>
+      ):filtered.length===0?(
+        <div style={{textAlign:"center",padding:60}}>
+          <div style={{fontSize:48,marginBottom:16}}>✨</div>
+          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>No Content for This Date</div>
+          <div style={{fontSize:15,color:T.s,marginBottom:20,maxWidth:400,margin:"0 auto 20px",lineHeight:1.6}}>Generate AI-powered social content for Facebook, Instagram, and YouTube. Each post links to your landing pages with UTM tracking.</div>
+          <div onClick={generating?null:generateContent} style={{display:"inline-block",padding:"14px 28px",borderRadius:8,background:T.am,color:T.a,fontSize:16,fontWeight:700,cursor:generating?"wait":"pointer"}}>
+            {generating?"⏳ Generating (~30s)...":"✨ Generate Today's Content"}
+          </div>
+        </div>
+      ):(
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          {filtered.map((post,i)=>{
+            const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
+            return(
+              <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,padding:"24px 26px",opacity:post.is_posted?0.7:1,transition:"all 0.15s"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,flexWrap:"wrap",gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{cfg.icon}</div>
+                    <div>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:16,fontWeight:700,color:T.t}}>{cfg.label}</span>
+                        {post.content_type&&post.content_type!=="post"&&<span style={{fontSize:12,padding:"2px 8px",borderRadius:4,background:T.p+"18",color:T.p,fontWeight:600,textTransform:"uppercase"}}>{post.content_type}</span>}
+                      </div>
+                      <div style={{fontSize:13,color:T.s}}>{post.theme?.replace(/_/g," ")}</div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    {post.is_posted&&<span style={{fontSize:12,color:T.a,fontWeight:700,padding:"4px 10px",borderRadius:4,background:T.a+"15"}}>✓ Posted</span>}
+                    {post.landing_page_slug&&<span style={{fontSize:12,color:T.bl,fontWeight:600,padding:"4px 10px",borderRadius:4,background:T.bl+"15"}}>→ /{post.landing_page_slug}</span>}
+                  </div>
+                </div>
+
+                {post.headline&&<div style={{fontSize:18,fontWeight:800,color:T.t,marginBottom:12,lineHeight:1.4}}>{post.headline}</div>}
+
+                <div style={{fontSize:15,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",marginBottom:16,maxHeight:200,overflow:"auto",padding:"16px 18px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{post.body}</div>
+
+                {post.hashtags&&post.hashtags.length>0&&post.hashtags[0]!==""&&(
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
+                    {post.hashtags.map((h,j)=><span key={j} style={{fontSize:13,color:T.bl,fontWeight:600}}>#{h.replace(/^#/,"")}</span>)}
+                  </div>
+                )}
+
+                {post.media_suggestion&&(
+                  <div style={{fontSize:13,color:T.p,padding:"10px 14px",borderRadius:6,background:T.p+"08",border:`1px solid ${T.p}15`,marginBottom:14}}>
+                    🎨 <strong>Visual idea:</strong> {post.media_suggestion}
+                  </div>
+                )}
+
+                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                  <div onClick={()=>copyPost(post.id,post.body)} style={{padding:"10px 18px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                    {copied[post.id]?"✓ Copied!":"📋 Copy Post"}
+                  </div>
+                  {!post.is_posted&&(
+                    <div onClick={()=>markPosted(post.id)} style={{padding:"10px 18px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                      ✅ Mark as Posted
+                    </div>
+                  )}
+                  {post.landing_page_slug&&(
+                    <a href={`https://livi-ai.vercel.app/${post.landing_page_slug}?utm_source=${post.platform}&utm_medium=organic&utm_campaign=${post.utm_campaign||"daily"}`} target="_blank" rel="noreferrer" style={{padding:"10px 18px",borderRadius:8,background:T.bl+"15",color:T.bl,fontSize:14,fontWeight:600,textDecoration:"none",display:"flex",alignItems:"center",gap:6}}>
+                      🔗 Preview Landing Page
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </>
@@ -478,19 +546,17 @@ export default function Livi(){
 
   const load=useCallback(async()=>{
     setLoading(true);
-    const [l,a]=await Promise.all([sq("leads","order=created_at.desc&limit=100"),sq("activity_log","order=created_at.desc&limit=50")]);
+    const [l,a]=await Promise.all([sq("dazet_leads","order=created_at.desc&limit=100"),sq("dazet_agent_activity","order=created_at.desc&limit=50")]);
     setLeads(l||[]);setActivity(a||[]);setLoading(false);
   },[]);
 
   useEffect(()=>{load();const i=setInterval(load,45000);return()=>clearInterval(i);},[load]);
 
-  // askLiviInline: scoped per page — response clears on navigation
+  // askLiviInline: inline AI on every page
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
-  const [responseSource,setResponseSource]=useState(null); // tracks which view/lead triggered it
-  const askLiviInline=async(q,source)=>{
-    const src=source||view;
-    setInlineLoading(true);setInlineResponse(null);setResponseSource(src);
+  const askLiviInline=async(q)=>{
+    setInlineLoading(true);setInlineResponse(null);
     try{
       let sys=SYSTEM;
       if(leads.length>0){
@@ -513,8 +579,6 @@ export default function Livi(){
   const setViewWithHistory=(v)=>{
     window.history.pushState({view:v},"",`#${v}`);
     setView(v);
-    // Clear LIVI response when navigating away
-    if(v!==responseSource){setInlineResponse(null);setResponseSource(null);}
   };
   useEffect(()=>{
     const onPop=(ev)=>{
@@ -533,30 +597,28 @@ export default function Livi(){
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
 
-  // ━━━ ASK LIVI BAR (top of page, scoped response) ━━━━━━━━━━━━
-  const AskLiviBar=({prompts,source})=>{
-    const isMyResponse=responseSource===source;
-    return(
+  // ━━━ ASK LIVI BAR (top of every page) ━━━━━━━━━━━━
+  const AskLiviBar=({prompts})=>(
     <>
       <div className="quick-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
         {prompts.map(([icon,label,q,c],i)=>
-          <div key={i} onClick={()=>askLiviInline(q,source)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
+          <div key={i} onClick={()=>askLiviInline(q)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
             onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20"}} onMouseOut={ev=>ev.currentTarget.style.background=(c||T.bl)+"10"}>
             <span style={{fontSize:24}}>{icon}</span><span style={{fontSize:15,fontWeight:700,color:T.t}}>{label}</span>
           </div>
         )}
       </div>
-      {inlineLoading&&isMyResponse&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&isMyResponse&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><div style={{display:"flex",gap:12}}><span onClick={()=>{setInlineResponse(null);setResponseSource(null);}} style={{fontSize:12,color:T.m,cursor:"pointer"}}>✕ Dismiss</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
+      {inlineLoading&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
     </>
-  );};
+  );
 
   // ━━━ ADD LEAD TO SUPABASE ━━━━━━━━━━━━━━━━━━━━━━━
   const saveLead=async(doResearch)=>{
     if(!newLead.first_name.trim())return;
     try{
       const body={first_name:newLead.first_name.trim(),last_name:newLead.last_name.trim(),email:newLead.email.trim()||null,phone:newLead.phone.trim()||null,market:newLead.market.trim()||null,brokerage:newLead.brokerage.trim()||null,source:newLead.source.trim()||"Manual",pipeline_stage:"new",tier:"New",urgency:"LOW"};
-      const r=await fetch(`${SUPA}/leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
+      const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(!r.ok){console.error("Add lead error:",r.status,await r.text());return;}
       const saved=await r.json();
       console.log("Lead saved:",saved);
@@ -979,7 +1041,7 @@ export default function Livi(){
       {/* SIDEBAR */}
       <div className="app-sidebar" style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
         <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
-        {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"]].map(([id,ic])=>
+        {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"]].map(([id,ic])=>
           <div key={id} onClick={()=>setViewWithHistory(id)} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
         )}
         <div style={{flex:1}}/>
@@ -990,24 +1052,18 @@ export default function Livi(){
       {/* MAIN AREA */}
       <div style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
         {view!=="lead"&&view!=="addlead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-          <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":"LIVI AI"}</h1>
+          <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":"LIVI AI"}</h1>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             {<div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
             <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
           </div>
         </div>}
-        {view==="home"&&<><AskLiviBar source="home" prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents in my target markets who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.`,T.y]]}/><Dash/></>}
-        {view==="pipeline"&&<><AskLiviBar source="pipeline" prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
-        {view==="crm"&&<><AskLiviBar source="crm" prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
+        {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents in my target markets who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.`,T.y]]}/><Dash/></>}
+        {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
+        {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
         {view==="agents"&&<AgentDirectory/>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setInlineResponse(null);setResponseSource(null);setViewWithHistory("pipeline");}} onAskInline={(q)=>askLiviInline(q,"lead_"+selLead.id)} inlineResponse={responseSource===("lead_"+selLead.id)?inlineResponse:null} inlineLoading={inlineLoading&&responseSource===("lead_"+selLead.id)} onRefreshLead={async()=>{
-          await load();
-          // Refresh the selected lead with latest data
-          try{
-            const r=await fetch(`${SUPA}/leads?id=eq.${selLead.id}&select=*`,{headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`}});
-            if(r.ok){const d=await r.json();if(d[0])setSelLead(d[0]);}
-          }catch{}
-        }}/>}
+        {view==="content"&&<ContentTab/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
