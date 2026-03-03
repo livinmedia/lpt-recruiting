@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#04060A"/>
+      <stop offset="100%" stop-color="#0B0F17"/>
+    </linearGradient>
+    <linearGradient id="greengrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#00E5A0" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#00E5A0" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Glow bottom right -->
+  <ellipse cx="1100" cy="550" rx="400" ry="300" fill="#00E5A0" fill-opacity="0.05"/>
+
+  <!-- Accent bar -->
+  <rect x="0" y="0" width="6" height="630" fill="#00E5A0"/>
+
+  <!-- Grid lines -->
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Brand -->
+  <rect x="60" y="54" width="160" height="36" rx="8" fill="#00E5A0" fill-opacity="0.14"/>
+  <text x="76" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#00E5A0" letter-spacing="2">LPT REALTY</text>
+
+  <!-- Headline -->
+  <text x="60" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="800" fill="#E4E8F1">Revenue</text>
+  <text x="60" y="281" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="800" fill="#00E5A0">Share</text>
+
+  <!-- Underline -->
+  <rect x="60" y="295" width="260" height="5" rx="2" fill="#00E5A0"/>
+
+  <!-- Subtitle -->
+  <text x="60" y="355" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="500" fill="#7B8BA3">Build Passive Income</text>
+
+  <!-- Tiers visual -->
+  <rect x="60" y="395" width="580" height="80" rx="12" fill="#0B0F17" stroke="rgba(0,229,160,0.1)" stroke-width="1"/>
+  <text x="84" y="428" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#7B8BA3" letter-spacing="1.5">MULTI-TIER STRUCTURE</text>
+  <text x="84" y="462" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#E4E8F1">Tier 1: 5% · Tier 2: 4% · Tier 3–7: varies</text>
+
+  <!-- Right: bar chart growth visual -->
+  <g transform="translate(780, 120)">
+    <!-- Bars growing -->
+    <rect x="0" y="290" width="50" height="50" rx="6" fill="#00E5A0" fill-opacity="0.3"/>
+    <rect x="70" y="240" width="50" height="100" rx="6" fill="#00E5A0" fill-opacity="0.45"/>
+    <rect x="140" y="180" width="50" height="160" rx="6" fill="#00E5A0" fill-opacity="0.6"/>
+    <rect x="210" y="110" width="50" height="230" rx="6" fill="#00E5A0" fill-opacity="0.75"/>
+    <rect x="280" y="40" width="50" height="300" rx="6" fill="#00E5A0"/>
+
+    <!-- Labels -->
+    <text x="25" y="358" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#7B8BA3">Yr 1</text>
+    <text x="95" y="358" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#7B8BA3">Yr 2</text>
+    <text x="165" y="358" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#7B8BA3">Yr 3</text>
+    <text x="235" y="358" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#7B8BA3">Yr 4</text>
+    <text x="305" y="358" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#00E5A0" font-weight="700">Yr 5</text>
+
+    <!-- Trend line -->
+    <polyline points="25,315 95,265 165,205 235,135 305,65" fill="none" stroke="#00E5A0" stroke-width="2" stroke-dasharray="6,3" opacity="0.5"/>
+  </g>
+
+  <!-- Footer -->
+  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#2A3345">lpt-recruiting.vercel.app/revenue-share</text>
+</svg>

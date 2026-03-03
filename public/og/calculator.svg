@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#04060A"/>
+      <stop offset="100%" stop-color="#0B0F17"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle glow -->
+  <ellipse cx="1100" cy="150" rx="350" ry="250" fill="#3B82F6" fill-opacity="0.05"/>
+
+  <!-- Accent bar -->
+  <rect x="0" y="0" width="6" height="630" fill="#00E5A0"/>
+
+  <!-- Grid lines -->
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Brand -->
+  <rect x="60" y="54" width="160" height="36" rx="8" fill="#00E5A0" fill-opacity="0.14"/>
+  <text x="76" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#00E5A0" letter-spacing="2">LPT REALTY</text>
+
+  <!-- Headline -->
+  <text x="60" y="200" font-family="system-ui, -apple-system, sans-serif" font-size="76" font-weight="800" fill="#E4E8F1">Commission</text>
+  <text x="60" y="286" font-family="system-ui, -apple-system, sans-serif" font-size="76" font-weight="800" fill="#00E5A0">Calculator</text>
+
+  <!-- Teal underline -->
+  <rect x="60" y="298" width="340" height="5" rx="2" fill="#00E5A0"/>
+
+  <!-- Subtitle -->
+  <text x="60" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="500" fill="#7B8BA3">See What You Could Earn</text>
+
+  <!-- Sample calculation visual -->
+  <rect x="60" y="400" width="580" height="90" rx="12" fill="#0B0F17" stroke="rgba(0,229,160,0.15)" stroke-width="1"/>
+  <text x="84" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600" fill="#7B8BA3">$300K SALE AT 3% = $9,000 GCI</text>
+  <text x="84" y="472" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#00E5A0">Your Take-Home: $8,550 — $9,000</text>
+
+  <!-- Right: calculator icon visual -->
+  <rect x="820" y="140" width="280" height="340" rx="20" fill="#0B0F17" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="848" y="168" width="224" height="80" rx="10" fill="#161C28"/>
+  <text x="1062" y="222" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="700" fill="#00E5A0">$8,550</text>
+
+  <!-- Calc buttons -->
+  <rect x="848" y="270" width="48" height="40" rx="8" fill="#161C28"/>
+  <rect x="908" y="270" width="48" height="40" rx="8" fill="#161C28"/>
+  <rect x="968" y="270" width="48" height="40" rx="8" fill="#161C28"/>
+  <rect x="1028" y="270" width="44" height="40" rx="8" fill="#00E5A0" fill-opacity="0.2"/>
+
+  <rect x="848" y="322" width="48" height="40" rx="8" fill="#161C28"/>
+  <rect x="908" y="322" width="48" height="40" rx="8" fill="#161C28"/>
+  <rect x="968" y="322" width="48" height="40" rx="8" fill="#161C28"/>
+  <rect x="1028" y="322" width="44" height="40" rx="8" fill="#00E5A0" fill-opacity="0.2"/>
+
+  <rect x="848" y="374" width="48" height="40" rx="8" fill="#161C28"/>
+  <rect x="908" y="374" width="48" height="40" rx="8" fill="#161C28"/>
+  <rect x="968" y="374" width="108" height="40" rx="8" fill="#00E5A0"/>
+
+  <!-- Footer -->
+  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#2A3345">lpt-recruiting.vercel.app/calculator</text>
+</svg>
