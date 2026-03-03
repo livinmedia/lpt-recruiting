@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New to Real Estate? Start Right at LPT Realty</title>
+<meta name="description" content="Just got your license? Don't start at a brokerage that takes 50% of your commission. LPT Realty gives new agents the tools, training, and splits to succeed from day one.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#020309;--card:#0C0E1A;--card2:#12152A;--border:rgba(99,102,241,0.1);--accent:#818CF8;--accent2:#6366F1;--glow:rgba(99,102,241,0.1);--text:#E8EAF6;--sub:#7C7FA8;--muted:#2A2D4A;--deep:#08091A;--green:#34D399;--yellow:#FBBF24;--pink:#F472B6}
+body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 24px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-300px;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(circle,rgba(99,102,241,0.07) 0%,transparent 65%);pointer-events:none}
+.hero-inner{max-width:620px;text-align:center}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:100px;background:var(--glow);border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:32px}
+.chip .emoji{font-size:16px}
+h1{font-size:clamp(36px,6vw,64px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px}
+h1 .hl{background:linear-gradient(135deg,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-p{font-size:clamp(16px,2vw,20px);color:var(--sub);line-height:1.7;margin-bottom:40px}
+.hero-btn{display:inline-flex;align-items:center;gap:10px;padding:18px 36px;border-radius:14px;background:var(--accent2);color:#fff;font-size:17px;font-weight:800;text-decoration:none;cursor:pointer;border:none;font-family:inherit;transition:all 0.2s}
+.hero-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,0.3)}
+
+/* Steps */
+.steps{padding:100px 24px;max-width:900px;margin:0 auto}
+.steps h2{font-size:clamp(28px,4vw,44px);font-weight:900;text-align:center;margin-bottom:56px;letter-spacing:-1px}
+.step-list{display:flex;flex-direction:column;gap:24px}
+.step{display:grid;grid-template-columns:64px 1fr;gap:24px;align-items:start;padding:32px 28px;background:var(--card);border:1px solid var(--border);border-radius:18px;transition:all 0.25s}
+.step:hover{border-color:rgba(99,102,241,0.25);transform:translateX(4px)}
+.step-num{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;background:var(--glow);color:var(--accent)}
+.step h3{font-size:20px;font-weight:800;margin-bottom:6px}
+.step p{font-size:15px;color:var(--sub);line-height:1.6}
+
+/* What You Get */
+.perks{padding:80px 24px 100px;background:var(--deep)}
+.perks-inner{max-width:1000px;margin:0 auto}
+.perks h2{font-size:clamp(28px,4vw,44px);font-weight:900;text-align:center;margin-bottom:16px;letter-spacing:-1px}
+.perks .sub{font-size:17px;color:var(--sub);text-align:center;margin-bottom:48px;max-width:500px;margin-left:auto;margin-right:auto}
+.perk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.perk{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;text-align:center;transition:all 0.25s}
+.perk:hover{border-color:rgba(99,102,241,0.2);transform:translateY(-4px)}
+.perk .ic{font-size:32px;margin-bottom:14px}
+.perk h3{font-size:17px;font-weight:800;margin-bottom:6px}
+.perk p{font-size:14px;color:var(--sub);line-height:1.5}
+
+/* Form */
+.form-section{padding:100px 24px;position:relative}
+.form-section::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(circle,rgba(99,102,241,0.05) 0%,transparent 70%);pointer-events:none}
+.form-wrap{max-width:480px;margin:0 auto;text-align:center}
+.form-section h2{font-size:clamp(28px,4vw,40px);font-weight:900;margin-bottom:12px;letter-spacing:-1px}
+.form-section .sub{font-size:16px;color:var(--sub);margin-bottom:36px;line-height:1.6}
+.form-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 28px;text-align:left}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.fi{width:100%;padding:14px 16px;border-radius:10px;background:var(--deep);border:1px solid var(--border);color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border 0.2s;margin-bottom:12px}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:var(--muted)}
+select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%237C7FA8'%3E%3Cpath d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+select.fi option{background:var(--card);color:var(--text)}
+.btn{width:100%;padding:18px;border-radius:12px;background:var(--accent2);color:#fff;font-size:17px;font-weight:800;border:none;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.btn:hover{box-shadow:0 6px 24px rgba(99,102,241,0.3);transform:translateY(-1px)}
+.btn:disabled{opacity:0.5;cursor:wait;transform:none}
+.fine{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
+.success{display:none;text-align:center;padding:40px 20px}
+.success .ic{font-size:48px;margin-bottom:16px}
+.success h3{font-size:24px;font-weight:900;margin-bottom:8px}
+.success p{font-size:15px;color:var(--sub);line-height:1.6}
+
+footer{text-align:center;padding:40px 24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+
+@media(max-width:768px){
+  .perk-grid{grid-template-columns:1fr}
+  .step{grid-template-columns:48px 1fr;gap:16px;padding:24px 20px}
+  .fr{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="chip"><span class="emoji">🎓</span> Just Got Your License?</div>
+    <h1>Don't Start at a<br>Brokerage That <span class="hl">Takes Half</span></h1>
+    <p class="hero-p">Most new agents sign with the first brokerage that calls them — and spend years overpaying. Start smart. LPT gives you the splits, tools, and training to build a real business from day one.</p>
+    <a href="#apply" class="hero-btn">Book My Strategy Call →</a>
+  </div>
+</section>
+
+<section class="steps">
+  <h2>Your First 90 Days at LPT</h2>
+  <div class="step-list">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div><h3>Onboard in 48 Hours</h3><p>We handle your license transfer and get you set up with your CRM, e-sign, and marketing tools. No waiting around — you're live and ready to work within two days.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div><h3>Launch Your Brand</h3><p>Our AI tools help you create professional marketing instantly — social posts, listing presentations, market reports. You'll look like a 10-year vet from day one.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div><h3>Get Trained by Top Producers</h3><p>Weekly live coaching sessions, scripts that actually work, and a community of agents who share what's working. No gatekeeping — just results.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div><h3>Close Your First Deal</h3><p>With our lead gen support and mentorship, most new agents close their first deal within 90 days. And you keep way more of that commission than you would elsewhere.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="perks">
+  <div class="perks-inner">
+    <h2>What New Agents Get at LPT</h2>
+    <p class="sub">Everything you need, nothing you don't. Zero surprises on your first commission check.</p>
+    <div class="perk-grid">
+      <div class="perk"><div class="ic">💰</div><h3>Better Splits, Day One</h3><p>No "new agent" penalty. You get our best commission structure from your first closing.</p></div>
+      <div class="perk"><div class="ic">🤖</div><h3>AI Marketing Suite</h3><p>LIVI AI creates social content, follow-ups, and listing materials for you automatically.</p></div>
+      <div class="perk"><div class="ic">🎓</div><h3>Mentorship Program</h3><p>Get paired with a producing agent who guides you through your first transactions.</p></div>
+      <div class="perk"><div class="ic">📱</div><h3>Full Tech Stack</h3><p>CRM, e-signatures, transaction management, marketing templates — all included, no extra fees.</p></div>
+      <div class="perk"><div class="ic">$0</div><h3>Zero Desk Fees</h3><p>Keep your overhead at zero while you build your pipeline. No monthly office fees eating your savings.</p></div>
+      <div class="perk"><div class="ic">📈</div><h3>Revenue Share</h3><p>Start building passive income from the beginning by referring other agents. It compounds.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="form-section" id="apply">
+  <div class="form-wrap">
+    <h2>Ready to Start Right?</h2>
+    <p class="sub">Book a quick strategy call. We'll map out your first 90 days and show you exactly what to expect.</p>
+    <div class="form-box">
+      <div id="formFields">
+        <div class="fr">
+          <input type="text" id="fname" class="fi" placeholder="First name *" style="margin:0">
+          <input type="text" id="lname" class="fi" placeholder="Last name" style="margin:0">
+        </div>
+        <input type="tel" id="phone" class="fi" placeholder="Phone *">
+        <input type="email" id="email" class="fi" placeholder="Email">
+        <input type="text" id="market" class="fi" placeholder="Where are you located? (e.g. Dallas, TX)">
+        <select id="status" class="fi">
+          <option value="">Where are you in the process?</option>
+          <option value="Just got my license">Just got my license</option>
+          <option value="Studying for exam">Still studying for my exam</option>
+          <option value="Licensed but haven't started">Licensed but haven't started yet</option>
+          <option value="At a brokerage, want to switch">At a brokerage but want to switch</option>
+        </select>
+        <button id="submitBtn" class="btn" onclick="submitLead()">Book My Strategy Call →</button>
+        <p class="fine">We'll text you within 24 hours to set up a 15-minute call.</p>
+      </div>
+      <div class="success" id="formSuccess">
+        <div class="ic">🚀</div>
+        <h3>You're on Your Way!</h3>
+        <p>We'll reach out shortly to schedule your strategy call. Welcome to the start of something big.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>© 2025 LPT Realty · Powered by LIVI AI</footer>
+
+<script>
+const SUPA="https://usknntguurefeyzusbdh.supabase.co/rest/v1";
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
+function getUTM(){const p=new URLSearchParams(window.location.search);return{utm_source:p.get('utm_source')||'',utm_campaign:p.get('utm_campaign')||''}}
+async function submitLead(){
+  const fname=document.getElementById('fname').value.trim(),phone=document.getElementById('phone').value.trim();
+  if(!fname||!phone){if(!fname)document.getElementById('fname').style.borderColor='#F43F5E';if(!phone)document.getElementById('phone').style.borderColor='#F43F5E';return}
+  const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='Submitting...';
+  const utm=getUTM(),status=document.getElementById('status').value;
+  const body={first_name:fname,last_name:document.getElementById('lname').value.trim()||null,phone,email:document.getElementById('email').value.trim()||null,market:document.getElementById('market').value.trim()||null,source:utm.utm_source?`${utm.utm_source}${utm.utm_campaign?' / '+utm.utm_campaign:''}`:'New Agent Page',pipeline_stage:'new',tier:'New',urgency:'MEDIUM',lead_type:'new_agent',notes:status?`Status: ${status}`:'New agent inquiry',pain_points:status?[status]:[]};
+  try{const r=await fetch(`${SUPA}/leads`,{method:'POST',headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
+    if(r.ok){document.getElementById('formFields').style.display='none';document.getElementById('formSuccess').style.display='block';if(typeof fbq!=='undefined')fbq('track','Lead')}
+    else{btn.textContent='Error — try again';btn.disabled=false}}
+  catch(e){btn.textContent='Error — try again';btn.disabled=false}
+}
+document.getElementById('phone').addEventListener('input',function(e){let v=e.target.value.replace(/\D/g,'');if(v.length>10)v=v.slice(0,10);if(v.length>=6)v=`(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;else if(v.length>=3)v=`(${v.slice(0,3)}) ${v.slice(3)}`;e.target.value=v});
+document.querySelectorAll('.fi').forEach(el=>el.addEventListener('focus',()=>el.style.borderColor=''));
+</script>
+</body>
+</html>
