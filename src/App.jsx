@@ -473,57 +473,43 @@ function ContentTab(){
           </div>
         </div>
       ):(
-        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,alignItems:"start"}}>
           {filtered.map((post,i)=>{
             const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
             return(
-              <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,padding:"24px 26px",opacity:post.is_posted?0.7:1,transition:"all 0.15s"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,flexWrap:"wrap",gap:8}}>
-                  <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <div style={{width:40,height:40,borderRadius:10,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{cfg.icon}</div>
-                    <div>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <span style={{fontSize:16,fontWeight:700,color:T.t}}>{cfg.label}</span>
-                        {post.content_type&&post.content_type!=="post"&&<span style={{fontSize:12,padding:"2px 8px",borderRadius:4,background:T.p+"18",color:T.p,fontWeight:600,textTransform:"uppercase"}}>{post.content_type}</span>}
-                      </div>
-                      <div style={{fontSize:13,color:T.s}}>{post.theme?.replace(/_/g," ")}</div>
-                    </div>
+              <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,padding:"18px 20px",opacity:post.is_posted?0.7:1,transition:"all 0.15s",display:"flex",flexDirection:"column"}}>
+
+                {/* Platform icon + type badge + posted status */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{width:32,height:32,borderRadius:8,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{cfg.icon}</div>
+                    <span style={{fontSize:14,fontWeight:700,color:cfg.color}}>{cfg.label}</span>
+                    {post.content_type&&post.content_type!=="post"&&<span style={{fontSize:11,padding:"2px 7px",borderRadius:4,background:T.p+"18",color:T.p,fontWeight:600,textTransform:"uppercase"}}>{post.content_type}</span>}
                   </div>
-                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                    {post.is_posted&&<span style={{fontSize:12,color:T.a,fontWeight:700,padding:"4px 10px",borderRadius:4,background:T.a+"15"}}>✓ Posted</span>}
-                    {post.landing_page_slug&&<span style={{fontSize:12,color:T.bl,fontWeight:600,padding:"4px 10px",borderRadius:4,background:T.bl+"15"}}>→ /{post.landing_page_slug}</span>}
-                  </div>
+                  {post.is_posted&&<span style={{fontSize:11,color:T.a,fontWeight:700,padding:"2px 8px",borderRadius:4,background:T.a+"15"}}>✓ Posted</span>}
                 </div>
 
-                {post.headline&&<div style={{fontSize:18,fontWeight:800,color:T.t,marginBottom:12,lineHeight:1.4}}>{post.headline}</div>}
+                {/* Theme tag */}
+                {post.theme&&<div style={{fontSize:12,color:T.s,marginBottom:8,letterSpacing:0.5}}>{post.theme.replace(/_/g," ")}</div>}
 
-                <div style={{fontSize:15,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",marginBottom:16,maxHeight:200,overflow:"auto",padding:"16px 18px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{post.body}</div>
+                {/* Headline */}
+                {post.headline&&<div style={{fontSize:14,fontWeight:800,color:T.t,marginBottom:10,lineHeight:1.4}}>{post.headline}</div>}
 
-                {post.hashtags&&post.hashtags.length>0&&post.hashtags[0]!==""&&(
-                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
-                    {post.hashtags.map((h,j)=><span key={j} style={{fontSize:13,color:T.bl,fontWeight:600}}>#{h.replace(/^#/,"")}</span>)}
-                  </div>
-                )}
+                {/* Body preview — 4 lines max */}
+                <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:12,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{post.body}</div>
 
-                {post.media_suggestion&&(
-                  <div style={{fontSize:13,color:T.p,padding:"10px 14px",borderRadius:6,background:T.p+"08",border:`1px solid ${T.p}15`,marginBottom:14}}>
-                    🎨 <strong>Visual idea:</strong> {post.media_suggestion}
-                  </div>
-                )}
+                {/* Image placeholder */}
+                <div style={{height:88,borderRadius:8,background:T.m+"15",border:`1px dashed ${T.m}`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12,fontSize:12,color:T.m,gap:6}}>🖼 Image coming soon</div>
 
-                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                  <div onClick={()=>copyPost(post.id,post.body)} style={{padding:"10px 18px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                    {copied[post.id]?"✓ Copied!":"📋 Copy Post"}
+                {/* Buttons pinned to bottom */}
+                <div style={{marginTop:"auto",display:"flex",gap:8}}>
+                  <div onClick={()=>copyPost(post.id,post.body)} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                    {copied[post.id]?"✓ Copied":"📋 Copy"}
                   </div>
                   {!post.is_posted&&(
-                    <div onClick={()=>markPosted(post.id)} style={{padding:"10px 18px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:14,fontWeight:600,cursor:"pointer"}}>
-                      ✅ Mark as Posted
+                    <div onClick={()=>markPosted(post.id)} style={{flex:1,padding:"9px 10px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      ✅ Posted
                     </div>
-                  )}
-                  {post.landing_page_slug&&(
-                    <a href={`https://livi-ai.vercel.app/${post.landing_page_slug}?utm_source=${post.platform}&utm_medium=organic&utm_campaign=${post.utm_campaign||"daily"}`} target="_blank" rel="noreferrer" style={{padding:"10px 18px",borderRadius:8,background:T.bl+"15",color:T.bl,fontSize:14,fontWeight:600,textDecoration:"none",display:"flex",alignItems:"center",gap:6}}>
-                      🔗 Preview Landing Page
-                    </a>
                   )}
                 </div>
               </div>
