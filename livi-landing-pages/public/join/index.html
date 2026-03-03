@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join LPT Realty — Keep More of What You Earn</title>
+<meta name="description" content="Real estate agents: stop giving away your commission. LPT Realty offers industry-leading splits, AI tools, and zero desk fees.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- FB Pixel placeholder -->
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+// fbq('init', 'YOUR_PIXEL_ID');
+// fbq('track', 'PageView');
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04060A;--card:#0B0F17;--border:rgba(255,255,255,0.06);
+  --accent:#00E5A0;--accent-glow:rgba(0,229,160,0.15);--accent-soft:rgba(0,229,160,0.08);
+  --text:#E4E8F1;--sub:#7B8BA3;--muted:#2A3345;--deep:#161C28;
+  --red:#F43F5E;--yellow:#F59E0B;--blue:#3B82F6;--purple:#8B5CF6;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(0,229,160,0.08) 0%,transparent 70%);pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:200px;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:100px;background:var(--accent-soft);border:1px solid rgba(0,229,160,0.15);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:28px;animation:fadeInDown 0.6s}
+.badge .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+h1{font-size:clamp(36px,6vw,72px);font-weight:900;line-height:1.05;margin-bottom:20px;letter-spacing:-2px;animation:fadeInUp 0.7s}
+h1 .green{color:var(--accent);position:relative}
+h1 .green::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:4px;background:var(--accent);border-radius:2px;opacity:0.4}
+.hero-sub{font-size:clamp(16px,2vw,22px);color:var(--sub);max-width:580px;line-height:1.6;margin-bottom:40px;animation:fadeInUp 0.8s}
+.hero-cta{display:inline-flex;align-items:center;gap:10px;padding:18px 40px;border-radius:12px;background:var(--accent);color:#000;font-size:18px;font-weight:800;text-decoration:none;transition:all 0.2s;animation:fadeInUp 0.9s;cursor:pointer;border:none}
+.hero-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,160,0.3)}
+.hero-stats{display:flex;gap:40px;margin-top:48px;animation:fadeInUp 1s}
+.hero-stats .stat{text-align:center}
+.hero-stats .stat-val{font-size:28px;font-weight:900;color:var(--text)}
+.hero-stats .stat-label{font-size:12px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px}
+
+/* Value Props */
+.props{padding:100px 24px;max-width:1100px;margin:0 auto}
+.props h2{font-size:clamp(28px,4vw,44px);font-weight:900;text-align:center;margin-bottom:16px;letter-spacing:-1px}
+.props .sub{font-size:17px;color:var(--sub);text-align:center;max-width:500px;margin:0 auto 60px;line-height:1.6}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.prop-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:36px 30px;transition:all 0.25s}
+.prop-card:hover{border-color:rgba(0,229,160,0.2);transform:translateY(-4px)}
+.prop-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px}
+.prop-card h3{font-size:20px;font-weight:800;margin-bottom:10px}
+.prop-card p{font-size:15px;color:var(--sub);line-height:1.6}
+
+/* Comparison */
+.compare{padding:100px 24px;background:var(--deep)}
+.compare-inner{max-width:900px;margin:0 auto}
+.compare h2{font-size:clamp(28px,4vw,44px);font-weight:900;text-align:center;margin-bottom:60px;letter-spacing:-1px}
+.compare-table{width:100%;border-collapse:collapse}
+.compare-table th{padding:16px 20px;text-align:left;font-size:14px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.compare-table th:nth-child(2){color:var(--accent);text-align:center}
+.compare-table th:nth-child(3){text-align:center}
+.compare-table td{padding:18px 20px;font-size:16px;border-bottom:1px solid var(--border)}
+.compare-table td:nth-child(2){text-align:center;color:var(--accent);font-weight:700}
+.compare-table td:nth-child(3){text-align:center;color:var(--sub)}
+.compare-table tr:hover{background:rgba(0,229,160,0.02)}
+
+/* Form Section */
+.form-section{padding:100px 24px;position:relative}
+.form-section::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,229,160,0.06) 0%,transparent 70%);pointer-events:none}
+.form-wrap{max-width:520px;margin:0 auto;position:relative}
+.form-section h2{font-size:clamp(28px,4vw,44px);font-weight:900;text-align:center;margin-bottom:12px;letter-spacing:-1px}
+.form-section .sub{font-size:17px;color:var(--sub);text-align:center;margin-bottom:40px;line-height:1.6}
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 36px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-group{margin-bottom:14px}
+.form-group:last-of-type{margin-bottom:0}
+.form-label{display:block;font-size:12px;color:var(--muted);letter-spacing:1.5px;font-weight:700;margin-bottom:6px;text-transform:uppercase}
+.form-input{width:100%;padding:14px 16px;border-radius:10px;background:var(--deep);border:1px solid var(--border);color:var(--text);font-size:16px;font-family:inherit;outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}
+select.form-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%237B8BA3'%3E%3Cpath d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+select.form-input option{background:var(--card);color:var(--text)}
+.form-submit{width:100%;padding:18px;border-radius:12px;background:var(--accent);color:#000;font-size:18px;font-weight:800;border:none;cursor:pointer;font-family:inherit;transition:all 0.2s;margin-top:20px}
+.form-submit:hover{box-shadow:0 8px 30px rgba(0,229,160,0.3);transform:translateY(-1px)}
+.form-submit:disabled{opacity:0.5;cursor:wait;transform:none;box-shadow:none}
+.form-note{font-size:13px;color:var(--muted);text-align:center;margin-top:14px}
+.form-success{display:none;text-align:center;padding:60px 20px}
+.form-success .check{width:80px;height:80px;border-radius:50%;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 24px}
+.form-success h3{font-size:28px;font-weight:900;margin-bottom:12px}
+.form-success p{font-size:16px;color:var(--sub);line-height:1.6}
+
+/* Testimonials */
+.social{padding:80px 24px 100px;max-width:1100px;margin:0 auto}
+.social h2{font-size:clamp(28px,4vw,44px);font-weight:900;text-align:center;margin-bottom:48px;letter-spacing:-1px}
+.testimonials{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.testimonial{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px 26px}
+.testimonial .stars{color:var(--yellow);font-size:16px;margin-bottom:12px;letter-spacing:2px}
+.testimonial .quote{font-size:15px;color:var(--sub);line-height:1.7;margin-bottom:16px;font-style:italic}
+.testimonial .author{font-size:14px;font-weight:700;color:var(--text)}
+.testimonial .role{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* Footer */
+.footer{padding:40px 24px;border-top:1px solid var(--border);text-align:center}
+.footer p{font-size:13px;color:var(--muted)}
+
+/* Animations */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Mobile */
+@media(max-width:768px){
+  .grid3,.testimonials{grid-template-columns:1fr}
+  .hero-stats{flex-direction:column;gap:20px}
+  .form-row{grid-template-columns:1fr}
+  .form-card{padding:28px 22px}
+  .compare-table{font-size:14px}
+  .compare-table td,.compare-table th{padding:12px 10px}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge"><span class="dot"></span> Now Recruiting in All 50 States</div>
+  <h1>Stop Giving Away<br>Your <span class="green">Commission</span></h1>
+  <p class="hero-sub">LPT Realty agents keep more on every deal. AI-powered tools, zero desk fees, and a model built for agents who want to grow — not just survive.</p>
+  <a href="#apply" class="hero-cta">See What You're Missing →</a>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-val">$0</div><div class="stat-label">Desk Fees</div></div>
+    <div class="stat"><div class="stat-val">AI</div><div class="stat-label">Powered Tools</div></div>
+    <div class="stat"><div class="stat-val">50</div><div class="stat-label">States</div></div>
+  </div>
+</section>
+
+<!-- VALUE PROPS -->
+<section class="props">
+  <h2>Built for Agents Who Want More</h2>
+  <p class="sub">While your brokerage takes a cut, we give you the tools and splits to actually build wealth.</p>
+  <div class="grid3">
+    <div class="prop-card">
+      <div class="prop-icon" style="background:rgba(0,229,160,0.1)">💰</div>
+      <h3>Industry-Leading Splits</h3>
+      <p>Keep more of what you earn. Our commission structure is designed so you build wealth, not pad someone else's bottom line.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-icon" style="background:rgba(59,130,246,0.1)">🤖</div>
+      <h3>AI-Powered Growth</h3>
+      <p>LIVI AI handles your marketing, lead gen, and follow-up so you can focus on closing deals and building relationships.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-icon" style="background:rgba(139,92,246,0.1)">🚀</div>
+      <h3>Zero Desk Fees</h3>
+      <p>No monthly fees eating into your income. No mandatory office time. Run your business your way, from anywhere.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-icon" style="background:rgba(245,158,11,0.1)">📈</div>
+      <h3>Revenue Share</h3>
+      <p>Build passive income by helping other agents succeed. Our revenue share program pays you for the network you build.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-icon" style="background:rgba(244,63,94,0.1)">🎓</div>
+      <h3>Elite Training</h3>
+      <p>Weekly live coaching, scripts that convert, and a community of top producers sharing what actually works.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-icon" style="background:rgba(6,182,212,0.1)">🏆</div>
+      <h3>Tech Stack Included</h3>
+      <p>CRM, transaction management, e-signatures, marketing templates — everything you need, no extra cost.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="compare">
+  <div class="compare-inner">
+    <h2>LPT vs. Traditional Brokerages</h2>
+    <table class="compare-table">
+      <thead><tr><th>Feature</th><th>LPT Realty</th><th>Traditional</th></tr></thead>
+      <tbody>
+        <tr><td>Commission Split</td><td>✓ Industry-leading</td><td>70/30 or worse</td></tr>
+        <tr><td>Monthly Desk Fee</td><td>✓ $0</td><td>$500-2,000/mo</td></tr>
+        <tr><td>AI Tools</td><td>✓ LIVI AI included</td><td>✕ Buy your own</td></tr>
+        <tr><td>Revenue Share</td><td>✓ Multi-tier</td><td>✕ None</td></tr>
+        <tr><td>Tech Stack</td><td>✓ All included</td><td>$200-500/mo extra</td></tr>
+        <tr><td>Cap</td><td>✓ Low annual cap</td><td>High or no cap</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FORM -->
+<section class="form-section" id="apply">
+  <div class="form-wrap">
+    <h2>Ready to Keep More?</h2>
+    <p class="sub">Fill this out and we'll show you exactly what your income looks like at LPT.</p>
+    <div class="form-card">
+      <div id="formFields">
+        <div class="form-row">
+          <div>
+            <label class="form-label">First Name *</label>
+            <input type="text" id="fname" class="form-input" placeholder="First name" required>
+          </div>
+          <div>
+            <label class="form-label">Last Name</label>
+            <input type="text" id="lname" class="form-input" placeholder="Last name">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone *</label>
+          <input type="tel" id="phone" class="form-input" placeholder="(555) 123-4567" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-input" placeholder="you@email.com">
+        </div>
+        <div class="form-row">
+          <div>
+            <label class="form-label">Current Brokerage</label>
+            <input type="text" id="brokerage" class="form-input" placeholder="Your brokerage">
+          </div>
+          <div>
+            <label class="form-label">Market / State</label>
+            <input type="text" id="market" class="form-input" placeholder="e.g. Austin, TX">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">What's your biggest frustration right now?</label>
+          <select id="frustration" class="form-input">
+            <option value="">Select one...</option>
+            <option value="Commission split is too low">My commission split is too low</option>
+            <option value="Paying too much in fees">Paying too much in desk/monthly fees</option>
+            <option value="No leads or lead gen support">No leads or lead gen support</option>
+            <option value="Lack of tech and tools">Lack of tech and tools</option>
+            <option value="No growth path or mentorship">No growth path or mentorship</option>
+            <option value="Looking for revenue share">Looking for a revenue share opportunity</option>
+            <option value="Just exploring options">Just exploring my options</option>
+          </select>
+        </div>
+        <button type="button" id="submitBtn" class="form-submit" onclick="submitLead()">Get My Commission Breakdown →</button>
+        <p class="form-note">No spam. We'll reach out within 24 hours to walk you through the numbers.</p>
+      </div>
+      <div class="form-success" id="formSuccess">
+        <div class="check">✓</div>
+        <h3>You're In!</h3>
+        <p>We'll reach out within 24 hours to show you exactly how much more you'd keep at LPT Realty. Check your phone — we like to text first.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="social">
+  <h2>What Agents Are Saying</h2>
+  <div class="testimonials">
+    <div class="testimonial">
+      <div class="stars">★★★★★</div>
+      <div class="quote">"I switched from KW and kept an extra $18K my first year. The AI tools alone are worth it — I'm spending half the time on marketing now."</div>
+      <div class="author">Top Producer</div>
+      <div class="role">Florida Agent, 3 Years at LPT</div>
+    </div>
+    <div class="testimonial">
+      <div class="stars">★★★★★</div>
+      <div class="quote">"Zero desk fees changed everything. I was paying $1,500/month at my old brokerage for an office I barely used. That's $18K/year back in my pocket."</div>
+      <div class="author">Growing Agent</div>
+      <div class="role">Texas Agent, 1 Year at LPT</div>
+    </div>
+    <div class="testimonial">
+      <div class="stars">★★★★★</div>
+      <div class="quote">"The revenue share is real. I brought on 5 agents last quarter and now I'm earning passive income on top of my closings. Wish I'd switched sooner."</div>
+      <div class="author">Team Builder</div>
+      <div class="role">New York Agent, 2 Years at LPT</div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>© 2025 LPT Realty · Powered by LIVI AI</p>
+</footer>
+
+<script>
+const SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
+
+// Get UTM params from URL
+function getUTM() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    utm_source: p.get('utm_source') || '',
+    utm_medium: p.get('utm_medium') || '',
+    utm_campaign: p.get('utm_campaign') || '',
+    utm_content: p.get('utm_content') || '',
+    utm_term: p.get('utm_term') || '',
+  };
+}
+
+async function submitLead() {
+  const fname = document.getElementById('fname').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  if (!fname) { document.getElementById('fname').style.borderColor = '#F43F5E'; return; }
+  if (!phone) { document.getElementById('phone').style.borderColor = '#F43F5E'; return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const utm = getUTM();
+  const frustration = document.getElementById('frustration').value;
+  const source = utm.utm_source 
+    ? `${utm.utm_source}${utm.utm_campaign ? ' / ' + utm.utm_campaign : ''}`
+    : document.referrer.includes('facebook') ? 'Facebook Ad'
+    : document.referrer.includes('instagram') ? 'Instagram Ad'
+    : document.referrer.includes('youtube') ? 'YouTube'
+    : 'Landing Page';
+
+  const body = {
+    first_name: fname,
+    last_name: document.getElementById('lname').value.trim() || null,
+    phone: phone,
+    email: document.getElementById('email').value.trim() || null,
+    brokerage: document.getElementById('brokerage').value.trim() || null,
+    market: document.getElementById('market').value.trim() || null,
+    source: source,
+    pipeline_stage: 'new',
+    tier: 'New',
+    urgency: 'MEDIUM',
+    notes: frustration ? `Biggest frustration: ${frustration}` : null,
+    pain_points: frustration ? [frustration] : [],
+  };
+
+  try {
+    const r = await fetch(`${SUPA}/leads`, {
+      method: 'POST',
+      headers: {
+        'apikey': KEY,
+        'Authorization': `Bearer ${KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (r.ok) {
+      document.getElementById('formFields').style.display = 'none';
+      document.getElementById('formSuccess').style.display = 'block';
+      // Fire FB conversion event
+      if (typeof fbq !== 'undefined') fbq('track', 'Lead');
+    } else {
+      const err = await r.text();
+      console.error('Submit error:', err);
+      btn.textContent = 'Something went wrong — try again';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    console.error('Submit error:', e);
+    btn.textContent = 'Connection error — try again';
+    btn.disabled = false;
+  }
+}
+
+// Phone formatting
+document.getElementById('phone').addEventListener('input', function(e) {
+  let v = e.target.value.replace(/\D/g, '');
+  if (v.length > 10) v = v.slice(0, 10);
+  if (v.length >= 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
+  else if (v.length >= 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
+  e.target.value = v;
+});
+
+// Reset border on input
+document.querySelectorAll('.form-input').forEach(el => {
+  el.addEventListener('focus', () => el.style.borderColor = '');
+});
+</script>
+</body>
+</html>

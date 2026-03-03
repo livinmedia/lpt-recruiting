@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/join", "destination": "/join/index.html" },
+    { "source": "/calculator", "destination": "/calculator/index.html" },
+    { "source": "/new-agent", "destination": "/new-agent/index.html" },
+    { "source": "/revenue-share", "destination": "/revenue-share/index.html" },
+    { "source": "/why-switch", "destination": "/why-switch/index.html" },
+    { "source": "/((?!join|calculator|new-agent|revenue-share|why-switch|assets).*)", "destination": "/index.html" }
+  ]
+}
