@@ -358,6 +358,14 @@ function ContentTab(){
   const [copied,setCopied]=useState({});
   const [filter,setFilter]=useState("all");
 
+  const LP_PREVIEWS={
+    "join":{img:"/og/join.png",title:"Join LPT Realty",desc:"Keep More of What You Earn"},
+    "calculator":{img:"/og/calculator.png",title:"Commission Calculator",desc:"See What You Could Earn"},
+    "new-agent":{img:"/og/new-agent.png",title:"New Agent Launch",desc:"Start Your Career Right"},
+    "revenue-share":{img:"/og/revenue-share.png",title:"Revenue Share",desc:"Build Passive Income"},
+    "why-switch":{img:"/og/why-switch.png",title:"Why Agents Switch",desc:"Better Splits, Better Tools"},
+  };
+
   const loadContent=async(date)=>{
     setLoading(true);
     try{
@@ -473,10 +481,9 @@ function ContentTab(){
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24,alignItems:"start"}}>
           {filtered.map((post,i)=>{
             const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
-            const urlRegex=/(https?:\/\/[^\s]+)/g;
             const bodyText=post.body||"";
-            const urls=bodyText.match(urlRegex)||[];
-            const bodyWithoutUrls=bodyText.replace(urlRegex,"").trim();
+            const bodyClean=bodyText.split("\n\n").filter(p=>!p.trim().match(/^https?:\/\/[^\s]+$/)).join("\n\n").trim();
+            const lp=post.landing_page_slug?LP_PREVIEWS[post.landing_page_slug]||null:null;
             return(
               <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,opacity:post.is_posted?0.7:1,transition:"all 0.15s",display:"flex",flexDirection:"column"}}>
 
@@ -499,13 +506,21 @@ function ContentTab(){
                 {post.headline&&<div style={{fontSize:14,fontWeight:800,color:T.t,marginBottom:10,lineHeight:1.4}}>{post.headline}</div>}
 
                 {/* Full body text */}
-                <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:urls.length>0?8:12,whiteSpace:"pre-wrap",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{bodyWithoutUrls}</div>
+                <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:12,whiteSpace:"pre-wrap",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{bodyClean}</div>
 
-                {/* Extracted URLs as clickable links */}
-                {urls.length>0&&(
-                  <div style={{marginBottom:12,display:"flex",flexDirection:"column",gap:4}}>
-                    {urls.map((url,j)=><a key={j} href={url} target="_blank" rel="noreferrer" style={{fontSize:13,color:T.a,textDecoration:"none",wordBreak:"break-all"}}>{url}</a>)}
-                  </div>
+                {/* Landing page preview card */}
+                {lp&&(
+                  <a href={`https://lpt-recruiting.vercel.app/${post.landing_page_slug}`} target="_blank" rel="noreferrer"
+                    style={{display:"flex",borderRadius:10,overflow:"hidden",border:`1px solid ${T.b}`,marginBottom:12,textDecoration:"none",background:T.d,transition:"border-color 0.15s"}}
+                    onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh}
+                    onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
+                    <img src={lp.img} alt={lp.title} style={{width:80,objectFit:"cover",flexShrink:0}}/>
+                    <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"center",minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:T.t,marginBottom:3}}>{lp.title}</div>
+                      <div style={{fontSize:12,color:T.s,marginBottom:4}}>{lp.desc}</div>
+                      <div style={{fontSize:11,color:T.m}}>lpt-recruiting.vercel.app</div>
+                    </div>
+                  </a>
                 )}
 
                 {/* Buttons pinned to bottom */}
