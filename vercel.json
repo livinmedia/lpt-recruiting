@@ -5,6 +5,9 @@
     { "source": "/new-agent", "destination": "/new-agent/index.html" },
     { "source": "/revenue-share", "destination": "/revenue-share/index.html" },
     { "source": "/why-switch", "destination": "/why-switch/index.html" },
-    { "source": "/((?!join|calculator|new-agent|revenue-share|why-switch|assets).*)", "destination": "/index.html" }
+    { "source": "/home", "destination": "/home.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/signup", "destination": "/signup.html" },
+    { "source": "/((?!join|calculator|new-agent|revenue-share|why-switch|home|login|signup|assets|og).*)", "destination": "/index.html" }
   ]
 }
