@@ -478,7 +478,7 @@ function ContentTab(){
           </div>
         </div>
       ):(
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))",gap:24,alignItems:"start"}}>
+        <div className="content-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))",gap:24,alignItems:"start"}}>
           {filtered.map((post,i)=>{
             const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
             const bodyText=post.body||"";
@@ -564,6 +564,7 @@ export default function Livi(){
   // askLiviInline: inline AI on every page
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
+  const [sidebarOpen,setSidebarOpen]=useState(false);
   const askLiviInline=async(q)=>{
     setInlineLoading(true);setInlineResponse(null);
     try{
@@ -1013,47 +1014,100 @@ export default function Livi(){
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   return(
     <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex"}}>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}textarea::placeholder,input::placeholder{color:${T.m}}
+      <style>{`
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+textarea::placeholder,input::placeholder{color:${T.m}}
+html,body{overflow-x:hidden}
+*{box-sizing:border-box}
+
+@media(min-width:769px) and (max-width:1200px){
+  .content-grid{grid-template-columns:repeat(2,1fr)!important}
+}
+
 @media(max-width:768px){
 
-.app-sidebar{width:56px!important}
+/* ── Sidebar becomes fixed overlay ── */
+.app-sidebar{
+  position:fixed!important;left:0!important;top:0!important;bottom:0!important;
+  transform:translateX(-100%);transition:transform 0.25s ease;
+  z-index:1000;width:72px!important;height:100vh
+}
+.app-sidebar.open{transform:translateX(0)!important}
 .app-sidebar .logo-btn{width:36px!important;height:36px!important;font-size:14px!important}
-.app-sidebar .nav-btn{width:40px!important;height:40px!important;font-size:16px!important}
-.main-scroll{padding:14px 12px!important}
+.app-sidebar .nav-btn{width:44px!important;height:44px!important;font-size:18px!important}
+
+/* ── Main area fills full width ── */
+.main-scroll{padding:14px 16px!important}
+
+/* ── Show hamburger button ── */
+.hamburger-btn{display:flex!important}
+
+/* ── Page header stacks ── */
+.page-header{flex-direction:column!important;align-items:flex-start!important}
+.page-header-actions{width:100%!important;justify-content:flex-start!important;flex-wrap:wrap!important}
+
+/* ── KPI cards 2×2 ── */
 .kpi-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
-.kpi-card{padding:14px 16px!important}
-.kpi-card .kpi-icon{width:40px!important;height:40px!important;font-size:18px!important}
-.kpi-card .kpi-val{font-size:24px!important}
-.kpi-card .kpi-label{font-size:11px!important}
-.kpi-card .kpi-sub{font-size:12px!important}
+.kpi-card{padding:12px!important;gap:8px!important;min-width:0!important}
+.kpi-icon{width:36px!important;height:36px!important;font-size:16px!important;flex-shrink:0!important}
+.kpi-val{font-size:22px!important}
+.kpi-label{font-size:10px!important;letter-spacing:1px!important}
+.kpi-sub{font-size:11px!important}
+
+/* ── Quick actions 2×2 ── */
 .quick-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
-.quick-grid>div{padding:14px 12px!important}
+.quick-grid>div{padding:12px 10px!important;gap:8px!important}
 .quick-grid>div span:first-child{font-size:20px!important}
 .quick-grid>div span:last-child{font-size:13px!important}
+
+/* ── Content grid single column ── */
+.content-grid{grid-template-columns:1fr!important}
+
+/* ── Content header controls ── */
+.content-ctrl-row{flex-direction:column!important;align-items:stretch!important}
+.content-ctrl-row input,.content-ctrl-row>div{width:100%!important;box-sizing:border-box!important}
+
+/* ── Layout grids ── */
 .two-col{grid-template-columns:1fr!important}
 .three-col{grid-template-columns:1fr!important}
 .four-col{grid-template-columns:1fr 1fr!important}
 .section-card{padding:16px 18px!important}
 .section-title{font-size:16px!important}
-.page-title{font-size:24px!important}
-.lead-header h1{font-size:24px!important}
+.page-title{font-size:22px!important}
+
+/* ── Lead views ── */
+.lead-header h1{font-size:22px!important}
 .lead-tabs{overflow-x:auto}
 .lead-tabs>div{padding:10px 14px!important;font-size:13px!important;white-space:nowrap}
+
+/* ── Pipeline kanban ── */
 .kanban-wrap{flex-direction:column!important}
 .kanban-wrap>div{min-width:100%!important}
+
+/* ── CRM table ── */
 .crm-table{font-size:13px!important}
 .crm-table td,.crm-table th{padding:10px 8px!important}
+
+/* ── Modals ── */
 .modal-box{width:90vw!important;max-width:400px!important;padding:16px 18px!important}
 .modal-box .form-grid{grid-template-columns:1fr!important}
-.content-ctrl-row{flex-direction:column!important;align-items:stretch!important}
-.content-ctrl-row input,.content-ctrl-row>div{width:100%!important;box-sizing:border-box!important}
+
+/* ── Touch targets ── */
+.nav-btn,.hamburger-btn{min-height:44px!important;min-width:44px!important}
+
+/* ── Word wrap ── */
+*{word-break:break-word;overflow-wrap:anywhere}
+
 }`}</style>
 
+      {/* MOBILE BACKDROP */}
+      {sidebarOpen&&<div className="sidebar-backdrop" onClick={()=>setSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:999}}/>}
+
       {/* SIDEBAR */}
-      <div className="app-sidebar" style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
+      <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
         <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
         {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"]].map(([id,ic])=>
-          <div key={id} onClick={()=>setViewWithHistory(id)} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
+          <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
         )}
         <div style={{flex:1}}/>
         <div onClick={load} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
@@ -1062,10 +1116,13 @@ export default function Livi(){
 
       {/* MAIN AREA */}
       <div className="main-scroll" style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
-        {view!=="lead"&&view!=="addlead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-          <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":"LIVI AI"}</h1>
+        {view!=="lead"&&view!=="addlead"&&<div className="page-header" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            {<div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>}
+            <div className="hamburger-btn" onClick={()=>setSidebarOpen(v=>!v)} style={{display:"none",width:44,height:44,borderRadius:8,alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",background:T.card,border:`1px solid ${T.b}`,color:T.t,flexShrink:0}}>☰</div>
+            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":"LIVI AI"}</h1>
+          </div>
+          <div className="page-header-actions" style={{display:"flex",alignItems:"center",gap:12}}>
+            <div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>
             <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
           </div>
         </div>}
