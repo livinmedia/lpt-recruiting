@@ -377,12 +377,10 @@ function ContentTab(){
       const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-content",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({date:selectedDate,force:true})
+        body:JSON.stringify({date:selectedDate,force:true,images:true})
       });
       if(r.ok){
-        setTimeout(()=>loadContent(selectedDate),15000);
-        setTimeout(()=>{loadContent(selectedDate);setGenerating(false);},30000);
-        return;
+        await loadContent(selectedDate);
       }
     }catch(e){console.error("Generate error:",e);}
     setGenerating(false);
