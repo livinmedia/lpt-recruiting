@@ -427,7 +427,7 @@ function ContentTab(){
 
   return(
     <>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
+      <div className="content-header-outer" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
         <div>
           <div style={{fontSize:14,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:4}}>
             {isToday?"TODAY'S CONTENT MENU":"CONTENT FOR"}
@@ -742,7 +742,7 @@ export default function Livi(){
       </div>
 
       {/* Pipeline + Activity */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+      <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📈 Pipeline</div><Gauge score={pScore}/><div style={{marginTop:12}}><ResponsiveContainer width="100%" height={160}><BarChart data={stages} layout="vertical" barSize={14}><XAxis type="number" hide/><YAxis type="category" dataKey="l" tick={{fontSize:13,fill:T.s}} width={76} axisLine={false} tickLine={false}/><Bar dataKey="count" radius={[0,4,4,0]}>{stages.map((d,i)=><Cell key={i} fill={d.c}/>)}</Bar></BarChart></ResponsiveContainer></div></div>
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
           <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Recent Activity</div>
@@ -768,7 +768,9 @@ export default function Livi(){
           <span onClick={()=>setViewWithHistory("pipeline")} style={{fontSize:14,color:T.s,cursor:"pointer"}}>View All →</span>
         </div>
         {leads.length>0 ? (
-          <div style={{overflowX:"auto"}}>
+          <>
+          {/* Desktop table */}
+          <div className="leads-desktop" style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <thead><tr>{["Name","Market","Brokerage","Tier","Urgency","Stage","Added"].map(h=>
               <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>
@@ -786,6 +788,21 @@ export default function Livi(){
             )}</tbody>
           </table>
           </div>
+          {/* Mobile cards */}
+          <div className="leads-mobile">
+            {leads.slice(0,6).map((l,i)=>
+              <div key={i} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8,cursor:"pointer"}}
+                onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
+                <div style={{minWidth:0,flex:1}}>
+                  <div style={{fontSize:15,fontWeight:600,color:T.t}}>{l.first_name} {l.last_name}</div>
+                  <div style={{fontSize:12,color:T.s,marginTop:2}}>{l.market||"—"} · {l.brokerage?.substring(0,18)||"—"}</div>
+                  <div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}><TPill t={l.tier}/><UPill u={l.urgency}/></div>
+                </div>
+                <span style={{fontSize:14,color:T.s,flexShrink:0,marginLeft:8}}>→</span>
+              </div>
+            )}
+          </div>
+          </>
         ) : (
           <div style={{textAlign:"center",padding:"40px 20px"}}>
             <div style={{fontSize:32,marginBottom:10}}>📭</div>
@@ -1019,6 +1036,8 @@ export default function Livi(){
 textarea::placeholder,input::placeholder{color:${T.m}}
 html,body{overflow-x:hidden}
 *{box-sizing:border-box}
+.leads-desktop{display:block}
+.leads-mobile{display:none}
 
 @media(min-width:769px) and (max-width:1200px){
   .content-grid{grid-template-columns:repeat(2,1fr)!important}
@@ -1094,6 +1113,17 @@ html,body{overflow-x:hidden}
 
 /* ── Touch targets ── */
 .nav-btn,.hamburger-btn{min-height:44px!important;min-width:44px!important}
+
+/* ── Recent leads: show cards, hide table ── */
+.leads-desktop{display:none!important}
+.leads-mobile{display:block!important}
+
+/* ── Content header: stack title + controls vertically ── */
+.content-header-outer{flex-direction:column!important;align-items:stretch!important;gap:10px!important}
+.content-ctrl-row{width:100%!important}
+
+/* ── Page header actions: tighter button padding ── */
+.page-header-actions>div:first-child{padding:10px 14px!important;font-size:14px!important}
 
 /* ── Word wrap ── */
 *{word-break:break-word;overflow-wrap:anywhere}
