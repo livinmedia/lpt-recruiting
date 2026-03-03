@@ -154,9 +154,13 @@ async function handleSignup(e) {
   btn.textContent = 'Creating account...';
 
   const { data, error } = await client.auth.signUp({
-    email,
-    password,
-    options: { data: { first_name: firstName, last_name: lastName } }
+    email: email,
+    password: password,
+    options: {
+      data: {
+        full_name: firstName + ' ' + lastName
+      }
+    }
   });
 
   if (error) {
@@ -164,8 +168,7 @@ async function handleSignup(e) {
     btn.disabled = false;
     btn.textContent = '✨ Create Free Account';
   } else {
-    showSuccess(`✓ Welcome, ${firstName || 'there'}! Check your email to confirm your account.`);
-    setTimeout(() => { window.location.href = '/'; }, 1500);
+    showSuccess('Account created! Check your email to confirm.');
   }
 }
 </script>
