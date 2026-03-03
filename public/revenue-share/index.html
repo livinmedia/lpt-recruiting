@@ -77,9 +77,33 @@ select.fi option{background:var(--card);color:var(--text)}
 
 footer{text-align:center;padding:40px 24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
 
+/* Tablet */
+@media(max-width:1024px){
+  .how,.form-section{padding:70px 24px}
+  .scenario{padding:50px 24px 70px}
+}
+/* Mobile */
 @media(max-width:768px){
   .tier-grid,.sc-row,.fr{grid-template-columns:1fr}
   .scenario-card{padding:28px 22px}
+  .how,.form-section{padding:50px 20px}
+  .scenario{padding:40px 20px 60px}
+  .form-box{padding:28px 22px}
+}
+/* Small phone */
+@media(max-width:480px){
+  .hero{padding:60px 16px 40px}
+  .hero-btn{width:100%;justify-content:center;font-size:16px;padding:16px;min-height:52px}
+  .how,.form-section{padding:40px 16px}
+  .scenario{padding:32px 16px 48px}
+  .tier{padding:24px 18px}
+  .tier .pct{font-size:36px}
+  .scenario-card{padding:22px 16px}
+  .sc-total .val{font-size:32px}
+  .form-box{padding:22px 16px}
+  .fi{min-height:48px;font-size:16px}
+  .btn{font-size:16px;padding:16px;min-height:52px}
+  img{max-width:100%;height:auto}
 }
 </style>
 </head>

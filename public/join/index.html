@@ -114,6 +114,13 @@ select.form-input option{background:var(--card);color:var(--text)}
 @keyframes fadeInDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
+/* Tablet */
+@media(max-width:1024px){
+  .grid3,.testimonials{grid-template-columns:repeat(2,1fr)}
+  .props,.social{padding:70px 24px}
+  .compare,.form-section{padding:70px 24px}
+  .hero-stats{gap:28px}
+}
 /* Mobile */
 @media(max-width:768px){
   .grid3,.testimonials{grid-template-columns:1fr}
@@ -122,6 +129,25 @@ select.form-input option{background:var(--card);color:var(--text)}
   .form-card{padding:28px 22px}
   .compare-table{font-size:14px}
   .compare-table td,.compare-table th{padding:12px 10px}
+  .props,.social{padding:50px 20px}
+  .compare,.form-section{padding:50px 20px}
+  .compare-inner{padding:0 4px}
+  .props .sub,.form-section .sub{font-size:15px;margin-bottom:32px}
+}
+/* Small phone */
+@media(max-width:480px){
+  h1{letter-spacing:-1px}
+  .hero{padding:60px 20px 40px}
+  .hero-cta{width:100%;justify-content:center;font-size:16px;padding:16px 24px}
+  .hero-stats{margin-top:32px}
+  .hero-stats .stat-val{font-size:22px}
+  .props,.social{padding:40px 16px}
+  .compare,.form-section{padding:40px 16px}
+  .prop-card{padding:24px 20px}
+  .form-card{padding:22px 16px}
+  .form-submit{font-size:16px;padding:16px}
+  .compare-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  img{max-width:100%;height:auto}
 }
 </style>
 </head>
