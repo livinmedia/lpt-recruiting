@@ -434,7 +434,7 @@ function ContentTab(){
           </div>
           <div style={{fontSize:18,color:T.s}}>{dayLabel}</div>
         </div>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+        <div className="content-ctrl-row" style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
           <input type="date" value={selectedDate} onChange={ev=>setSelectedDate(ev.target.value)} style={{padding:"10px 14px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}/>
           <div onClick={generating?null:generateContent} style={{padding:"12px 20px",borderRadius:8,background:generating?T.d:T.am,color:generating?T.m:T.a,fontSize:14,fontWeight:700,cursor:generating?"wait":"pointer",display:"flex",alignItems:"center",gap:8}}>
             {generating?"⏳ Generating (~30s)...":"✨ Generate Fresh Content"}
@@ -457,7 +457,7 @@ function ContentTab(){
         )}
       </div>
 
-      <div style={{display:"flex",gap:8,marginBottom:20}}>
+      <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
         {[["all","All",T.t],["facebook","📘 Facebook","#1877F2"],["instagram","📸 Instagram","#E1306C"]].map(([id,label,c])=>
           <div key={id} onClick={()=>setFilter(id)} style={{padding:"10px 18px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.12s"}}>{label}</div>
         )}
@@ -478,7 +478,7 @@ function ContentTab(){
           </div>
         </div>
       ):(
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24,alignItems:"start"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))",gap:24,alignItems:"start"}}>
           {filtered.map((post,i)=>{
             const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
             const bodyText=post.body||"";
@@ -506,7 +506,7 @@ function ContentTab(){
                 {post.headline&&<div style={{fontSize:14,fontWeight:800,color:T.t,marginBottom:10,lineHeight:1.4}}>{post.headline}</div>}
 
                 {/* Full body text */}
-                <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:12,whiteSpace:"pre-wrap",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{bodyClean}</div>
+                <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:12,whiteSpace:"pre-wrap",wordBreak:"break-word",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{bodyClean}</div>
 
                 {/* Landing page preview card */}
                 {lp&&(
@@ -1045,6 +1045,8 @@ export default function Livi(){
 .crm-table td,.crm-table th{padding:10px 8px!important}
 .modal-box{width:90vw!important;max-width:400px!important;padding:16px 18px!important}
 .modal-box .form-grid{grid-template-columns:1fr!important}
+.content-ctrl-row{flex-direction:column!important;align-items:stretch!important}
+.content-ctrl-row input,.content-ctrl-row>div{width:100%!important;box-sizing:border-box!important}
 }`}</style>
 
       {/* SIDEBAR */}
@@ -1059,7 +1061,7 @@ export default function Livi(){
       </div>
 
       {/* MAIN AREA */}
-      <div style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
+      <div className="main-scroll" style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
         {view!=="lead"&&view!=="addlead"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
           <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":"LIVI AI"}</h1>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
