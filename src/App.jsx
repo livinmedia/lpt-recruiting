@@ -477,7 +477,18 @@ function ContentTab(){
           {filtered.map((post,i)=>{
             const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
             return(
-              <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,padding:"18px 20px",opacity:post.is_posted?0.7:1,transition:"all 0.15s",display:"flex",flexDirection:"column"}}>
+              <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,overflow:"hidden",opacity:post.is_posted?0.7:1,transition:"all 0.15s",display:"flex",flexDirection:"column"}}>
+
+                {/* Image — top of card */}
+                {post.image_url
+                  ? <img src={post.image_url} alt={post.headline||post.platform} style={{width:"100%",height:200,objectFit:"cover",display:"block",flexShrink:0}}/>
+                  : <div style={{height:200,background:T.m+"15",border:`1px dashed ${T.m}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:12,color:T.m,gap:6,padding:"0 16px",textAlign:"center"}}>
+                      <span style={{fontSize:20}}>🖼</span>
+                      {post.media_suggestion||"Image coming soon"}
+                    </div>
+                }
+
+                <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",flex:1}}>
 
                 {/* Platform icon + type badge + posted status */}
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
@@ -498,9 +509,6 @@ function ContentTab(){
                 {/* Body preview — 4 lines max */}
                 <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:12,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{post.body}</div>
 
-                {/* Image placeholder */}
-                <div style={{height:88,borderRadius:8,background:T.m+"15",border:`1px dashed ${T.m}`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12,fontSize:12,color:T.m,gap:6}}>🖼 Image coming soon</div>
-
                 {/* Buttons pinned to bottom */}
                 <div style={{marginTop:"auto",display:"flex",gap:8}}>
                   <div onClick={()=>copyPost(post.id,post.body)} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
@@ -511,6 +519,7 @@ function ContentTab(){
                       ✅ Posted
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             );
