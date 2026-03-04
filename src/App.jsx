@@ -168,7 +168,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading}){
 }
 
 // ━━━ AGENT DIRECTORY (352K+ real agents) ━━━━━━━━━━━━━━
-function AgentDirectory(){
+function AgentDirectory({userId}){
   const [results,setResults]=useState([]);
   const [total,setTotal]=useState(0);
   const [loading,setLoading]=useState(false);
@@ -202,7 +202,7 @@ function AgentDirectory(){
 
   const addToPipeline=async(agent)=>{
     try {
-      const body={first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage:agent.brokerage_name||"",market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),source:"Agent Directory",pipeline_stage:"new",tier:"New",urgency:"LOW",notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`};
+      const body={user_id:userId,first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage:agent.brokerage_name||"",market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),source:"Agent Directory",pipeline_stage:"new",tier:"New",urgency:"LOW",notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`};
       const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));}
     } catch(e) { console.error("Add to pipeline error:", e); }
@@ -353,7 +353,7 @@ function AgentDirectory(){
 
 
 // ━━━ CONTENT TAB (Today's Content Menu) ━━━━━━━━━━━━━━
-function ContentTab(){
+function ContentTab({userId}){
   const [content,setContent]=useState([]);
   const [loading,setLoading]=useState(true);
   const [generating,setGenerating]=useState(false);
@@ -372,7 +372,7 @@ function ContentTab(){
   const loadContent=async(date)=>{
     setLoading(true);
     try{
-      const r=await fetch(`${LIVI_SUPA}/daily_content?content_date=eq.${date}&order=platform.asc,created_at.asc`,{
+      const r=await fetch(`${LIVI_SUPA}/daily_content?content_date=eq.${date}&user_id=eq.${userId}&order=platform.asc,created_at.asc`,{
         headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}
       });
       if(r.ok){const d=await r.json();setContent(d);}
@@ -388,7 +388,7 @@ function ContentTab(){
       const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-content",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({date:selectedDate,force:true,images:true})
+        body:JSON.stringify({date:selectedDate,force:true,images:true,user_id:userId})
       });
       if(r.ok){
         await loadContent(selectedDate);
@@ -556,11 +556,17 @@ export default function Livi(){
   const [loading,setLoading]=useState(true);
   const [search,setSearch]=useState("");
 
+  // ━━━ AUTH (declared early so load can reference authUser) ━━━
+  const [authUser,setAuthUser]=useState(null);
+  const [profile,setProfile]=useState(null);
+  const [authLoading,setAuthLoading]=useState(true);
+
   const load=useCallback(async()=>{
+    if(!authUser) return;
     setLoading(true);
-    const [l,a]=await Promise.all([sq("dazet_leads","order=created_at.desc&limit=100"),sq("dazet_agent_activity","order=created_at.desc&limit=50")]);
+    const [l,a]=await Promise.all([sq("dazet_leads","user_id=eq."+authUser.id+"&order=created_at.desc&limit=100"),sq("dazet_agent_activity","user_id=eq."+authUser.id+"&order=created_at.desc&limit=50")]);
     setLeads(l||[]);setActivity(a||[]);setLoading(false);
-  },[]);
+  },[authUser]);
 
   useEffect(()=>{load();const i=setInterval(load,45000);return()=>clearInterval(i);},[load]);
 
@@ -569,11 +575,6 @@ export default function Livi(){
   const [inlineLoading,setInlineLoading]=useState(false);
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [profileMenuOpen,setProfileMenuOpen]=useState(false);
-
-  // ━━━ AUTH ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  const [authUser,setAuthUser]=useState(null);
-  const [profile,setProfile]=useState(null);
-  const [authLoading,setAuthLoading]=useState(true);
 
   useEffect(()=>{
     supabase.auth.getSession().then(async({data:{session}})=>{
@@ -664,7 +665,7 @@ export default function Livi(){
   const saveLead=async(doResearch)=>{
     if(!newLead.first_name.trim())return;
     try{
-      const body={first_name:newLead.first_name.trim(),last_name:newLead.last_name.trim(),email:newLead.email.trim()||null,phone:newLead.phone.trim()||null,market:newLead.market.trim()||null,brokerage:newLead.brokerage.trim()||null,source:newLead.source.trim()||"Manual",pipeline_stage:"new",tier:"New",urgency:"LOW"};
+      const body={user_id:authUser.id,first_name:newLead.first_name.trim(),last_name:newLead.last_name.trim(),email:newLead.email.trim()||null,phone:newLead.phone.trim()||null,market:newLead.market.trim()||null,brokerage:newLead.brokerage.trim()||null,source:newLead.source.trim()||"Manual",pipeline_stage:"new",tier:"New",urgency:"LOW"};
       const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(!r.ok){console.error("Add lead error:",r.status,await r.text());return;}
       const saved=await r.json();
@@ -1503,8 +1504,8 @@ html,body{overflow-x:hidden}
         {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents in my target markets who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.`,T.y]]}/><Dash/></>}
         {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
         {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
-        {view==="agents"&&<AgentDirectory/>}
-        {view==="content"&&<ContentTab/>}
+        {view==="agents"&&<AgentDirectory userId={authUser?.id}/>}
+        {view==="content"&&<ContentTab userId={authUser?.id}/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="profile"&&<ProfileView/>}
         {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
