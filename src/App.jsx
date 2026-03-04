@@ -579,11 +579,7 @@ export default function Livi(){
     supabase.auth.getSession().then(async({data:{session}})=>{
       if(!session){window.location.href="/login";return;}
       setAuthUser(session.user);
-      const {data:prof,error:profErr}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
-      console.log('Profile loaded:', prof);
-      console.log('Profile error:', profErr);
-      console.log('Profile role:', prof?.role);
-      console.log('Is owner:', prof?.role === 'owner');
+      const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
       setProfile(prof||null);
       setAuthLoading(false);
     });
@@ -1079,7 +1075,7 @@ export default function Livi(){
     const [usersCount,leadsCount,contentCount,agentsCount,usersRows,activityRows,contentRows]=await Promise.all([
       supabase.from("profiles").select("*",{count:"exact",head:true}),
       supabase.from("leads").select("*",{count:"exact",head:true}),
-      supabase.from("daily_content").select("*",{count:"exact",head:true}).eq("date",today),
+      supabase.from("daily_content").select("*",{count:"exact",head:true}).gte("created_at",today).lt("created_at",new Date(Date.now()+86400000).toISOString().split("T")[0]),
       supabase.from("agent_directory").select("*",{count:"exact",head:true}),
       supabase.from("profiles").select("*").order("created_at",{ascending:false}).limit(100),
       supabase.from("user_activity").select("*").order("created_at",{ascending:false}).limit(20),
@@ -1092,7 +1088,7 @@ export default function Livi(){
     setAdminLoading(false);
   },[]);
 
-  useEffect(()=>{if(view==="admin")loadAdmin();},[view,loadAdmin]);
+  useEffect(()=>{if(view==="admin"){if(profile?.role!=="owner"){setView("home");return;}loadAdmin();}},[view,loadAdmin,profile]);
 
   const publishContent=async()=>{
     if(!newContent.title.trim())return;
