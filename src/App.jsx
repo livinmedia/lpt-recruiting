@@ -583,6 +583,10 @@ export default function Livi(){
       setProfile(prof||null);
       setAuthLoading(false);
     });
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+      if(!session) window.location.href="/login";
+    });
+    return()=>subscription.unsubscribe();
   },[]);
 
   const [profileEdit,setProfileEdit]=useState(null);
