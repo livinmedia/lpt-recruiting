@@ -11,6 +11,13 @@ const LIVI_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 
 const supabase = createClient('https://usknntguurefeyzusbdh.supabase.co', LIVI_KEY);
 
+async function logActivity(userId, action, metadata = {}) {
+  if (!userId) return;
+  try {
+    await supabase.from('user_activity').insert({ user_id: userId, action, metadata, created_at: new Date().toISOString() });
+  } catch (e) { /* silent fail */ }
+}
+
 async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}={}) {
   let params = [];
   if(state) params.push(`state=eq.${state}`);
@@ -115,7 +122,7 @@ function Gauge({score}){
 }
 
 // ━━━ LEAD DETAIL PAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading}){
+function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId}){
   const [editing,setEditing]=useState(false);
   const [info,setInfo]=useState({first_name:lead.first_name||"",last_name:lead.last_name||"",email:lead.email||"",phone:lead.phone||"",market:lead.market||"",brokerage:lead.brokerage||""});
   const [notes,setNotes]=useState(lead._notes||[]);
@@ -152,7 +159,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading}){
         </div>
       </div>
 
-      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginBottom:24}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>onAskInline(q)} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
+      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginBottom:24}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>{onAskInline(q);if(label==="Draft Outreach"||label==="Research")logActivity(userId,label==="Research"?"research_lead":"draft_outreach",{lead_name:`${lead.first_name} ${lead.last_name}`})}} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
       {inlineLoading&&<div style={{marginTop:16,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
       {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
       </div>
@@ -186,6 +193,7 @@ function AgentDirectory({userId}){
     try {
       const {data,total:t}=await agentSearch({...f,limit:PER,offset:pg*PER});
       setResults(data||[]); setTotal(t); setSearched(true);
+      logActivity(userId,'search_agents',{state:f.state,brokerage:f.brokerage,name:f.name,results:t});
     } catch(e) {
       console.error("Search failed:", e);
       setError("Search failed. Please try again.");
@@ -204,7 +212,7 @@ function AgentDirectory({userId}){
     try {
       const body={user_id:userId,first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage:agent.brokerage_name||"",market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),source:"Agent Directory",pipeline_stage:"new",tier:"New",urgency:"LOW",notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`};
       const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
-      if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));}
+      if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));logActivity(userId,'add_lead_from_directory',{agent_name:agent.full_name});}
     } catch(e) { console.error("Add to pipeline error:", e); }
   };
 
@@ -392,6 +400,7 @@ function ContentTab({userId}){
       });
       if(r.ok){
         await loadContent(selectedDate);
+        logActivity(userId,'generate_content',{date:selectedDate});
       }
     }catch(e){console.error("Generate error:",e);}
     setGenerating(false);
@@ -528,11 +537,11 @@ function ContentTab({userId}){
 
                 {/* Buttons pinned to bottom */}
                 <div style={{marginTop:"auto",display:"flex",gap:8}}>
-                  <div onClick={()=>copyPost(post.id,post.body)} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                  <div onClick={()=>{copyPost(post.id,post.body);logActivity(userId,'copy_content',{platform:post.platform,theme:post.theme})}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                     {copied[post.id]?"✓ Copied":"📋 Copy"}
                   </div>
                   {!post.is_posted&&(
-                    <div onClick={()=>markPosted(post.id)} style={{flex:1,padding:"9px 10px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <div onClick={()=>{markPosted(post.id);logActivity(userId,'mark_posted',{platform:post.platform,theme:post.theme})}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       ✅ Posted
                     </div>
                   )}
@@ -580,6 +589,7 @@ export default function Livi(){
     supabase.auth.getSession().then(async({data:{session}})=>{
       if(!session){window.location.href="/login";return;}
       setAuthUser(session.user);
+      logActivity(session.user.id,'login');
       const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
       setProfile(prof||null);
       setAuthLoading(false);
@@ -599,7 +609,7 @@ export default function Livi(){
     if(!profileEdit)return;
     setProfileSaving(true);
     const{error}=await supabase.from("profiles").update(profileEdit).eq("id",authUser.id);
-    if(!error)setProfile(p=>({...p,...profileEdit}));
+    if(!error){setProfile(p=>({...p,...profileEdit}));logActivity(authUser.id,'update_profile');}
     setProfileSaving(false);
   };
 
@@ -672,6 +682,7 @@ export default function Livi(){
       console.log("Lead saved:",saved);
       const lead=saved[0]||saved;
       await load();
+      logActivity(authUser.id,'add_lead',{lead_name:`${newLead.first_name} ${newLead.last_name}`.trim()});
       if(doResearch){
         setSelLead(lead);
         setViewWithHistory("lead");
@@ -1152,16 +1163,21 @@ export default function Livi(){
         {/* C) RECENT ACTIVITY */}
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
           <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📊 Recent Activity</div>
-          {adminActivity.length>0?adminActivity.map((a,i)=>
+          {adminActivity.length>0?adminActivity.map((a,i)=>{
+            const u=adminUsers.find(x=>x.id===a.user_id);
+            const AL={login:'Logged in',add_lead:'Added lead',add_lead_from_directory:'Added from directory',generate_content:'Generated content',copy_content:'Copied content',mark_posted:'Marked as posted',search_agents:'Searched agents',research_lead:'Researched lead',draft_outreach:'Drafted outreach',update_profile:'Updated profile'};
+            const AI={login:'🔑',add_lead:'➕',add_lead_from_directory:'🔍',generate_content:'✨',copy_content:'📋',mark_posted:'✅',search_agents:'🔎',research_lead:'🔬',draft_outreach:'📱',update_profile:'👤'};
+            const meta=a.metadata||{};
+            const detail=meta.lead_name||meta.agent_name||(meta.platform?meta.platform:'')||(meta.date?meta.date:'');
+            return(
             <div key={i} style={{display:"flex",gap:10,padding:"10px 0",alignItems:"flex-start",borderBottom:i<adminActivity.length-1?`1px solid ${T.b}`:"none"}}>
-              <Dot c={T.bl}/>
+              <span style={{fontSize:16,flexShrink:0,marginTop:1}}>{AI[a.action]||'📌'}</span>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.user_email||a.user_id||"—"}</div>
-                <div style={{fontSize:12,color:T.s,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.action||a.description||"—"}</div>
+                <div style={{fontSize:13,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u?.full_name||u?.email||a.user_id?.substring(0,8)||"—"}</div>
+                <div style={{fontSize:12,color:T.s,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{AL[a.action]||a.action||"—"}{detail?` · ${detail}`:''}</div>
               </div>
               <span style={{fontSize:11,color:T.m,flexShrink:0}}>{ago(a.created_at)}</span>
-            </div>
-          ):(
+            </div>);}):(
             <div style={{textAlign:"center",padding:"40px",color:T.m}}>
               <div style={{fontSize:28,marginBottom:8}}>📋</div>
               <div style={{fontSize:14}}>No activity logged yet</div>
@@ -1508,7 +1524,7 @@ html,body{overflow-x:hidden}
         {view==="content"&&<ContentTab userId={authUser?.id}/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="profile"&&<ProfileView/>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={authUser?.id}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
