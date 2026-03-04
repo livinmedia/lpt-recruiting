@@ -106,30 +106,49 @@ PERSONALITY:
 
 You are their unfair advantage in recruiting. Act like it.`;
 
-const UpgradeGate = ({userProfile, userId}) => (
-  <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'60px 20px',textAlign:'center'}}>
-    <div style={{fontSize:48,marginBottom:16}}>🔒</div>
-    <div style={{fontSize:24,fontWeight:800,color:T.t,marginBottom:8}}>RKRT.in Pro</div>
-    <div style={{fontSize:15,color:T.s,marginBottom:32,maxWidth:400,lineHeight:1.7}}>
-      Unlock the full recruiting intelligence platform — agent directory, custom content generation, pipeline CRM, and LIVI AI tools.
+const getPlanLimits = (profile) => {
+  const isPro = profile?.plan === 'pro' || profile?.plan === 'enterprise' || profile?.role === 'owner';
+  return {
+    isPro,
+    canGenerateContent: isPro,
+    canAccessAgents: isPro,
+    canEnrichContacts: isPro,
+    canAccessCalculator: isPro,
+    canAccessRevenueShare: isPro,
+    leadLimit: isPro ? Infinity : 10,
+    landingPageCount: isPro ? 5 : 1,
+    hasUTMTracking: isPro,
+  };
+};
+
+const ProGate = ({feature, userId, userProfile, children}) => {
+  const limits = getPlanLimits(userProfile);
+  if (limits.isPro) return children;
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'60px 20px',textAlign:'center',minHeight:400}}>
+      <div style={{fontSize:48,marginBottom:16}}>🔒</div>
+      <div style={{fontSize:22,fontWeight:800,color:T.t,marginBottom:8}}>{feature} is a Pro feature</div>
+      <div style={{fontSize:14,color:T.s,marginBottom:32,maxWidth:380,lineHeight:1.7}}>
+        Upgrade to RKRT.in Pro to unlock {feature.toLowerCase()}, plus the full agent directory, unlimited leads, all landing pages, and custom content generation.
+      </div>
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:'28px 36px',marginBottom:24,width:'100%',maxWidth:340}}>
+        <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:6}}>RKRT.IN PRO</div>
+        <div style={{fontSize:44,fontWeight:900,color:T.t,marginBottom:4}}>$97<span style={{fontSize:16,color:T.s,fontWeight:400}}>/mo</span></div>
+        <div style={{fontSize:12,color:T.s,marginBottom:20}}>Cancel anytime · No contracts</div>
+        {['848K+ agent directory','Custom targeted content','Unlimited pipeline leads','All 5 landing pages + UTM tracking','Commission calculator','Revenue share projections'].map(f=>(
+          <div key={f} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,textAlign:'left'}}>
+            <span style={{color:T.a,fontWeight:700,fontSize:13}}>✓</span>
+            <span style={{fontSize:13,color:T.s}}>{f}</span>
+          </div>
+        ))}
+      </div>
+      <div onClick={()=>startCheckout(userId,userProfile?.email)} style={{padding:'14px 0',borderRadius:10,background:T.a,color:'#000',fontSize:15,fontWeight:800,cursor:'pointer',width:'100%',maxWidth:340,textAlign:'center'}}>
+        Upgrade to Pro — $97/mo →
+      </div>
+      <div style={{fontSize:11,color:T.m,marginTop:10}}>Powered by Stripe · Secure checkout</div>
     </div>
-    <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:'32px 40px',marginBottom:32,width:'100%',maxWidth:360}}>
-      <div style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:8}}>RKRT.IN PRO</div>
-      <div style={{fontSize:48,fontWeight:900,color:T.t,marginBottom:4}}>$97<span style={{fontSize:18,color:T.s,fontWeight:400}}>/mo</span></div>
-      <div style={{fontSize:13,color:T.s,marginBottom:24}}>Cancel anytime</div>
-      {['Agent directory (848K+ agents)','Daily AI content brief','Custom targeted post generation','Pipeline CRM','Commission calculator','Landing pages with tracking'].map(f => (
-        <div key={f} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,textAlign:'left'}}>
-          <span style={{color:T.a,fontWeight:700}}>✓</span>
-          <span style={{fontSize:14,color:T.s}}>{f}</span>
-        </div>
-      ))}
-    </div>
-    <div onClick={()=>startCheckout(userId, userProfile?.email)} style={{padding:'16px 48px',borderRadius:10,background:T.a,color:'#000',fontSize:16,fontWeight:800,cursor:'pointer',width:'100%',maxWidth:360,textAlign:'center'}}>
-      Upgrade to Pro — $97/mo →
-    </div>
-    <div style={{fontSize:12,color:T.m,marginTop:12}}>Powered by Stripe · Secure checkout</div>
-  </div>
-);
+  );
+};
 
 const STAGES = [{id:"new",l:"New",c:T.s},{id:"researched",l:"Researched",c:T.bl},{id:"outreach_sent",l:"Outreach",c:T.y},{id:"meeting_booked",l:"Meeting",c:T.p},{id:"in_conversation",l:"Talking",c:T.c},{id:"recruited",l:"Recruited",c:T.a}];
 const PC = [T.a,T.bl,T.y,T.p,T.r,T.c];
@@ -730,6 +749,7 @@ function ContentTab({userId,userProfile}){
   const [showUpgrade,setShowUpgrade]=useState(false);
 
   const isAdmin=userProfile?.role==="owner"||userProfile?.role==="admin";
+  const contentLimits=getPlanLimits(userProfile);
   const trackingRef=userId?`?ref=${userId}`:"";
   const targetParam=targetBrokerage?`&target=${encodeURIComponent(targetBrokerage)}`:"";
   const remaining=isAdmin?null:Math.max(0,DAILY_LIMIT-usageToday);
@@ -940,6 +960,10 @@ function ContentTab({userId,userProfile}){
 
           {/* ── SECTION 2: GENERATE CUSTOM ── */}
           <div style={{borderTop:`1px solid ${T.b}`,paddingTop:28,marginBottom:20}}>
+            {!contentLimits.canGenerateContent?(
+              <ProGate feature="Custom Content Generation" userId={userId} userProfile={userProfile}><div/></ProGate>
+            ):(
+            <>
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
               <div>
                 <div style={{fontSize:11,color:"#8B5CF6",fontWeight:700,letterSpacing:2,marginBottom:4}}>✨ FRESH CONTENT</div>
@@ -968,7 +992,7 @@ function ContentTab({userId,userProfile}){
                   <div style={{fontSize:14,fontWeight:700,color:"#8B5CF6",marginBottom:4}}>🚀 You've used all {DAILY_LIMIT} generations today</div>
                   <div style={{fontSize:13,color:T.s}}>Upgrade to Pro for unlimited daily content generation and advanced targeting.</div>
                 </div>
-                <div style={{padding:"10px 20px",borderRadius:8,background:"#8B5CF6",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Upgrade to Pro →</div>
+                <div onClick={()=>startCheckout(userId,userProfile?.email)} style={{padding:"10px 20px",borderRadius:8,background:"#8B5CF6",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Upgrade to Pro →</div>
               </div>
             )}
 
@@ -984,6 +1008,8 @@ function ContentTab({userId,userProfile}){
               <div className="content-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20}}>
                 {filtered_custom.map((post,i)=><PostCard key={post.id||i} post={post}/>)}
               </div>
+            )}
+            </>
             )}
           </div>
         </>
@@ -1151,7 +1177,8 @@ export default function Livi(){
   const today=leads.filter(l=>l.created_at&&new Date(l.created_at).toDateString()===new Date().toDateString()).length;
   const apiCost=activity.reduce((s,a)=>s+parseFloat(a.cost||0),0);
   const cpl=total>0?(20/total).toFixed(2):"—";
-  const isPro=profile?.plan==="pro"||profile?.plan==="enterprise"||profile?.role==="owner";
+  const limits=getPlanLimits(profile);
+  const isPro=limits.isPro;
   const pScore=Math.min(100,Math.round((total>0?25:0)+(targets>0?25:0)+(leads.some(l=>l.pipeline_stage==="outreach_sent")?25:0)+(leads.some(l=>l.pipeline_stage==="meeting_booked")?25:0)));
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
@@ -1911,7 +1938,7 @@ select option{background:${T.card};color:${T.t}}
       <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",flexShrink:0}}>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14,width:"100%"}}>
           <div style={{width:44,height:44,borderRadius:9,marginBottom:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,letterSpacing:"-0.5px",lineHeight:1}}><span style={{color:"#fff"}}>rkrt</span><span style={{color:"#000"}}>.in</span></div>
-          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"]].map(([id,ic])=>
+          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["calculator","🧮"],["revenue","💰"]].map(([id,ic])=>
             <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
           )}
         </div>
@@ -1928,7 +1955,7 @@ select option{background:${T.card};color:${T.t}}
         {view!=="lead"&&view!=="addlead"&&<div className="page-header" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div className="hamburger-btn" onClick={()=>setSidebarOpen(v=>!v)} style={{display:"none",width:44,height:44,borderRadius:8,alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",background:T.card,border:`1px solid ${T.b}`,color:T.t,flexShrink:0}}>☰</div>
-            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":view==="admin"?"Admin":view==="profile"?"My Profile":"rkrt.in"}</h1>
+            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":view==="calculator"?"Commission Calculator":view==="revenue"?"Revenue Share":view==="admin"?"Admin":view==="profile"?"My Profile":"rkrt.in"}</h1>
           </div>
           {/* Brokerage chip in header */}
           {profile?.brokerage&&view==="home"&&(
@@ -1938,9 +1965,11 @@ select option{background:${T.card};color:${T.t}}
           )}
         </div>}
         {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.${profile?.brokerage?" I recruit for "+profile.brokerage:""}`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.${profile?.brokerage?" Context: I'm at "+profile.brokerage:""}`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents${profile?.market?" in "+profile.market:""} who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.${profile?.brokerage?" I'm at "+profile.brokerage:""}`,T.y]]}/><Dash/></>}
-        {view==="pipeline"&&(isPro?<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>:<UpgradeGate userProfile={profile} userId={authUser?.id}/>)}
-        {view==="crm"&&(isPro?<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>:<UpgradeGate userProfile={profile} userId={authUser?.id}/>)}
-        {view==="agents"&&(isPro?<AgentDirectory userId={authUser?.id} userProfile={profile}/>:<UpgradeGate userProfile={profile} userId={authUser?.id}/>)}
+        {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline/></>}
+        {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM/></>}
+        {view==="agents"&&<ProGate feature="Agent Directory" userId={authUser?.id} userProfile={profile}><AgentDirectory userId={authUser?.id} userProfile={profile}/></ProGate>}
+        {view==="calculator"&&<ProGate feature="Commission Calculator" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Calculator coming soon</div></ProGate>}
+        {view==="revenue"&&<ProGate feature="Revenue Share Projections" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Revenue share projections coming soon</div></ProGate>}
         {view==="content"&&<ContentTab userId={authUser?.id} userProfile={profile}/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="profile"&&<ProfileView/>}
