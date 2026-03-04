@@ -671,20 +671,25 @@ function AgentDirectory({userId,userProfile}){
 }
 
 const TARGET_BROKERAGES=["Keller Williams","eXp Realty","RE/MAX","Compass","Coldwell Banker","Century 21","Berkshire Hathaway HomeServices","HomeSmart","Sotheby's International Realty","Better Homes & Gardens Real Estate","ERA Real Estate","Engel & Völkers","Redfin","Side","Independent","Other"];
+const DAILY_LIMIT=3;
 
 // ━━━ CONTENT TAB ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ContentTab({userId,userProfile}){
-  const [content,setContent]=useState([]);
+  const [dailyContent,setDailyContent]=useState([]);
+  const [customContent,setCustomContent]=useState([]);
   const [loading,setLoading]=useState(true);
   const [generating,setGenerating]=useState(false);
   const [selectedDate,setSelectedDate]=useState(new Date().toISOString().split("T")[0]);
   const [copied,setCopied]=useState({});
   const [filter,setFilter]=useState("all");
   const [targetBrokerage,setTargetBrokerage]=useState(userProfile?.brokerage||"");
+  const [usageToday,setUsageToday]=useState(0);
+  const [showUpgrade,setShowUpgrade]=useState(false);
 
-  // Per-user tracking link
-  const trackingRef = userId ? `?ref=${userId}` : "";
-  const targetParam = targetBrokerage ? `&target=${encodeURIComponent(targetBrokerage)}` : "";
+  const isAdmin=userProfile?.role==="owner"||userProfile?.role==="admin";
+  const trackingRef=userId?`?ref=${userId}`:"";
+  const targetParam=targetBrokerage?`&target=${encodeURIComponent(targetBrokerage)}`:"";
+  const remaining=isAdmin?null:Math.max(0,DAILY_LIMIT-usageToday);
 
   const LP_PREVIEWS={
     "join":{img:"/og/join.png",title:"Join LPT Realty",desc:"Keep More of What You Earn"},
@@ -697,34 +702,58 @@ function ContentTab({userId,userProfile}){
   const loadContent=async(date)=>{
     setLoading(true);
     try{
-      const r=await fetch(`${LIVI_SUPA}/daily_content?content_date=eq.${date}&order=platform.asc,created_at.asc`,{
+      const r=await fetch(`${LIVI_SUPA}/daily_content?content_date=eq.${date}&order=content_source.asc,platform.asc,created_at.asc`,{
         headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}
       });
-      if(r.ok){const d=await r.json();setContent(d);}
-    }catch(e){console.error("Load content error:",e);}
+      if(r.ok){
+        const d=await r.json();
+        setDailyContent(d.filter(p=>p.content_source==="daily"||!p.content_source));
+        setCustomContent(d.filter(p=>p.content_source==="custom"&&p.user_id===userId));
+      }
+    }catch(e){console.error("Load error:",e);}
     setLoading(false);
   };
 
-  useEffect(()=>{loadContent(selectedDate);},[selectedDate]);
+  const loadUsage=async()=>{
+    if(!userId||isAdmin)return;
+    try{
+      const today=new Date().toISOString().split("T")[0];
+      const r=await fetch(`${LIVI_SUPA}/content_generation_log?user_id=eq.${userId}&date=eq.${today}&select=id`,{
+        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}
+      });
+      if(r.ok){const d=await r.json();setUsageToday(d.length);}
+    }catch(e){}
+  };
+
+  useEffect(()=>{loadContent(selectedDate);loadUsage();},[selectedDate]);
 
   const generateContent=async()=>{
+    if(!isAdmin&&usageToday>=DAILY_LIMIT){setShowUpgrade(true);return;}
     setGenerating(true);
+    setShowUpgrade(false);
     try{
       const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-content",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({date:selectedDate,force:true,images:true,user_id:userId,brokerage:userProfile?.brokerage||null,target_brokerage:targetBrokerage||null})
+        body:JSON.stringify({date:selectedDate,force:true,images:false,user_id:userId,brokerage:userProfile?.brokerage||null,target_brokerage:targetBrokerage||null,content_source:"custom"})
       });
+      const data=await r.json();
+      if(r.status===429){setShowUpgrade(true);setGenerating(false);return;}
       if(r.ok){
         await loadContent(selectedDate);
-        logActivity(userId,'generate_content',{date:selectedDate});
+        await loadUsage();
+        logActivity(userId,"generate_content",{date:selectedDate,target:targetBrokerage});
       }
     }catch(e){console.error("Generate error:",e);}
     setGenerating(false);
   };
 
   const copyPost=(id,text)=>{
-    navigator.clipboard?.writeText(text);
+    const url=`https://rkrt.in/join${trackingRef}${targetParam}`;
+    navigator.clipboard?.writeText(text).catch(()=>{
+      const t=document.createElement("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";
+      document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);
+    });
     setCopied(p=>({...p,[id]:true}));
     setTimeout(()=>setCopied(p=>({...p,[id]:false})),2000);
   };
@@ -736,141 +765,185 @@ function ContentTab({userId,userProfile}){
         headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
         body:JSON.stringify({is_posted:true,posted_at:new Date().toISOString()})
       });
-      setContent(p=>p.map(c=>c.id===id?{...c,is_posted:true,posted_at:new Date().toISOString()}:c));
-    }catch(e){console.error("Mark posted error:",e);}
+      const upd=p=>p.map(c=>c.id===id?{...c,is_posted:true}:c);
+      setDailyContent(upd);setCustomContent(upd);
+    }catch(e){}
   };
 
   const platformConfig={
     facebook:{icon:"📘",label:"Facebook",color:"#1877F2",bg:"#1877F210"},
     instagram:{icon:"📸",label:"Instagram",color:"#E1306C",bg:"#E1306C10"},
-    youtube:{icon:"🎬",label:"YouTube",color:"#FF0000",bg:"#FF000010"}
   };
 
-  const filtered=filter==="all"?content:content.filter(c=>c.platform===filter);
-  const posted=content.filter(c=>c.is_posted).length;
-  const totalPosts=content.length;
+  const filterPosts=(posts)=>filter==="all"?posts:posts.filter(c=>c.platform===filter);
   const dateObj=new Date(selectedDate+"T12:00:00");
   const dayLabel=dateObj.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
   const isToday=selectedDate===new Date().toISOString().split("T")[0];
+  const hour=new Date().getHours();
+  const greeting=hour<12?"Good morning":hour<17?"Good afternoon":"Good evening";
+  const firstName=userProfile?.full_name?.split(" ")[0]||"there";
 
-  // User tracking link display
-  const userTrackingUrl = userId ? `https://rkrt.in/join?ref=${userId}` : "";
+  const PostCard=({post})=>{
+    const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
+    const bodyClean=(post.body||"").split("\n\n").filter(p=>!p.trim().match(/^https?:\/\/[^\s]+$/)).join("\n\n").trim();
+    const lp=post.landing_page_slug?LP_PREVIEWS[post.landing_page_slug]||null:null;
+    const lpUrl=post.landing_page_slug?`https://rkrt.in/${post.landing_page_slug}${trackingRef}${targetParam}`:null;
+    return(
+      <div style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,opacity:post.is_posted?0.7:1,display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",flex:1}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:32,height:32,borderRadius:8,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{cfg.icon}</div>
+              <span style={{fontSize:14,fontWeight:700,color:cfg.color}}>{cfg.label}</span>
+            </div>
+            {post.is_posted&&<span style={{fontSize:11,color:T.a,fontWeight:700,padding:"2px 8px",borderRadius:4,background:T.a+"15"}}>✓ Posted</span>}
+          </div>
+          {post.theme&&<div style={{fontSize:12,color:T.s,marginBottom:8,letterSpacing:0.5}}>{post.theme.replace(/_/g," ")}</div>}
+          {post.headline&&<div style={{fontSize:14,fontWeight:800,color:T.t,marginBottom:10,lineHeight:1.4}}>{post.headline}</div>}
+          <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:12,whiteSpace:"pre-wrap",wordBreak:"break-word",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{bodyClean}</div>
+          {lp&&lpUrl&&(
+            <a href={lpUrl} target="_blank" rel="noreferrer" style={{display:"flex",borderRadius:10,overflow:"hidden",border:`1px solid ${T.b}`,marginBottom:12,textDecoration:"none",background:T.d}}>
+              <img src={lp.img} alt={lp.title} style={{width:80,objectFit:"cover",flexShrink:0}}/>
+              <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                <div style={{fontSize:13,fontWeight:700,color:T.t,marginBottom:3}}>{lp.title}</div>
+                <div style={{fontSize:12,color:T.s,marginBottom:4}}>{lp.desc}</div>
+                <div style={{fontSize:11,color:T.a,fontFamily:"monospace"}}>rkrt.in/{post.landing_page_slug}{trackingRef}{targetParam}</div>
+              </div>
+            </a>
+          )}
+          <div style={{marginTop:"auto",display:"flex",gap:8}}>
+            <div onClick={()=>{copyPost(post.id,post.body);logActivity(userId,"copy_content",{platform:post.platform});}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+              {copied[post.id]?"✓ Copied":"📋 Copy"}
+            </div>
+            {!post.is_posted&&(
+              <div onClick={()=>{markPosted(post.id);logActivity(userId,"mark_posted",{platform:post.platform});}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                ✅ Posted
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const filtered_daily=filterPosts(dailyContent);
+  const filtered_custom=filterPosts(customContent);
 
   return(
     <>
-      {/* Tracking link banner */}
+      {/* Target brokerage + tracking link */}
       {userId&&(
-  <div style={{background:T.a+"10",border:`1px solid ${T.a}25`,borderRadius:10,padding:"16px 18px",marginBottom:20}}>
-    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-      <div style={{flex:1,minWidth:200}}>
-        <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🎯 TARGET BROKERAGE</div>
-        <div style={{fontSize:13,color:T.s,marginBottom:8}}>Posts and landing pages personalized for agents at this brokerage</div>
-        <select value={targetBrokerage} onChange={ev=>setTargetBrokerage(ev.target.value)} style={{width:"100%",maxWidth:280,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${targetBrokerage?T.a+"50":T.b}`,color:targetBrokerage?T.t:T.s,fontSize:14,outline:"none",fontFamily:"inherit"}}>
-          <option value="">— Generic (no target) —</option>
-          {TARGET_BROKERAGES.map(b=><option key={b} value={b}>{b}</option>)}
-        </select>
-      </div>
-      <div style={{flex:1,minWidth:200}}>
-        <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🔗 YOUR TRACKING LINK</div>
-        <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all",marginBottom:4}}>{`https://rkrt.in/join${trackingRef}${targetParam}`}</div>
-        <div style={{fontSize:12,color:T.s}}>Leads route to your pipeline{targetBrokerage?` · Targeting ${targetBrokerage}`:""}</div>
-      </div>
-      <div onClick={()=>{const url=`https://rkrt.in/join${trackingRef}${targetParam}`;try{navigator.clipboard.writeText(url);}catch(e){const t=document.createElement('textarea');t.value=url;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.focus();t.select();document.execCommand('copy');document.body.removeChild(t);}}} style={{padding:"10px 16px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,alignSelf:"flex-end"}}>📋 Copy Link</div>
-    </div>
-    {targetBrokerage&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,fontSize:12,color:T.s}}>💡 Generate fresh content to get posts targeting <strong style={{color:T.t}}>{targetBrokerage}</strong> agents</div>}
-  </div>
-)}
+        <div style={{background:T.a+"10",border:`1px solid ${T.a}25`,borderRadius:10,padding:"16px 18px",marginBottom:20}}>
+          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            <div style={{flex:1,minWidth:200}}>
+              <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🎯 TARGET BROKERAGE</div>
+              <div style={{fontSize:13,color:T.s,marginBottom:8}}>Posts and landing pages personalized for agents at this brokerage</div>
+              <select value={targetBrokerage} onChange={ev=>setTargetBrokerage(ev.target.value)} style={{width:"100%",maxWidth:280,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${targetBrokerage?T.a+"50":T.b}`,color:targetBrokerage?T.t:T.s,fontSize:14,outline:"none",fontFamily:"inherit"}}>
+                <option value="">— Generic (no target) —</option>
+                {TARGET_BROKERAGES.map(b=><option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div style={{flex:1,minWidth:200}}>
+              <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🔗 YOUR TRACKING LINK</div>
+              <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all",marginBottom:4}}>{`https://rkrt.in/join${trackingRef}${targetParam}`}</div>
+              <div style={{fontSize:12,color:T.s}}>Leads route to your pipeline{targetBrokerage?` · Targeting ${targetBrokerage}`:""}</div>
+            </div>
+            <div onClick={()=>{const url=`https://rkrt.in/join${trackingRef}${targetParam}`;navigator.clipboard?.writeText(url).catch(()=>{const t=document.createElement("textarea");t.value=url;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});}} style={{padding:"10px 16px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,alignSelf:"flex-end"}}>📋 Copy Link</div>
+          </div>
+          {targetBrokerage&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,fontSize:12,color:T.s}}>💡 Generate fresh content below to get posts targeting <strong style={{color:T.t}}>{targetBrokerage}</strong> agents</div>}
+        </div>
+      )}
 
-      <div className="content-header-outer" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
+      {/* Date nav + filter */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
         <div>
-          <div style={{fontSize:14,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:4}}>{isToday?"TODAY'S CONTENT MENU":"CONTENT FOR"}</div>
-          <div style={{fontSize:18,color:T.s}}>{dayLabel}</div>
+          <div style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:2}}>{isToday?"TODAY":"CONTENT FOR"}</div>
+          <div style={{fontSize:16,color:T.s}}>{dayLabel}</div>
         </div>
-        <div className="content-ctrl-row" style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-          <input type="date" value={selectedDate} onChange={ev=>setSelectedDate(ev.target.value)} style={{padding:"10px 14px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}/>
-          <div className="generate-btn" onClick={generating?null:generateContent} style={{padding:"12px 20px",borderRadius:8,background:generating?T.d:T.am,color:generating?T.m:T.a,fontSize:14,fontWeight:700,cursor:generating?"wait":"pointer",display:"flex",alignItems:"center",gap:8}}>
-            {generating?"⏳ Generating (~30s)...":"✨ Generate Fresh Content"}
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          <input type="date" value={selectedDate} onChange={ev=>setSelectedDate(ev.target.value)} style={{padding:"8px 12px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}/>
+          <div style={{display:"flex",gap:6}}>
+            {[["all","All",T.t],["facebook","📘 FB","#1877F2"],["instagram","📸 IG","#E1306C"]].map(([id,label,c])=>(
+              <div key={id} onClick={()=>setFilter(id)} style={{padding:"8px 14px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:13,fontWeight:600,cursor:"pointer"}}>{label}</div>
+            ))}
           </div>
         </div>
-      </div>
-
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}} className="kpi-grid">
-        {[["📝","Total Posts",totalPosts,T.bl],["📘","Facebook",content.filter(c=>c.platform==="facebook").length,"#1877F2"],["📸","Instagram",content.filter(c=>c.platform==="instagram").length,"#E1306C"],["✅","Posted",posted,T.a]].map(([ic,l,v,c],i)=>
-          <div key={i} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 20px",textAlign:"center"}}>
-            <div style={{fontSize:20,marginBottom:4}}>{ic}</div>
-            <div style={{fontSize:24,fontWeight:800,color:c}}>{v}</div>
-            <div style={{fontSize:11,color:T.s,letterSpacing:1,marginTop:2}}>{l.toUpperCase()}</div>
-          </div>
-        )}
-      </div>
-
-      <div className="content-filter-tabs" style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[["all","All",T.t],["facebook","📘 Facebook","#1877F2"],["instagram","📸 Instagram","#E1306C"]].map(([id,label,c])=>
-          <div key={id} onClick={()=>setFilter(id)} style={{padding:"10px 18px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.12s",display:"flex",alignItems:"center",justifyContent:"center"}}>{label}</div>
-        )}
       </div>
 
       {loading?(
-        <div style={{textAlign:"center",padding:60}}><div style={{fontSize:32,animation:"pulse 1s infinite"}}>📝</div><div style={{color:T.s,marginTop:12}}>Loading content...</div></div>
-      ):filtered.length===0?(
-        <div style={{textAlign:"center",padding:60}}>
-          <div style={{fontSize:48,marginBottom:16}}>✨</div>
-          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>No Content for This Date</div>
-          <div style={{fontSize:15,color:T.s,marginBottom:20,maxWidth:400,margin:"0 auto 20px",lineHeight:1.6}}>Generate AI-powered social content for Facebook and Instagram. Each post includes your unique tracking link.</div>
-          <div onClick={generating?null:generateContent} style={{display:"inline-block",padding:"14px 28px",borderRadius:8,background:T.am,color:T.a,fontSize:16,fontWeight:700,cursor:generating?"wait":"pointer"}}>
-            {generating?"⏳ Generating (~30s)...":"✨ Generate Today's Content"}
-          </div>
-        </div>
+        <div style={{textAlign:"center",padding:60}}><div style={{fontSize:32}}>📝</div><div style={{color:T.s,marginTop:12}}>Loading content...</div></div>
       ):(
-        <div className="content-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))",gap:24,alignItems:"start"}}>
-          {filtered.map((post,i)=>{
-            const cfg=platformConfig[post.platform]||{icon:"📄",label:post.platform,color:T.bl,bg:T.bl+"10"};
-            const bodyText=post.body||"";
-            const bodyClean=bodyText.split("\n\n").filter(p=>!p.trim().match(/^https?:\/\/[^\s]+$/)).join("\n\n").trim();
-            const lp=post.landing_page_slug?LP_PREVIEWS[post.landing_page_slug]||null:null;
-            const lpUrl = post.landing_page_slug ? `https://rkrt.in/${post.landing_page_slug}${trackingRef}${targetParam}` : null;
-            return(
-              <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,opacity:post.is_posted?0.7:1,transition:"all 0.15s",display:"flex",flexDirection:"column"}}>
-                <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",flex:1}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{width:32,height:32,borderRadius:8,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{cfg.icon}</div>
-                      <span style={{fontSize:14,fontWeight:700,color:cfg.color}}>{cfg.label}</span>
-                      {post.content_type&&post.content_type!=="post"&&<span style={{fontSize:11,padding:"2px 7px",borderRadius:4,background:T.p+"18",color:T.p,fontWeight:600,textTransform:"uppercase"}}>{post.content_type}</span>}
-                    </div>
-                    {post.is_posted&&<span style={{fontSize:11,color:T.a,fontWeight:700,padding:"2px 8px",borderRadius:4,background:T.a+"15"}}>✓ Posted</span>}
-                  </div>
-                  {post.theme&&<div style={{fontSize:12,color:T.s,marginBottom:8,letterSpacing:0.5}}>{post.theme.replace(/_/g," ")}</div>}
-                  {post.headline&&<div style={{fontSize:14,fontWeight:800,color:T.t,marginBottom:10,lineHeight:1.4}}>{post.headline}</div>}
-                  <div style={{fontSize:13,color:T.s,lineHeight:1.6,marginBottom:12,whiteSpace:"pre-wrap",wordBreak:"break-word",padding:"12px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>{bodyClean}</div>
-                  {lp&&lpUrl&&(
-                    <a href={lpUrl} target="_blank" rel="noreferrer"
-                      style={{display:"flex",borderRadius:10,overflow:"hidden",border:`1px solid ${T.b}`,marginBottom:12,textDecoration:"none",background:T.d,transition:"border-color 0.15s"}}
-                      onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh}
-                      onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
-                      <img src={lp.img} alt={lp.title} style={{width:80,objectFit:"cover",flexShrink:0}}/>
-                      <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"center",minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:700,color:T.t,marginBottom:3}}>{lp.title}</div>
-                        <div style={{fontSize:12,color:T.s,marginBottom:4}}>{lp.desc}</div>
-                        <div style={{fontSize:11,color:T.a,fontFamily:"monospace"}}>rkrt.in/{post.landing_page_slug}{trackingRef}{targetParam}</div>
-                      </div>
-                    </a>
-                  )}
-                  <div style={{marginTop:"auto",display:"flex",gap:8}}>
-                    <div onClick={()=>{copyPost(post.id,post.body);logActivity(userId,'copy_content',{platform:post.platform,theme:post.theme})}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-                      {copied[post.id]?"✓ Copied":"📋 Copy"}
-                    </div>
-                    {!post.is_posted&&(
-                      <div onClick={()=>{markPosted(post.id);logActivity(userId,'mark_posted',{platform:post.platform,theme:post.theme})}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        ✅ Posted
-                      </div>
-                    )}
-                  </div>
+        <>
+          {/* ── SECTION 1: DAILY BRIEF ── */}
+          <div style={{marginBottom:32}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
+              <div>
+                <div style={{fontSize:11,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:4}}>☀️ DAILY BRIEF</div>
+                <div style={{fontSize:18,fontWeight:800,color:T.t}}>{greeting}, {firstName}! Here's your content for today.</div>
+                <div style={{fontSize:13,color:T.s,marginTop:2}}>Auto-generated every morning · {dailyContent.length} posts ready</div>
+              </div>
+            </div>
+            {filtered_daily.length===0?(
+              <div style={{background:T.card,border:`1px dashed ${T.b}`,borderRadius:12,padding:"32px",textAlign:"center"}}>
+                <div style={{fontSize:32,marginBottom:8}}>⏰</div>
+                <div style={{color:T.s,fontSize:14}}>Daily content generates automatically at 5AM UTC. Check back tomorrow!</div>
+              </div>
+            ):(
+              <div className="content-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20}}>
+                {filtered_daily.map((post,i)=><PostCard key={post.id||i} post={post}/>)}
+              </div>
+            )}
+          </div>
+
+          {/* ── SECTION 2: GENERATE CUSTOM ── */}
+          <div style={{borderTop:`1px solid ${T.b}`,paddingTop:28,marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
+              <div>
+                <div style={{fontSize:11,color:"#8B5CF6",fontWeight:700,letterSpacing:2,marginBottom:4}}>✨ FRESH CONTENT</div>
+                <div style={{fontSize:18,fontWeight:800,color:T.t}}>Generate Targeted Posts</div>
+                <div style={{fontSize:13,color:T.s,marginTop:2}}>
+                  {isAdmin?"Unlimited generations · Admin":`${remaining} of ${DAILY_LIMIT} generations remaining today`}
                 </div>
               </div>
-            );
-          })}
-        </div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+                {!isAdmin&&(
+                  <div style={{display:"flex",gap:6}}>
+                    {[...Array(DAILY_LIMIT)].map((_,i)=>(
+                      <div key={i} style={{width:10,height:10,borderRadius:"50%",background:i<usageToday?T.a+"40":T.a}}/>
+                    ))}
+                  </div>
+                )}
+                <div onClick={generating?null:generateContent} style={{padding:"12px 22px",borderRadius:8,background:generating?T.d:(!isAdmin&&usageToday>=DAILY_LIMIT)?"#8B5CF620":T.am,border:(!isAdmin&&usageToday>=DAILY_LIMIT)?`1px solid #8B5CF640`:"none",color:generating?T.m:(!isAdmin&&usageToday>=DAILY_LIMIT)?"#8B5CF6":T.a,fontSize:14,fontWeight:700,cursor:generating?"wait":"pointer",display:"flex",alignItems:"center",gap:8}}>
+                  {generating?"⏳ Generating (~30s)...":(!isAdmin&&usageToday>=DAILY_LIMIT)?"🔒 Upgrade for More":"✨ Generate Fresh Content"}
+                </div>
+              </div>
+            </div>
+
+            {showUpgrade&&(
+              <div style={{background:"#8B5CF610",border:"1px solid #8B5CF640",borderRadius:10,padding:"16px 20px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:"#8B5CF6",marginBottom:4}}>🚀 You've used all {DAILY_LIMIT} generations today</div>
+                  <div style={{fontSize:13,color:T.s}}>Upgrade to Pro for unlimited daily content generation and advanced targeting.</div>
+                </div>
+                <div style={{padding:"10px 20px",borderRadius:8,background:"#8B5CF6",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Upgrade to Pro →</div>
+              </div>
+            )}
+
+            {filtered_custom.length===0?(
+              <div style={{background:T.card,border:`1px dashed ${T.b}`,borderRadius:12,padding:"40px",textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:12}}>✨</div>
+                <div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:8}}>Generate Posts for {targetBrokerage||"Your Target Brokerage"}</div>
+                <div style={{fontSize:14,color:T.s,marginBottom:20,maxWidth:400,margin:"0 auto 20px",lineHeight:1.6}}>
+                  {targetBrokerage?`Get 6 posts written specifically for ${targetBrokerage} agents with your tracking links baked in.`:"Select a target brokerage above, then generate posts tailored to those agents."}
+                </div>
+              </div>
+            ):(
+              <div className="content-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20}}>
+                {filtered_custom.map((post,i)=><PostCard key={post.id||i} post={post}/>)}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </>
   );
