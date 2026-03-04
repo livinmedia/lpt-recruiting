@@ -670,6 +670,8 @@ function AgentDirectory({userId,userProfile}){
   );
 }
 
+const TARGET_BROKERAGES=["Keller Williams","eXp Realty","RE/MAX","Compass","Coldwell Banker","Century 21","Berkshire Hathaway HomeServices","HomeSmart","Sotheby's International Realty","Better Homes & Gardens Real Estate","ERA Real Estate","Engel & Völkers","Redfin","Side","Independent","Other"];
+
 // ━━━ CONTENT TAB ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ContentTab({userId,userProfile}){
   const [content,setContent]=useState([]);
@@ -678,9 +680,11 @@ function ContentTab({userId,userProfile}){
   const [selectedDate,setSelectedDate]=useState(new Date().toISOString().split("T")[0]);
   const [copied,setCopied]=useState({});
   const [filter,setFilter]=useState("all");
+  const [targetBrokerage,setTargetBrokerage]=useState(userProfile?.brokerage||"");
 
   // Per-user tracking link
   const trackingRef = userId ? `?ref=${userId}` : "";
+  const targetParam = targetBrokerage ? `&target=${encodeURIComponent(targetBrokerage)}` : "";
 
   const LP_PREVIEWS={
     "join":{img:"/og/join.png",title:"Join LPT Realty",desc:"Keep More of What You Earn"},
@@ -709,7 +713,7 @@ function ContentTab({userId,userProfile}){
       const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-content",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({date:selectedDate,force:true,images:true,user_id:userId,brokerage:userProfile?.brokerage||null})
+        body:JSON.stringify({date:selectedDate,force:true,images:true,user_id:userId,brokerage:userProfile?.brokerage||null,target_brokerage:targetBrokerage||null})
       });
       if(r.ok){
         await loadContent(selectedDate);
@@ -756,15 +760,26 @@ function ContentTab({userId,userProfile}){
     <>
       {/* Tracking link banner */}
       {userId&&(
-        <div style={{background:T.a+"10",border:`1px solid ${T.a}25`,borderRadius:10,padding:"14px 18px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
-          <div>
-            <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🔗 YOUR TRACKING LINK</div>
-            <div style={{fontSize:14,color:T.t,fontFamily:"monospace"}}>{userTrackingUrl}</div>
-            <div style={{fontSize:12,color:T.s,marginTop:2}}>All copied posts include this link — leads route to your pipeline</div>
-          </div>
-          <div onClick={()=>{navigator.clipboard?.writeText(userTrackingUrl);}} style={{padding:"8px 16px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0}}>📋 Copy Link</div>
-        </div>
-      )}
+  <div style={{background:T.a+"10",border:`1px solid ${T.a}25`,borderRadius:10,padding:"16px 18px",marginBottom:20}}>
+    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+      <div style={{flex:1,minWidth:200}}>
+        <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🎯 TARGET BROKERAGE</div>
+        <div style={{fontSize:13,color:T.s,marginBottom:8}}>Posts and landing pages personalized for agents at this brokerage</div>
+        <select value={targetBrokerage} onChange={ev=>setTargetBrokerage(ev.target.value)} style={{width:"100%",maxWidth:280,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${targetBrokerage?T.a+"50":T.b}`,color:targetBrokerage?T.t:T.s,fontSize:14,outline:"none",fontFamily:"inherit"}}>
+          <option value="">— Generic (no target) —</option>
+          {TARGET_BROKERAGES.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+      </div>
+      <div style={{flex:1,minWidth:200}}>
+        <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🔗 YOUR TRACKING LINK</div>
+        <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all",marginBottom:4}}>{`https://rkrt.in/join${trackingRef}${targetParam}`}</div>
+        <div style={{fontSize:12,color:T.s}}>Leads route to your pipeline{targetBrokerage?` · Targeting ${targetBrokerage}`:""}</div>
+      </div>
+      <div onClick={()=>navigator.clipboard?.writeText(`https://rkrt.in/join${trackingRef}${targetParam}`)} style={{padding:"10px 16px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,alignSelf:"flex-end"}}>📋 Copy Link</div>
+    </div>
+    {targetBrokerage&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,fontSize:12,color:T.s}}>💡 Generate fresh content to get posts targeting <strong style={{color:T.t}}>{targetBrokerage}</strong> agents</div>}
+  </div>
+)}
 
       <div className="content-header-outer" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
         <div>
@@ -813,7 +828,7 @@ function ContentTab({userId,userProfile}){
             const bodyText=post.body||"";
             const bodyClean=bodyText.split("\n\n").filter(p=>!p.trim().match(/^https?:\/\/[^\s]+$/)).join("\n\n").trim();
             const lp=post.landing_page_slug?LP_PREVIEWS[post.landing_page_slug]||null:null;
-            const lpUrl = post.landing_page_slug ? `https://rkrt.in/${post.landing_page_slug}${trackingRef}` : null;
+            const lpUrl = post.landing_page_slug ? `https://rkrt.in/${post.landing_page_slug}${trackingRef}${targetParam}` : null;
             return(
               <div key={post.id||i} style={{background:T.card,border:`1px solid ${post.is_posted?T.a+"30":T.b}`,borderRadius:12,opacity:post.is_posted?0.7:1,transition:"all 0.15s",display:"flex",flexDirection:"column"}}>
                 <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",flex:1}}>
@@ -837,7 +852,7 @@ function ContentTab({userId,userProfile}){
                       <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"center",minWidth:0}}>
                         <div style={{fontSize:13,fontWeight:700,color:T.t,marginBottom:3}}>{lp.title}</div>
                         <div style={{fontSize:12,color:T.s,marginBottom:4}}>{lp.desc}</div>
-                        <div style={{fontSize:11,color:T.a,fontFamily:"monospace"}}>rkrt.in/{post.landing_page_slug}{trackingRef}</div>
+                        <div style={{fontSize:11,color:T.a,fontFamily:"monospace"}}>rkrt.in/{post.landing_page_slug}{trackingRef}{targetParam}</div>
                       </div>
                     </a>
                   )}
