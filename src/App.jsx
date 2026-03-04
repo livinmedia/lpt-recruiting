@@ -568,6 +568,7 @@ export default function Livi(){
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
   const [sidebarOpen,setSidebarOpen]=useState(false);
+  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
 
   // ━━━ AUTH ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const [authUser,setAuthUser]=useState(null);
@@ -1435,20 +1436,49 @@ html,body{overflow-x:hidden}
 }`}</style>
 
       {/* MOBILE BACKDROP */}
-      {sidebarOpen&&<div className="sidebar-backdrop" onClick={()=>setSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:999}}/>}
+      {sidebarOpen&&<div className="sidebar-backdrop" onClick={()=>{setSidebarOpen(false);setProfileMenuOpen(false);}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:999}}/>}
+
+      {/* PROFILE MENU BACKDROP (transparent, closes menu when clicking outside) */}
+      {profileMenuOpen&&<div onClick={()=>setProfileMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:1099}}/>}
+
+      {/* PROFILE POPUP MENU */}
+      {profileMenuOpen&&(
+        <div style={{position:"fixed",bottom:80,left:8,width:210,background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"6px 0",zIndex:1100,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+          {profile?.role==="owner"&&<>
+            <div onClick={()=>{setViewWithHistory("admin");setSidebarOpen(false);setProfileMenuOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.r,borderRadius:6}} onMouseOver={ev=>ev.currentTarget.style.background=T.r+"15"} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+              <span>🛡️</span><span>Admin Dashboard</span>
+            </div>
+            <div style={{height:1,background:T.b,margin:"4px 0"}}/>
+          </>}
+          <div onClick={()=>{setViewWithHistory("profile");setSidebarOpen(false);setProfileMenuOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.t}} onMouseOver={ev=>ev.currentTarget.style.background=T.bh} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+            <span>👤</span><span>My Profile</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.s}} onMouseOver={ev=>ev.currentTarget.style.background=T.bh} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+            <span>⚙️</span><span>Settings</span>
+          </div>
+          <div style={{height:1,background:T.b,margin:"4px 0"}}/>
+          <div onClick={()=>{supabase.auth.signOut().then(()=>{window.location.href="/login";});}} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.r}} onMouseOver={ev=>ev.currentTarget.style.background=T.r+"15"} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+            <span>🚪</span><span>Logout</span>
+          </div>
+        </div>
+      )}
 
       {/* SIDEBAR */}
-      <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",gap:14,flexShrink:0}}>
-        <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:16}}>L</div>
-        {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"]].map(([id,ic])=>
-          <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
-        )}
-        {profile?.role==="owner"&&<div onClick={()=>{setViewWithHistory("admin");setSidebarOpen(false);}} title="Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view==="admin"?T.r+"20":"transparent",color:view==="admin"?T.r:T.m,transition:"all 0.12s"}}>🛡️</div>}
-        <div style={{flex:1}}/>
-        <div onClick={load} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
-        <div onClick={()=>{setViewWithHistory("profile");setSidebarOpen(false);}} title="My Profile" style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",marginTop:4,marginBottom:4}}>
-          <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,border:`2px solid ${view==="profile"?T.bl:T.b}`,transition:"border-color 0.12s"}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
-          <div style={{fontSize:9,color:T.m,maxWidth:60,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center",letterSpacing:0.3}}>{profile?.full_name?.split(" ")[0]||"Account"}</div>
+      <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",flexShrink:0}}>
+        {/* Top: logo + nav */}
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14,width:"100%"}}>
+          <div className="logo-btn" style={{width:44,height:44,borderRadius:9,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#000",marginBottom:6}}>L</div>
+          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"]].map(([id,ic])=>
+            <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
+          )}
+        </div>
+        {/* Bottom: refresh + profile (pinned) */}
+        <div style={{marginTop:"auto",display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14}}>
+          <div onClick={load} style={{width:44,height:44,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
+          <div onClick={()=>setProfileMenuOpen(v=>!v)} title="Account" style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",padding:"8px 4px",borderRadius:8,background:profileMenuOpen?T.bh:"transparent",transition:"background 0.12s",width:64}}>
+            <div style={{width:36,height:36,borderRadius:"50%",background:T.a,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:800,color:"#000"}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
+            <div style={{fontSize:9,color:T.m,maxWidth:56,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center",letterSpacing:0.3}}>{profile?.full_name?.split(" ")[0]||"Account"}</div>
+          </div>
         </div>
       </div>
 
