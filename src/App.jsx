@@ -33,7 +33,7 @@ async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}
   }
   params.push(`limit=${limit}`);
   params.push(`offset=${offset}`);
-  params.push(`select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration,original_license_date`);
+  params.push(`select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration,original_license_date,personal_email,work_email,mobile_phone,linkedin_url,enriched_at`);
   try {
     const url = `${LIVI_SUPA}/agent_directory?${params.join("&")}`;
     console.log("Agent search URL:", url);
@@ -184,6 +184,8 @@ function AgentDirectory({userId}){
   const [page,setPage]=useState(0);
   const [added,setAdded]=useState({});
   const [error,setError]=useState(null);
+  const [selectedAgent,setSelectedAgent]=useState(null);
+  const [enriching,setEnriching]=useState(false);
   const PER=50;
 
   const doSearch=async(filtersOverride,pg=0)=>{
@@ -214,6 +216,29 @@ function AgentDirectory({userId}){
       const r=await fetch(`${SUPA}/dazet_leads`,{method:"POST",headers:{"apikey":KEY,"Authorization":`Bearer ${KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));logActivity(userId,'add_lead_from_directory',{agent_name:agent.full_name});}
     } catch(e) { console.error("Add to pipeline error:", e); }
+  };
+
+  const enrichAgent=async(agent)=>{
+    setEnriching(true);
+    try {
+      const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/enrich-agent",{
+        method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${LIVI_KEY}`},
+        body:JSON.stringify({agent_id:agent.id,first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage_name:agent.brokerage_name||"",state:agent.state||""})
+      });
+      const d=await r.json();
+      if(d.enriched||d.personal_email||d.work_email||d.mobile_phone||d.linkedin_url||d.enriched_at){
+        const updated={...agent,...d,enriched_at:d.enriched_at||new Date().toISOString()};
+        setSelectedAgent(updated);
+        setResults(prev=>prev.map(a=>a.id===agent.id?updated:a));
+      } else if(d.error){
+        setSelectedAgent({...agent,_enrichError:d.error});
+      } else {
+        setSelectedAgent({...agent,_enrichError:"No match found on Apollo"});
+      }
+    } catch(e) {
+      setSelectedAgent({...agent,_enrichError:"Enrichment failed. Try again."});
+    }
+    setEnriching(false);
   };
 
   const topBrokerages=[
@@ -309,7 +334,7 @@ function AgentDirectory({userId}){
               </tr></thead>
               <tbody>
                 {results.map((a,i)=>
-                  <tr key={a.id||i} style={{borderBottom:`1px solid ${T.b}`,transition:"background 0.1s"}} onMouseOver={e=>e.currentTarget.style.background=T.hover} onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                  <tr key={a.id||i} onClick={()=>setSelectedAgent(a)} style={{borderBottom:`1px solid ${T.b}`,transition:"background 0.1s",cursor:"pointer"}} onMouseOver={e=>e.currentTarget.style.background=T.hover} onMouseOut={e=>e.currentTarget.style.background="transparent"}>
                     <td style={{padding:"14px 16px"}}>
                       <div style={{fontWeight:700,color:T.t}}>{a.full_name||"—"}</div>
                       <div style={{fontSize:12,color:T.s}}>{a.state}</div>
@@ -352,6 +377,97 @@ function AgentDirectory({userId}){
             {[{l:"🆕 New TX agents (30d)",f:{state:"TX",brokerage:"",name:"",city:"",newDays:"30"}},{l:"eXp agents in TX",f:{state:"TX",brokerage:"EXP REALTY",name:"",city:"",newDays:""}},{l:"Compass in NY",f:{state:"NY",brokerage:"COMPASS",name:"",city:"",newDays:""}},{l:"All LPT Realty",f:{state:"",brokerage:"LPT REALTY",name:"",city:"",newDays:""}}].map((ex,i)=>
               <div key={i} onClick={()=>{setFilters(ex.f);doSearch(ex.f,0);}} style={{padding:"10px 18px",borderRadius:8,background:i===0?T.y+"20":T.am,color:i===0?T.y:T.a,fontSize:14,fontWeight:600,cursor:"pointer",border:`1px solid ${i===0?T.y+"30":T.a+"20"}`}}>{ex.l}</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Agent Detail Panel */}
+      {selectedAgent && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setSelectedAgent(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:"32px 28px",maxWidth:520,width:"100%",maxHeight:"85vh",overflowY:"auto",position:"relative"}}>
+            <div onClick={()=>setSelectedAgent(null)} style={{position:"absolute",top:16,right:16,cursor:"pointer",color:T.s,fontSize:18,fontWeight:700}}>✕</div>
+
+            <div style={{fontSize:22,fontWeight:800,color:T.t,marginBottom:4}}>{selectedAgent.full_name||"—"}</div>
+            <div style={{fontSize:14,color:T.s,marginBottom:20}}>{selectedAgent.brokerage_name||"—"}</div>
+
+            {/* Agent Info Grid */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+              {[
+                ["State",selectedAgent.state],
+                ["City",selectedAgent.city||selectedAgent.county||"—"],
+                ["License #",selectedAgent.license_number],
+                ["Type",(selectedAgent.license_type||"").includes("Broker")?"Broker":"Agent"],
+                ["Status",selectedAgent.license_status||"—"],
+                ["Licensed",selectedAgent.original_license_date||"—"],
+                ["Expires",selectedAgent.license_expiration||"—"],
+                ["Address",selectedAgent.address||"—"],
+              ].map(([label,val],i)=>
+                <div key={i} style={{padding:"10px 14px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}>
+                  <div style={{fontSize:10,color:T.m,fontWeight:700,letterSpacing:1.2,marginBottom:4}}>{label.toUpperCase()}</div>
+                  <div style={{fontSize:14,color:T.t,fontWeight:600}}>{val}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Enrichment Section */}
+            {selectedAgent.enriched_at ? (
+              <div style={{background:T.d,borderRadius:12,border:`1px solid ${T.a}20`,padding:"20px 18px",marginBottom:16}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                  <div style={{fontSize:13,fontWeight:700,color:T.a,letterSpacing:1}}>ENRICHED DATA</div>
+                  <div style={{fontSize:11,color:T.m}}>via Apollo · {new Date(selectedAgent.enriched_at).toLocaleDateString()}</div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {selectedAgent.personal_email && (
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:12,color:T.m,fontWeight:700,width:90}}>Personal</span>
+                      <a href={`mailto:${selectedAgent.personal_email}`} style={{color:T.a,fontSize:14,textDecoration:"none",fontWeight:600}}>{selectedAgent.personal_email}</a>
+                    </div>
+                  )}
+                  {selectedAgent.work_email && (
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:12,color:T.m,fontWeight:700,width:90}}>Work</span>
+                      <a href={`mailto:${selectedAgent.work_email}`} style={{color:T.a,fontSize:14,textDecoration:"none",fontWeight:600}}>{selectedAgent.work_email}</a>
+                    </div>
+                  )}
+                  {selectedAgent.mobile_phone && (
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:12,color:T.m,fontWeight:700,width:90}}>Mobile</span>
+                      <a href={`tel:${selectedAgent.mobile_phone}`} style={{color:T.a,fontSize:14,textDecoration:"none",fontWeight:600}}>{selectedAgent.mobile_phone}</a>
+                    </div>
+                  )}
+                  {selectedAgent.linkedin_url && (
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:12,color:T.m,fontWeight:700,width:90}}>LinkedIn</span>
+                      <a href={selectedAgent.linkedin_url} target="_blank" rel="noopener noreferrer" style={{color:T.bl,fontSize:14,textDecoration:"none",fontWeight:600}}>{selectedAgent.linkedin_url.replace(/https?:\/\/(www\.)?linkedin\.com\//,"")}</a>
+                    </div>
+                  )}
+                  {!selectedAgent.personal_email && !selectedAgent.work_email && !selectedAgent.mobile_phone && !selectedAgent.linkedin_url && (
+                    <div style={{color:T.s,fontSize:13}}>No contact data found on Apollo</div>
+                  )}
+                </div>
+                <div onClick={()=>enrichAgent(selectedAgent)} style={{marginTop:14,padding:"10px 20px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:enriching?"not-allowed":"pointer",opacity:enriching?0.5:1,textAlign:"center",border:`1px solid ${T.a}30`}}>
+                  {enriching?"Enriching...":"Re-enrich"}
+                </div>
+              </div>
+            ) : (
+              <div style={{marginBottom:16}}>
+                {selectedAgent._enrichError && (
+                  <div style={{padding:"12px 16px",borderRadius:8,background:T.r+"15",border:`1px solid ${T.r}30`,color:T.r,fontSize:13,marginBottom:12}}>{selectedAgent._enrichError}</div>
+                )}
+                <div onClick={()=>!enriching&&enrichAgent(selectedAgent)} style={{padding:"14px 24px",borderRadius:10,background:T.a,color:"#000",fontSize:15,fontWeight:700,cursor:enriching?"not-allowed":"pointer",opacity:enriching?0.5:1,textAlign:"center"}}>
+                  {enriching?"Enriching...":"Enrich with Apollo"}
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{display:"flex",gap:10}}>
+              {added[selectedAgent.license_number] ? (
+                <div style={{flex:1,padding:"12px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,textAlign:"center"}}>✓ In Pipeline</div>
+              ) : (
+                <div onClick={()=>addToPipeline(selectedAgent)} style={{flex:1,padding:"12px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center",border:`1px solid ${T.a}30`}}>+ Add to Pipeline</div>
+              )}
+            </div>
           </div>
         </div>
       )}
