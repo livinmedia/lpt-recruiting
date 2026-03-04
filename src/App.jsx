@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { createClient } from "@supabase/supabase-js";
 
 const SUPA = "https://zuwvovjhrkzlpdxcpsud.supabase.co/rest/v1";
 const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1d3Zvdmpocmt6bHBkeGNwc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTMyOTAsImV4cCI6MjA4NzcyOTI5MH0.SmOAe8yeEa79hrSkwMLLq5z70Fmoxznvhs0YNOxa-no";
@@ -7,6 +8,8 @@ const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 // LIVI AI Platform — Agent Directory (352K+ real agents)
 const LIVI_SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
 const LIVI_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
+
+const supabase = createClient('https://usknntguurefeyzusbdh.supabase.co', LIVI_KEY);
 
 async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}={}) {
   let params = [];
@@ -565,6 +568,22 @@ export default function Livi(){
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
   const [sidebarOpen,setSidebarOpen]=useState(false);
+
+  // ━━━ AUTH ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const [authUser,setAuthUser]=useState(null);
+  const [profile,setProfile]=useState(null);
+  const [authLoading,setAuthLoading]=useState(true);
+
+  useEffect(()=>{
+    supabase.auth.getSession().then(async({data:{session}})=>{
+      if(!session){window.location.href="/login";return;}
+      setAuthUser(session.user);
+      const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+      setProfile(prof||null);
+      setAuthLoading(false);
+    });
+  },[]);
+
   const askLiviInline=async(q)=>{
     setInlineLoading(true);setInlineResponse(null);
     try{
@@ -1028,7 +1047,188 @@ export default function Livi(){
     </>
   );
 
+  // ━━━ ADMIN ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const [adminStats,setAdminStats]=useState({users:0,leads:0,contentToday:0,agents:0});
+  const [adminUsers,setAdminUsers]=useState([]);
+  const [adminActivity,setAdminActivity]=useState([]);
+  const [adminContent,setAdminContent]=useState([]);
+  const [newContent,setNewContent]=useState({title:"",body:"",type:"announcement"});
+  const [adminLoading,setAdminLoading]=useState(false);
+
+  const loadAdmin=useCallback(async()=>{
+    setAdminLoading(true);
+    const today=new Date().toISOString().split("T")[0];
+    const [usersCount,leadsCount,contentCount,agentsCount,usersRows,activityRows,contentRows]=await Promise.all([
+      supabase.from("profiles").select("*",{count:"exact",head:true}),
+      supabase.from("leads").select("*",{count:"exact",head:true}),
+      supabase.from("daily_content").select("*",{count:"exact",head:true}).eq("date",today),
+      supabase.from("agent_directory").select("*",{count:"exact",head:true}),
+      supabase.from("profiles").select("*").order("created_at",{ascending:false}).limit(100),
+      supabase.from("user_activity").select("*").order("created_at",{ascending:false}).limit(20),
+      supabase.from("platform_content").select("*").order("created_at",{ascending:false}).limit(20),
+    ]);
+    setAdminStats({users:usersCount.count||0,leads:leadsCount.count||0,contentToday:contentCount.count||0,agents:agentsCount.count||0});
+    setAdminUsers(usersRows.data||[]);
+    setAdminActivity(activityRows.data||[]);
+    setAdminContent(contentRows.data||[]);
+    setAdminLoading(false);
+  },[]);
+
+  useEffect(()=>{if(view==="admin")loadAdmin();},[view,loadAdmin]);
+
+  const publishContent=async()=>{
+    if(!newContent.title.trim())return;
+    const {error}=await supabase.from("platform_content").insert({...newContent,published:true});
+    if(!error){setNewContent({title:"",body:"",type:"announcement"});loadAdmin();}
+  };
+
+  const AdminView=()=>(
+    <>
+      {/* A) PLATFORM STATS */}
+      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        {[
+          ["👥","Total Users",adminStats.users,"Platform accounts",T.bl],
+          ["🎯","Total Leads",adminStats.leads,"Across all users",T.a],
+          ["📝","Content Today",adminStats.contentToday,"Posts generated",T.y],
+          ["🔍","Agent Directory",adminStats.agents?.toLocaleString(),"Licensed agents",T.p],
+        ].map(([ic,l,v,s,c],i)=>
+          <div key={i} className="kpi-card" style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"22px 24px",display:"flex",alignItems:"center",gap:16}}>
+            <div className="kpi-icon" style={{width:52,height:52,borderRadius:10,background:c+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
+            <div>
+              <div className="kpi-label" style={{fontSize:12,color:T.s,letterSpacing:2,fontWeight:700}}>{l.toUpperCase()}</div>
+              <div className="kpi-val" style={{fontSize:32,fontWeight:800,color:T.t}}>{adminLoading?"…":v}</div>
+              <div style={{fontSize:12,color:c,fontWeight:600}}>{s}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* B) USER CRM TABLE */}
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
+        <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>👥 Users ({adminUsers.length})</div>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
+            <thead><tr>{["Name","Email","Role","Plan","Joined","Onboarded"].map(h=>
+              <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
+            )}</tr></thead>
+            <tbody>{adminUsers.length>0?adminUsers.map((u,i)=>
+              <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                <td style={{padding:"13px 14px",fontSize:15,fontWeight:600,color:T.t,whiteSpace:"nowrap"}}>{u.full_name||"—"}</td>
+                <td style={{padding:"13px 14px",fontSize:13,color:T.bl}}>{u.email||"—"}</td>
+                <td style={{padding:"13px 14px"}}>
+                  <span style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:4,background:u.role==="owner"?T.r+"20":u.role==="admin"?T.p+"20":T.s+"20",color:u.role==="owner"?T.r:u.role==="admin"?T.p:T.s}}>{u.role||"user"}</span>
+                </td>
+                <td style={{padding:"13px 14px",fontSize:13,color:T.s}}>{u.plan||"free"}</td>
+                <td style={{padding:"13px 14px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</td>
+                <td style={{padding:"13px 14px"}}>
+                  <span style={{fontSize:12,fontWeight:700,color:u.onboarded?T.a:T.y}}>{u.onboarded?"✓ Yes":"— No"}</span>
+                </td>
+              </tr>
+            ):<tr><td colSpan={6} style={{textAlign:"center",padding:"40px",color:T.m,fontSize:15}}>No users found</td></tr>}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
+        {/* C) RECENT ACTIVITY */}
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
+          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📊 Recent Activity</div>
+          {adminActivity.length>0?adminActivity.map((a,i)=>
+            <div key={i} style={{display:"flex",gap:10,padding:"10px 0",alignItems:"flex-start",borderBottom:i<adminActivity.length-1?`1px solid ${T.b}`:"none"}}>
+              <Dot c={T.bl}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.user_email||a.user_id||"—"}</div>
+                <div style={{fontSize:12,color:T.s,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.action||a.description||"—"}</div>
+              </div>
+              <span style={{fontSize:11,color:T.m,flexShrink:0}}>{ago(a.created_at)}</span>
+            </div>
+          ):(
+            <div style={{textAlign:"center",padding:"40px",color:T.m}}>
+              <div style={{fontSize:28,marginBottom:8}}>📋</div>
+              <div style={{fontSize:14}}>No activity logged yet</div>
+            </div>
+          )}
+        </div>
+
+        {/* E) SYSTEM STATUS */}
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
+          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>⚡ System Status</div>
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>EDGE FUNCTIONS</div>
+            {[
+              ["generate-daily-content","Daily content generation"],
+              ["process-lead","Lead intake webhook"],
+              ["livi-chat","AI chat endpoint"],
+              ["send-email","Email notifications"],
+            ].map(([name,desc])=>
+              <div key={name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6}}>
+                <div style={{minWidth:0,flex:1}}>
+                  <div style={{fontSize:13,fontWeight:600,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
+                  <div style={{fontSize:11,color:T.s}}>{desc}</div>
+                </div>
+                <span style={{fontSize:13,color:T.a,fontWeight:700,flexShrink:0,marginLeft:8}}>✓</span>
+              </div>
+            )}
+          </div>
+          <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>QUICK LINKS</div>
+          {[
+            ["🗄️","Supabase Dashboard","https://supabase.com/dashboard/project/usknntguurefeyzusbdh"],
+            ["▲","Vercel Dashboard","https://vercel.com/dashboard"],
+            ["🐙","GitHub Repo","https://github.com/livinmedia/lpt-recruiting"],
+          ].map(([ic,label,url])=>
+            <a key={label} href={url} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6,textDecoration:"none",color:T.t}}>
+              <span style={{fontSize:18}}>{ic}</span>
+              <span style={{fontSize:13,fontWeight:600}}>{label}</span>
+              <span style={{marginLeft:"auto",fontSize:12,color:T.s}}>→</span>
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* D) PLATFORM CONTENT MANAGER */}
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
+        <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📣 Platform Content Manager</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:14}} className="form-grid">
+          <div>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>TITLE</div>
+            <input value={newContent.title} onChange={ev=>setNewContent(p=>({...p,title:ev.target.value}))} placeholder="Announcement title..." style={{width:"100%",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>TYPE</div>
+            <select value={newContent.type} onChange={ev=>setNewContent(p=>({...p,type:ev.target.value}))} style={{width:"100%",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}>
+              {["announcement","blog","changelog"].map(t=><option key={t} value={t} style={{background:T.card}}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>)}
+            </select>
+          </div>
+          <div style={{gridColumn:"1/3"}}>
+            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>BODY</div>
+            <textarea value={newContent.body} onChange={ev=>setNewContent(p=>({...p,body:ev.target.value}))} placeholder="Write your content..." rows={4} style={{width:"100%",padding:"12px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",lineHeight:1.5}}/>
+          </div>
+        </div>
+        <div onClick={publishContent} style={{padding:"12px 24px",borderRadius:8,background:newContent.title.trim()?T.a:"#333",color:newContent.title.trim()?"#000":T.m,fontSize:15,fontWeight:700,cursor:newContent.title.trim()?"pointer":"default",display:"inline-flex",alignItems:"center",gap:8,marginBottom:24}}>📣 Publish</div>
+        <div style={{fontSize:12,color:T.m,fontWeight:700,letterSpacing:1.5,marginBottom:10}}>PUBLISHED CONTENT</div>
+        {adminContent.length>0?adminContent.map((c,i)=>
+          <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
+                <span style={{fontSize:13,fontWeight:700,color:T.t}}>{c.title}</span>
+                <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:T.bl+"20",color:T.bl}}>{c.type}</span>
+              </div>
+              {c.body&&<div style={{fontSize:13,color:T.s,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.body}</div>}
+            </div>
+            <div style={{flexShrink:0,marginLeft:16,textAlign:"right"}}>
+              <div style={{fontSize:12,color:c.published?T.a:T.y,fontWeight:700}}>{c.published?"Published":"Draft"}</div>
+              <div style={{fontSize:11,color:T.m}}>{c.created_at?new Date(c.created_at).toLocaleDateString():"—"}</div>
+            </div>
+          </div>
+        ):(
+          <div style={{textAlign:"center",padding:"24px",color:T.m}}>No content published yet</div>
+        )}
+      </div>
+    </>
+  );
+
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.s,fontSize:18,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>Authenticating…</div>;
   return(
     <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex"}}>
       <style>{`
@@ -1175,9 +1375,11 @@ html,body{overflow-x:hidden}
         {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"]].map(([id,ic])=>
           <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
         )}
+        {profile?.role==="owner"&&<div onClick={()=>{setViewWithHistory("admin");setSidebarOpen(false);}} title="Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view==="admin"?T.r+"20":"transparent",color:view==="admin"?T.r:T.m,transition:"all 0.12s"}}>🛡️</div>}
         <div style={{flex:1}}/>
         <div onClick={load} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
-        <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,marginTop:4}}>AD</div>
+        <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,marginTop:4,marginBottom:4}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
+        <div onClick={()=>{supabase.auth.signOut().then(()=>{window.location.href="/login";});}} title="Logout" className="nav-btn" style={{width:44,height:44,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:18,color:T.m,transition:"color 0.12s"}} onMouseOver={ev=>ev.currentTarget.style.color=T.r} onMouseOut={ev=>ev.currentTarget.style.color=T.m}>⏻</div>
       </div>
 
       {/* MAIN AREA */}
@@ -1185,7 +1387,7 @@ html,body{overflow-x:hidden}
         {view!=="lead"&&view!=="addlead"&&<div className="page-header" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div className="hamburger-btn" onClick={()=>setSidebarOpen(v=>!v)} style={{display:"none",width:44,height:44,borderRadius:8,alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",background:T.card,border:`1px solid ${T.b}`,color:T.t,flexShrink:0}}>☰</div>
-            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":"LIVI AI"}</h1>
+            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":view==="admin"?"Admin":"LIVI AI"}</h1>
           </div>
           <div className="page-header-actions" style={{display:"flex",alignItems:"center",gap:12}}>
             <div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>
@@ -1197,6 +1399,7 @@ html,body{overflow-x:hidden}
         {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
         {view==="agents"&&<AgentDirectory/>}
         {view==="content"&&<ContentTab/>}
+        {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
