@@ -1477,7 +1477,7 @@ html,body{overflow-x:hidden}
       <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",flexShrink:0}}>
         {/* Top: logo + nav */}
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14,width:"100%"}}>
-          <img src="/logo-rkrt.png" alt="rkrt.in" style={{width:44,height:44,borderRadius:9,marginBottom:6,objectFit:"contain"}} />
+          <div style={{width:44,height:44,borderRadius:9,marginBottom:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,letterSpacing:"-0.5px",lineHeight:1}}><span style={{color:"#fff"}}>rkrt</span><span style={{color:"#000"}}>.in</span></div>
           {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"]].map(([id,ic])=>
             <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s"}}>{ic}</div>
           )}
