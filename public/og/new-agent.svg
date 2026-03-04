@@ -27,7 +27,7 @@
 
   <!-- Brand -->
   <rect x="60" y="54" width="160" height="36" rx="8" fill="#00E5A0" fill-opacity="0.14"/>
-  <text x="76" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#00E5A0" letter-spacing="2">LPT REALTY</text>
+  <text x="76" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#00E5A0" letter-spacing="2">RKRT.IN</text>
 
   <!-- NEW badge -->
   <rect x="240" y="54" width="80" height="36" rx="8" fill="#3B82F6" fill-opacity="0.2"/>
@@ -61,5 +61,5 @@
   <text x="1060" y="340" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="120" fill="#00E5A0" fill-opacity="0.8">🚀</text>
 
   <!-- Footer -->
-  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#2A3345">lpt-recruiting.vercel.app/new-agent</text>
+  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#2A3345">rkrt.in/new-agent</text>
 </svg>

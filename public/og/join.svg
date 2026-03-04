@@ -27,7 +27,7 @@
 
   <!-- Brand pill -->
   <rect x="60" y="54" width="160" height="36" rx="8" fill="#00E5A0" fill-opacity="0.14"/>
-  <text x="76" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#00E5A0" letter-spacing="2">LPT REALTY</text>
+  <text x="76" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#00E5A0" letter-spacing="2">RKRT.IN</text>
 
   <!-- Main headline -->
   <text x="60" y="210" font-family="system-ui, -apple-system, sans-serif" font-size="82" font-weight="800" fill="#E4E8F1">Join LPT Realty</text>
@@ -58,5 +58,5 @@
   <text x="1050" y="355" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#00E5A0">EARN MORE</text>
 
   <!-- Footer -->
-  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#2A3345">lpt-recruiting.vercel.app/join</text>
+  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#2A3345">rkrt.in/join</text>
 </svg>

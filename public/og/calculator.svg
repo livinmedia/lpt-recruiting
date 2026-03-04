@@ -20,7 +20,7 @@
 
   <!-- Brand -->
   <rect x="60" y="54" width="160" height="36" rx="8" fill="#00E5A0" fill-opacity="0.14"/>
-  <text x="76" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#00E5A0" letter-spacing="2">LPT REALTY</text>
+  <text x="76" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#00E5A0" letter-spacing="2">RKRT.IN</text>
 
   <!-- Headline -->
   <text x="60" y="200" font-family="system-ui, -apple-system, sans-serif" font-size="76" font-weight="800" fill="#E4E8F1">Commission</text>
@@ -58,5 +58,5 @@
   <rect x="968" y="374" width="108" height="40" rx="8" fill="#00E5A0"/>
 
   <!-- Footer -->
-  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#2A3345">lpt-recruiting.vercel.app/calculator</text>
+  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#2A3345">rkrt.in/calculator</text>
 </svg>
