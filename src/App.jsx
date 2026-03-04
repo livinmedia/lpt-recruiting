@@ -719,17 +719,8 @@ function ContentTab({userId,userProfile}){
     setGenerating(false);
   };
 
-  const copyPost=(id,text,slug)=>{
-    // Append tracking ref to landing page URL in the copied text
-    let finalText = text;
-    if(slug && userId) {
-      const baseUrl = `https://rkrt.in/${slug}`;
-      finalText = text.replace(baseUrl, `${baseUrl}${trackingRef}`);
-      if(!finalText.includes(trackingRef)) {
-        finalText = `${text}\n\nhttps://rkrt.in/${slug}${trackingRef}`;
-      }
-    }
-    navigator.clipboard?.writeText(finalText);
+  const copyPost=(id,text)=>{
+    navigator.clipboard?.writeText(text);
     setCopied(p=>({...p,[id]:true}));
     setTimeout(()=>setCopied(p=>({...p,[id]:false})),2000);
   };
@@ -851,7 +842,7 @@ function ContentTab({userId,userProfile}){
                     </a>
                   )}
                   <div style={{marginTop:"auto",display:"flex",gap:8}}>
-                    <div onClick={()=>{copyPost(post.id,post.body,post.landing_page_slug);logActivity(userId,'copy_content',{platform:post.platform,theme:post.theme})}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                    <div onClick={()=>{copyPost(post.id,post.body);logActivity(userId,'copy_content',{platform:post.platform,theme:post.theme})}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                       {copied[post.id]?"✓ Copied":"📋 Copy"}
                     </div>
                     {!post.is_posted&&(
