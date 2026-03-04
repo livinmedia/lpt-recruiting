@@ -2,6 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "routes": [
+    { "src": "^/og/(.*)", "dest": "/og/$1" },
+    { "src": "^/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "^/(.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp|mp4|pdf))$", "dest": "/$1" },
     { "src": "^/$", "dest": "/home.html" },
     { "src": "^/home$", "dest": "/home.html" },
     { "src": "^/login$", "dest": "/login.html" },
