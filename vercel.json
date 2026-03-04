@@ -9,11 +9,13 @@
     { "src": "^/home$", "dest": "/home.html" },
     { "src": "^/login$", "dest": "/login.html" },
     { "src": "^/signup$", "dest": "/signup.html" },
-    { "src": "^/join$", "dest": "/join/index.html" },
-    { "src": "^/calculator$", "dest": "/calculator/index.html" },
-    { "src": "^/new-agent$", "dest": "/new-agent/index.html" },
-    { "src": "^/revenue-share$", "dest": "/revenue-share/index.html" },
-    { "src": "^/why-switch$", "dest": "/why-switch/index.html" },
-    { "src": "^/app(/.*)?$", "dest": "/index.html" }
+    { "src": "^/join$", "dest": "/join.html" },
+    { "src": "^/calculator$", "dest": "/calculator.html" },
+    { "src": "^/new-agent$", "dest": "/new-agent.html" },
+    { "src": "^/revenue-share$", "dest": "/revenue-share.html" },
+    { "src": "^/why-switch$", "dest": "/why-switch.html" },
+    { "src": "^/robots\\.txt$", "dest": "/robots.txt" },
+    { "src": "^/app(/.*)?$", "dest": "/index.html" },
+    { "src": "^/(.*)$", "dest": "/home.html" }
   ]
 }
