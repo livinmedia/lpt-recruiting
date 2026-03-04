@@ -775,7 +775,7 @@ function ContentTab({userId,userProfile}){
         <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all",marginBottom:4}}>{`https://rkrt.in/join${trackingRef}${targetParam}`}</div>
         <div style={{fontSize:12,color:T.s}}>Leads route to your pipeline{targetBrokerage?` · Targeting ${targetBrokerage}`:""}</div>
       </div>
-      <div onClick={()=>{navigator.clipboard?.writeText(`https://rkrt.in/join${trackingRef}${targetParam}`).catch(()=>{const el=document.createElement('textarea');el.value=`https://rkrt.in/join${trackingRef}${targetParam}`;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);});}} style={{padding:"10px 16px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,alignSelf:"flex-end"}}>📋 Copy Link</div>
+      <div onClick={()=>{const url=`https://rkrt.in/join${trackingRef}${targetParam}`;try{navigator.clipboard.writeText(url);}catch(e){const t=document.createElement('textarea');t.value=url;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.focus();t.select();document.execCommand('copy');document.body.removeChild(t);}}} style={{padding:"10px 16px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,alignSelf:"flex-end"}}>📋 Copy Link</div>
     </div>
     {targetBrokerage&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,fontSize:12,color:T.s}}>💡 Generate fresh content to get posts targeting <strong style={{color:T.t}}>{targetBrokerage}</strong> agents</div>}
   </div>
