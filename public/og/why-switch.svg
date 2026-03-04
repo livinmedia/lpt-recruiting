@@ -24,7 +24,7 @@
 
   <!-- Headline -->
   <text x="60" y="190" font-family="system-ui, -apple-system, sans-serif" font-size="68" font-weight="800" fill="#E4E8F1">Why Top Agents</text>
-  <text x="60" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="68" font-weight="800" fill="#00E5A0">Switch to LPT</text>
+  <text x="60" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="68" font-weight="800" fill="#00E5A0">Switch to rkrt.in</text>
 
   <!-- Underline -->
   <rect x="60" y="284" width="480" height="5" rx="2" fill="#00E5A0"/>
@@ -37,7 +37,7 @@
   <text x="190" y="410" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#7B8BA3">Others</text>
 
   <rect x="336" y="378" width="260" height="50" rx="10" fill="#00E5A0" fill-opacity="0.12" stroke="#00E5A0" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="466" y="410" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#00E5A0">LPT Realty</text>
+  <text x="466" y="410" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#00E5A0">rkrt.in</text>
 
   <!-- Row 1 -->
   <text x="190" y="452" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#F43F5E">70/30 split</text>
