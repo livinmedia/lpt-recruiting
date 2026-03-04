@@ -1,6 +1,14 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "all" }
+      ]
+    }
+  ],
   "routes": [
     { "src": "^/og/(.*)", "dest": "/og/$1" },
     { "src": "^/assets/(.*)", "dest": "/assets/$1" },
