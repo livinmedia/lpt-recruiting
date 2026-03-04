@@ -7,11 +7,11 @@
 </head>
 <body>
 <script>
-const ref = new URLSearchParams(window.location.search).get('ref') || '';
-const page = 'join';
-fetch(`https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-landing?page=${page}&ref=${ref}`)
-  .then(r => r.text())
-  .then(html => { document.open(); document.write(html); document.close(); });
+const p=new URLSearchParams(window.location.search);
+const ref=p.get('ref')||'';const target=p.get('target')||'';
+const params=new URLSearchParams({page:'join'});
+if(ref)params.set('ref',ref);if(target)params.set('target',target);
+fetch(`https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-landing?${params}`)
+  .then(r=>r.text()).then(html=>{document.open();document.write(html);document.close();});
 </script>
-</body>
-</html>
+</body></html>
