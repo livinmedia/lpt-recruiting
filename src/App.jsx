@@ -579,7 +579,11 @@ export default function Livi(){
     supabase.auth.getSession().then(async({data:{session}})=>{
       if(!session){window.location.href="/login";return;}
       setAuthUser(session.user);
-      const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+      const {data:prof,error:profErr}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+      console.log('Profile loaded:', prof);
+      console.log('Profile error:', profErr);
+      console.log('Profile role:', prof?.role);
+      console.log('Is owner:', prof?.role === 'owner');
       setProfile(prof||null);
       setAuthLoading(false);
     });
