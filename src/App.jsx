@@ -584,6 +584,19 @@ export default function Livi(){
     });
   },[]);
 
+  const [profileEdit,setProfileEdit]=useState(null);
+  const [profileSaving,setProfileSaving]=useState(false);
+  useEffect(()=>{
+    if(profile) setProfileEdit({full_name:profile.full_name||"",phone:profile.phone||"",brokerage:profile.brokerage||"",license_number:profile.license_number||"",license_state:profile.license_state||"",market:profile.market||""});
+  },[profile]);
+  const saveProfile=async()=>{
+    if(!profileEdit)return;
+    setProfileSaving(true);
+    const{error}=await supabase.from("profiles").update(profileEdit).eq("id",authUser.id);
+    if(!error)setProfile(p=>({...p,...profileEdit}));
+    setProfileSaving(false);
+  };
+
   const askLiviInline=async(q)=>{
     setInlineLoading(true);setInlineResponse(null);
     try{
@@ -1227,6 +1240,61 @@ export default function Livi(){
     </>
   );
 
+  // ━━━ PROFILE VIEW ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const ProfileView=()=>{
+    if(!profileEdit)return null;
+    const inSt={width:"100%",padding:"13px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"};
+    const roSt={width:"100%",padding:"13px 16px",borderRadius:8,background:T.bg,border:`1px solid ${T.b}`,color:T.m,fontSize:15};
+    const FI=({label,field,placeholder})=>(
+      <div>
+        <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>{label}</div>
+        <input value={profileEdit[field]||""} onChange={ev=>setProfileEdit(p=>({...p,[field]:ev.target.value}))} placeholder={placeholder||""} style={inSt}/>
+      </div>
+    );
+    const FD=({label,value})=>(
+      <div>
+        <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>{label}</div>
+        <div style={roSt}>{value||"—"}</div>
+      </div>
+    );
+    return(
+      <div style={{maxWidth:640,margin:"0 auto"}}>
+        <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:28}}>
+          <div style={{width:64,height:64,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:800,flexShrink:0}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
+          <div>
+            <div style={{fontSize:22,fontWeight:800,color:T.t}}>{profile?.full_name||"Your Name"}</div>
+            <div style={{fontSize:14,color:T.s,marginTop:2}}>{authUser?.email}</div>
+          </div>
+        </div>
+
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"28px 30px",marginBottom:20}}>
+          <div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:20}}>Account Info</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}} className="form-grid">
+            <FI label="FULL NAME" field="full_name" placeholder="Your Name"/>
+            <FI label="PHONE" field="phone" placeholder="(555) 123-4567"/>
+            <FI label="BROKERAGE" field="brokerage" placeholder="LPT Realty"/>
+            <FI label="LICENSE NUMBER" field="license_number" placeholder="RE123456"/>
+            <FI label="LICENSE STATE" field="license_state" placeholder="TX"/>
+            <FI label="MARKET" field="market" placeholder="Austin, TX"/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:24,opacity:0.6}} className="form-grid">
+            <FD label="EMAIL (read-only)" value={authUser?.email}/>
+            <FD label="ROLE" value={profile?.role}/>
+            <FD label="PLAN" value={profile?.plan}/>
+          </div>
+          <div onClick={saveProfile} style={{padding:"13px 28px",borderRadius:8,background:profileSaving?"#333":T.a,color:profileSaving?T.m:"#000",fontSize:15,fontWeight:700,cursor:profileSaving?"default":"pointer",display:"inline-flex",alignItems:"center",gap:8}}>
+            {profileSaving?"Saving…":"✓ Save Changes"}
+          </div>
+        </div>
+
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
+          <div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:16}}>Session</div>
+          <div onClick={()=>{supabase.auth.signOut().then(()=>{window.location.href="/login";});}} style={{padding:"12px 24px",borderRadius:8,background:T.r+"15",border:`1px solid ${T.r}30`,color:T.r,fontSize:15,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}>⏻ Logout</div>
+        </div>
+      </div>
+    );
+  };
+
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.s,fontSize:18,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>Authenticating…</div>;
   return(
@@ -1378,8 +1446,10 @@ html,body{overflow-x:hidden}
         {profile?.role==="owner"&&<div onClick={()=>{setViewWithHistory("admin");setSidebarOpen(false);}} title="Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view==="admin"?T.r+"20":"transparent",color:view==="admin"?T.r:T.m,transition:"all 0.12s"}}>🛡️</div>}
         <div style={{flex:1}}/>
         <div onClick={load} style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
-        <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,marginTop:4,marginBottom:4}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
-        <div onClick={()=>{supabase.auth.signOut().then(()=>{window.location.href="/login";});}} title="Logout" className="nav-btn" style={{width:44,height:44,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:18,color:T.m,transition:"color 0.12s"}} onMouseOver={ev=>ev.currentTarget.style.color=T.r} onMouseOut={ev=>ev.currentTarget.style.color=T.m}>⏻</div>
+        <div onClick={()=>{setViewWithHistory("profile");setSidebarOpen(false);}} title="My Profile" style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",marginTop:4,marginBottom:4}}>
+          <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,border:`2px solid ${view==="profile"?T.bl:T.b}`,transition:"border-color 0.12s"}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
+          <div style={{fontSize:9,color:T.m,maxWidth:60,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center",letterSpacing:0.3}}>{profile?.full_name?.split(" ")[0]||"Account"}</div>
+        </div>
       </div>
 
       {/* MAIN AREA */}
@@ -1387,11 +1457,7 @@ html,body{overflow-x:hidden}
         {view!=="lead"&&view!=="addlead"&&<div className="page-header" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div className="hamburger-btn" onClick={()=>setSidebarOpen(v=>!v)} style={{display:"none",width:44,height:44,borderRadius:8,alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",background:T.card,border:`1px solid ${T.b}`,color:T.t,flexShrink:0}}>☰</div>
-            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":view==="admin"?"Admin":"LIVI AI"}</h1>
-          </div>
-          <div className="page-header-actions" style={{display:"flex",alignItems:"center",gap:12}}>
-            <div onClick={()=>setViewWithHistory("addlead")} style={{padding:"12px 20px",borderRadius:8,background:T.am,fontSize:15,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ New Lead</div>
-            <div style={{fontSize:14,color:leads.length>0?T.a:T.r,fontWeight:600}}>{loading?"⟳ Loading...":leads.length>0?`✓ ${leads.length} leads`:"✕ No data"}</div>
+            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":view==="admin"?"Admin":view==="profile"?"My Profile":"LIVI AI"}</h1>
           </div>
         </div>}
         {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents in my target markets who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.`,T.y]]}/><Dash/></>}
@@ -1400,6 +1466,7 @@ html,body{overflow-x:hidden}
         {view==="agents"&&<AgentDirectory/>}
         {view==="content"&&<ContentTab/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
+        {view==="profile"&&<ProfileView/>}
         {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
