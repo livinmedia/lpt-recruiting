@@ -22,6 +22,24 @@ async function logActivity(userId, action, metadata = {}) {
   } catch (e) { /* silent fail */ }
 }
 
+const startCheckout = async (userId, email) => {
+  try {
+    const r = await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/create-checkout', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_id: userId,
+        email: email,
+        success_url: `${window.location.origin}?upgraded=true`,
+        cancel_url: `${window.location.origin}?cancelled=true`
+      })
+    });
+    const data = await r.json();
+    if (data.url) window.location.href = data.url;
+    else alert('Could not start checkout. Please try again.');
+  } catch(e) { alert('Checkout error. Please try again.'); }
+};
+
 async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}={}) {
   let params = [];
   if(state) params.push(`state=eq.${state}`);
@@ -87,6 +105,31 @@ PERSONALITY:
 - When drafting messages, make them personal and specific — never generic
 
 You are their unfair advantage in recruiting. Act like it.`;
+
+const UpgradeGate = ({userProfile, userId}) => (
+  <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'60px 20px',textAlign:'center'}}>
+    <div style={{fontSize:48,marginBottom:16}}>🔒</div>
+    <div style={{fontSize:24,fontWeight:800,color:T.t,marginBottom:8}}>RKRT.in Pro</div>
+    <div style={{fontSize:15,color:T.s,marginBottom:32,maxWidth:400,lineHeight:1.7}}>
+      Unlock the full recruiting intelligence platform — agent directory, custom content generation, pipeline CRM, and LIVI AI tools.
+    </div>
+    <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:'32px 40px',marginBottom:32,width:'100%',maxWidth:360}}>
+      <div style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:8}}>RKRT.IN PRO</div>
+      <div style={{fontSize:48,fontWeight:900,color:T.t,marginBottom:4}}>$97<span style={{fontSize:18,color:T.s,fontWeight:400}}>/mo</span></div>
+      <div style={{fontSize:13,color:T.s,marginBottom:24}}>Cancel anytime</div>
+      {['Agent directory (848K+ agents)','Daily AI content brief','Custom targeted post generation','Pipeline CRM','Commission calculator','Landing pages with tracking'].map(f => (
+        <div key={f} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,textAlign:'left'}}>
+          <span style={{color:T.a,fontWeight:700}}>✓</span>
+          <span style={{fontSize:14,color:T.s}}>{f}</span>
+        </div>
+      ))}
+    </div>
+    <div onClick={()=>startCheckout(userId, userProfile?.email)} style={{padding:'16px 48px',borderRadius:10,background:T.a,color:'#000',fontSize:16,fontWeight:800,cursor:'pointer',width:'100%',maxWidth:360,textAlign:'center'}}>
+      Upgrade to Pro — $97/mo →
+    </div>
+    <div style={{fontSize:12,color:T.m,marginTop:12}}>Powered by Stripe · Secure checkout</div>
+  </div>
+);
 
 const STAGES = [{id:"new",l:"New",c:T.s},{id:"researched",l:"Researched",c:T.bl},{id:"outreach_sent",l:"Outreach",c:T.y},{id:"meeting_booked",l:"Meeting",c:T.p},{id:"in_conversation",l:"Talking",c:T.c},{id:"recruited",l:"Recruited",c:T.a}];
 const PC = [T.a,T.bl,T.y,T.p,T.r,T.c];
@@ -961,6 +1004,7 @@ export default function Livi(){
   const [profile,setProfile]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
   const [showOnboarding,setShowOnboarding]=useState(false);
+  const [showUpgradeSuccess,setShowUpgradeSuccess]=useState(false);
 
   const load=useCallback(async()=>{
     if(!authUser) return;
@@ -1017,6 +1061,13 @@ export default function Livi(){
         setShowOnboarding(true);
       }
       setAuthLoading(false);
+      // Check for Stripe upgrade success
+      if(window.location.search.includes('upgraded=true')){
+        const freshProf=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+        if(freshProf.data) setProfile(freshProf.data);
+        setShowUpgradeSuccess(true);
+        setTimeout(()=>{setShowUpgradeSuccess(false);window.history.replaceState({},'',window.location.pathname);},5000);
+      }
     });
     const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
       if(!session) window.location.href="/login";
@@ -1100,6 +1151,7 @@ export default function Livi(){
   const today=leads.filter(l=>l.created_at&&new Date(l.created_at).toDateString()===new Date().toDateString()).length;
   const apiCost=activity.reduce((s,a)=>s+parseFloat(a.cost||0),0);
   const cpl=total>0?(20/total).toFixed(2):"—";
+  const isPro=profile?.plan==="pro"||profile?.plan==="enterprise"||profile?.role==="owner";
   const pScore=Math.min(100,Math.round((total>0?25:0)+(targets>0?25:0)+(leads.some(l=>l.pipeline_stage==="outreach_sent")?25:0)+(leads.some(l=>l.pipeline_stage==="meeting_booked")?25:0)));
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
@@ -1778,7 +1830,8 @@ export default function Livi(){
   }
 
   return(
-    <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex"}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex",position:"relative"}}>
+      {showUpgradeSuccess&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:T.a,color:"#000",padding:"14px 32px",borderRadius:10,fontSize:15,fontWeight:800,boxShadow:"0 4px 24px rgba(0,229,160,0.4)",display:"flex",alignItems:"center",gap:10}}>🎉 Welcome to RKRT.in Pro! All features unlocked.</div>}
       <style>{`
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 textarea::placeholder,input::placeholder{color:${T.m}}
@@ -1885,9 +1938,9 @@ select option{background:${T.card};color:${T.t}}
           )}
         </div>}
         {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.${profile?.brokerage?" I recruit for "+profile.brokerage:""}`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.${profile?.brokerage?" Context: I'm at "+profile.brokerage:""}`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents${profile?.market?" in "+profile.market:""} who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.${profile?.brokerage?" I'm at "+profile.brokerage:""}`,T.y]]}/><Dash/></>}
-        {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>}
-        {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>}
-        {view==="agents"&&<AgentDirectory userId={authUser?.id} userProfile={profile}/>}
+        {view==="pipeline"&&(isPro?<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/><Pipeline/></>:<UpgradeGate userProfile={profile} userId={authUser?.id}/>)}
+        {view==="crm"&&(isPro?<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/><CRM/></>:<UpgradeGate userProfile={profile} userId={authUser?.id}/>)}
+        {view==="agents"&&(isPro?<AgentDirectory userId={authUser?.id} userProfile={profile}/>:<UpgradeGate userProfile={profile} userId={authUser?.id}/>)}
         {view==="content"&&<ContentTab userId={authUser?.id} userProfile={profile}/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="profile"&&<ProfileView/>}
