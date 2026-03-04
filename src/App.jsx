@@ -899,7 +899,27 @@ export default function Livi(){
     setLoading(false);
   },[authUser]);
 
-  useEffect(()=>{load();const i=setInterval(load,45000);return()=>clearInterval(i);},[load]);
+  useEffect(()=>{
+    load();
+    const channel = supabase
+      .channel('leads-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'leads',
+        filter: `user_id=eq.${authUser?.id}`
+      }, (payload) => {
+        if(payload.eventType === 'INSERT') {
+          setLeads(p => [payload.new, ...p]);
+        } else if(payload.eventType === 'UPDATE') {
+          setLeads(p => p.map(l => l.id === payload.new.id ? payload.new : l));
+        } else if(payload.eventType === 'DELETE') {
+          setLeads(p => p.filter(l => l.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  },[load]);
 
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
