@@ -1174,24 +1174,30 @@ export default function Livi(){
           <div style={{marginBottom:20}}>
             <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>EDGE FUNCTIONS</div>
             {[
-              ["generate-daily-content","Daily content generation"],
-              ["process-lead","Lead intake webhook"],
-              ["livi-chat","AI chat endpoint"],
-              ["send-email","Email notifications"],
-            ].map(([name,desc])=>
-              <div key={name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6}}>
+              ["sync-agents","Agent directory sync (FL/TX/NY/CT)","ok"],
+              ["generate-content","Daily AI content generation (6 posts)","ok"],
+              ["research-to-lead","AI agent research & dossier","ok"],
+              ["parse-research","Parse research into lead fields","ok"],
+              ["migrate-leads","Lead data migration tool","ok"],
+              ["bulk-agent-load","Bulk agent directory loader","ok"],
+              ["load-fl-csv","Florida CSV agent loader","ok"],
+              ["parse-fl-csv","Florida CSV parser","ok"],
+              ["upload-pages","Landing page uploader","ok"],
+              ["lp","Landing page server (v3 - has bug)","warn"],
+            ].map(([name,desc,status])=>
+              <div key={name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${status==="warn"?T.y+"30":T.b}`,marginBottom:6}}>
                 <div style={{minWidth:0,flex:1}}>
                   <div style={{fontSize:13,fontWeight:600,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
                   <div style={{fontSize:11,color:T.s}}>{desc}</div>
                 </div>
-                <span style={{fontSize:13,color:T.a,fontWeight:700,flexShrink:0,marginLeft:8}}>✓</span>
+                <span style={{fontSize:13,color:status==="warn"?T.y:T.a,fontWeight:700,flexShrink:0,marginLeft:8}}>{status==="warn"?"⚠️":"✅"}</span>
               </div>
             )}
           </div>
           <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>QUICK LINKS</div>
           {[
             ["🗄️","Supabase Dashboard","https://supabase.com/dashboard/project/usknntguurefeyzusbdh"],
-            ["▲","Vercel Dashboard","https://vercel.com/dashboard"],
+            ["▲","Vercel Dashboard","https://vercel.com/livinmedias-projects/lpt-recruiting"],
             ["🐙","GitHub Repo","https://github.com/livinmedia/lpt-recruiting"],
           ].map(([ic,label,url])=>
             <a key={label} href={url} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6,textDecoration:"none",color:T.t}}>
