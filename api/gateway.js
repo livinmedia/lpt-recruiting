@@ -1,10 +1,8 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
   const gwUrl = process.env.OPENCLAW_URL || 'http://137.184.182.195:18790';
-
   try {
     const response = await fetch(gwUrl, {
       method: 'POST',
@@ -16,4 +14,4 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
-}
+};
