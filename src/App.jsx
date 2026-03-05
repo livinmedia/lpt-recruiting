@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
+const rechartsReady = import("recharts").then(m => {
+  BarChart = m.BarChart; Bar = m.Bar; XAxis = m.XAxis; YAxis = m.YAxis;
+  Tooltip = m.Tooltip; ResponsiveContainer = m.ResponsiveContainer;
+  PieChart = m.PieChart; Pie = m.Pie; Cell = m.Cell;
+});
 import { createClient } from "@supabase/supabase-js";
 
 // rkrt.in Platform — LIVI AI Recruiting Intelligence
@@ -1100,6 +1105,8 @@ export default function Livi(){
     return () => supabase.removeChannel(channel);
   },[load]);
 
+  const [chartsReady,setChartsReady]=useState(false);
+  useEffect(()=>{rechartsReady.then(()=>setChartsReady(true));},[]);
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
   const [sidebarOpen,setSidebarOpen]=useState(false);
@@ -1368,7 +1375,7 @@ export default function Livi(){
       </div>
 
       <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📈 Pipeline</div><Gauge score={pScore}/><div style={{marginTop:12}}><ResponsiveContainer width="100%" height={160}><BarChart data={stages} layout="vertical" barSize={14}><XAxis type="number" hide/><YAxis type="category" dataKey="l" tick={{fontSize:13,fill:T.s}} width={76} axisLine={false} tickLine={false}/><Bar dataKey="count" radius={[0,4,4,0]}>{stages.map((d,i)=><Cell key={i} fill={d.c}/>)}</Bar></BarChart></ResponsiveContainer></div></div>
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}><div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📈 Pipeline</div><Gauge score={pScore}/><div style={{marginTop:12}}>{chartsReady&&ResponsiveContainer?<ResponsiveContainer width="100%" height={160}><BarChart data={stages} layout="vertical" barSize={14}><XAxis type="number" hide/><YAxis type="category" dataKey="l" tick={{fontSize:13,fill:T.s}} width={76} axisLine={false} tickLine={false}/><Bar dataKey="count" radius={[0,4,4,0]}>{stages.map((d,i)=><Cell key={i} fill={d.c}/>)}</Bar></BarChart></ResponsiveContainer>:<div style={{height:160,display:"flex",alignItems:"center",justifyContent:"center",color:T.m,fontSize:13}}>Loading chart...</div>}</div></div>
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
           <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Recent Activity</div>
           {activity.length>0?activity.slice(0,8).map((a,i)=>
