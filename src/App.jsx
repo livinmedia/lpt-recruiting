@@ -1107,10 +1107,6 @@ export default function Livi(){
   const [notifications, setNotifications] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const unreadCount = notifications.filter(n=>!n.read).length;
-  const [rueOpen, setRueOpen] = useState(false);
-  const [rueMessages, setRueMessages] = useState([]);
-  const [rueInput, setRueInput] = useState('');
-  const [rueLoading, setRueLoading] = useState(false);
 
   useEffect(()=>{
     supabase.auth.getSession().then(async({data:{session}})=>{
@@ -1202,23 +1198,6 @@ export default function Livi(){
       setInlineResponse(d.choices?.[0]?.message?.content||"No response.");
     }catch{setInlineResponse("Connection error.");}
     setInlineLoading(false);
-  };
-
-  const askRue = async () => {
-    if (!rueInput.trim() || rueLoading) return;
-    const userMsg = rueInput.trim();
-    setRueMessages(p => [...p, { role: 'user', text: userMsg }]);
-    setRueInput(''); setRueLoading(true);
-    try {
-      const r = await fetch('/api/gateway', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agent: 'rue', message: userMsg })
-      });
-      const d = await r.json();
-      setRueMessages(p => [...p, { role: 'rue', text: d.response || d.message || JSON.stringify(d) }]);
-    } catch { setRueMessages(p => [...p, { role: 'rue', text: 'Connection error.' }]); }
-    setRueLoading(false);
   };
 
   const setViewWithHistory=(v)=>{
@@ -2128,32 +2107,6 @@ select option{background:${T.card};color:${T.t}}
             </div>
           </div>
         )}
-
-        {/* Rue Chat Widget */}
-        {rueOpen && (
-          <div style={{position:'fixed',bottom:90,right:24,width:370,maxHeight:520,background:T.card,border:`1px solid ${T.b}`,borderRadius:16,boxShadow:'0 12px 48px rgba(0,0,0,0.5)',zIndex:2000,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-            <div style={{padding:'14px 18px',background:'linear-gradient(135deg,#8B5CF6,#6D28D9)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <span style={{fontWeight:800,fontSize:16,color:'#fff'}}>Rue</span>
-              <span onClick={()=>setRueOpen(false)} style={{cursor:'pointer',fontSize:20,color:'#fff',opacity:0.8}}>✕</span>
-            </div>
-            <div style={{flex:1,overflowY:'auto',padding:16,display:'flex',flexDirection:'column',gap:10,maxHeight:360}}>
-              {rueMessages.length===0 && <div style={{textAlign:'center',color:T.s,fontSize:13,padding:20}}>Ask Rue anything about recruiting, leads, or strategy.</div>}
-              {rueMessages.map((m,i)=>(
-                <div key={i} style={{alignSelf:m.role==='user'?'flex-end':'flex-start',background:m.role==='user'?'#8B5CF6':'#1E1E2E',color:'#fff',padding:'10px 14px',borderRadius:12,maxWidth:'85%',fontSize:14,lineHeight:1.5,whiteSpace:'pre-wrap'}}>
-                  {m.text}
-                </div>
-              ))}
-              {rueLoading && <div style={{alignSelf:'flex-start',color:T.s,fontSize:13,padding:'8px 0'}}>Rue is thinking...</div>}
-            </div>
-            <div style={{padding:'10px 14px',borderTop:`1px solid ${T.b}`,display:'flex',gap:8}}>
-              <input value={rueInput} onChange={ev=>setRueInput(ev.target.value)} onKeyDown={ev=>{if(ev.key==='Enter')askRue();}} placeholder="Ask Rue..." style={{flex:1,padding:'10px 14px',borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:'none',fontFamily:'inherit'}}/>
-              <div onClick={askRue} style={{padding:'10px 16px',borderRadius:8,background:rueInput.trim()?'#8B5CF6':'#333',color:'#fff',fontSize:14,fontWeight:700,cursor:rueInput.trim()?'pointer':'default',display:'flex',alignItems:'center'}}>Send</div>
-            </div>
-          </div>
-        )}
-        <div onClick={()=>setRueOpen(o=>!o)} style={{position:'fixed',bottom:24,right:24,width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,#8B5CF6,#6D28D9)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',zIndex:2000,boxShadow:'0 4px 20px rgba(139,92,246,0.5)',transition:'transform 0.15s'}} onMouseOver={ev=>ev.currentTarget.style.transform='scale(1.1)'} onMouseOut={ev=>ev.currentTarget.style.transform='scale(1)'}>
-          <span style={{color:'#fff',fontWeight:800,fontSize:13}}>Rue</span>
-        </div>
       </div>
     </div>
   );
