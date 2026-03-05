@@ -23,6 +23,7 @@
     { "src": "^/revenue-share$", "dest": "/revenue-share.html" },
     { "src": "^/why-switch$", "dest": "/why-switch.html" },
     { "src": "^/robots\\.txt$", "dest": "/robots.txt" },
+    { "src": "^/api/(.*)", "dest": "/api/$1" },
     { "src": "^/app(/.*)?$", "dest": "/index.html" },
     { "src": "^/(.*)$", "dest": "/home.html" }
   ]
