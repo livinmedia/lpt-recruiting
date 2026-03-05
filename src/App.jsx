@@ -58,6 +58,7 @@ async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}
   params.push(`select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration,original_license_date,personal_email,work_email,mobile_phone,linkedin_url,enriched_at`);
   try {
     const url = `${LIVI_SUPA}/agent_directory?${params.join("&")}`;
+    console.log('Agent search URL:', url);
     const r = await fetch(url,{
       headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Prefer":"count=exact"}
     });
