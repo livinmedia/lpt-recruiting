@@ -43,7 +43,7 @@ const startCheckout = async (userId, email) => {
 async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}={}) {
   let params = [];
   if(state) params.push(`state=eq.${state}`);
-  if(brokerage) params.push(`brokerage_name=ilike.${encodeURIComponent('%' + brokerage + '%')}`);
+  if(brokerage) params.push(`brokerage_name=ilike.%25${encodeURIComponent(brokerage)}%25`);
   if(name) params.push(`full_name=ilike.*${encodeURIComponent(name)}*`);
   if(city) params.push(`city=ilike.*${encodeURIComponent(city)}*`);
   if(newDays) {
