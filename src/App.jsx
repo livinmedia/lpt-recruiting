@@ -562,7 +562,7 @@ function AgentDirectory({userId,userProfile}){
   return (
     <>
       <div style={{display:"flex",gap:16,marginBottom:20,flexWrap:"wrap"}}>
-        {[["🇺🇸","849K+","Licensed Agents",T.a],["🏢","51K+","Brokerages",T.bl],["📍","4","States Live",T.p],["🆕","~1,000/mo","New TX Agents",T.y]].map(([ic,v,l,c],i)=>
+        {[["🇺🇸","1.2M+","Licensed Agents",T.a],["🏢","51K+","Brokerages",T.bl],["📍","4","States Live",T.p],["🆕","~1,000/mo","New TX Agents",T.y]].map(([ic,v,l,c],i)=>
           <div key={i} style={{flex:"1 1 140px",background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"18px 22px",display:"flex",alignItems:"center",gap:14}}>
             <div style={{fontSize:24}}>{ic}</div>
             <div><div style={{fontSize:22,fontWeight:800,color:T.t}}>{v}</div><div style={{fontSize:11,color:c,fontWeight:700,letterSpacing:1}}>{l.toUpperCase()}</div></div>
@@ -615,7 +615,7 @@ function AgentDirectory({userId,userProfile}){
 
       {error && <div style={{padding:"16px 20px",borderRadius:10,background:T.r+"15",border:`1px solid ${T.r}30`,color:T.r,marginBottom:16,fontSize:14}}>{error}</div>}
 
-      {loading && <div style={{textAlign:"center",padding:40}}><div style={{fontSize:24,animation:"pulse 1s infinite"}}>🔍</div><div style={{color:T.s,marginTop:8}}>Searching 849K+ agents...</div></div>}
+      {loading && <div style={{textAlign:"center",padding:40}}><div style={{fontSize:24,animation:"pulse 1s infinite"}}>🔍</div><div style={{color:T.s,marginTop:8}}>Searching 1.2M+ agents...</div></div>}
 
       {searched && !loading && (
         <div style={{background:T.card,borderRadius:12,border:`1px solid ${T.b}`,overflow:"hidden"}}>
@@ -673,7 +673,7 @@ function AgentDirectory({userId,userProfile}){
       {!searched && !loading && (
         <div style={{textAlign:"center",padding:"60px 20px"}}>
           <div style={{fontSize:48,marginBottom:16}}>🔍</div>
-          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>849,472 Real Licensed Agents</div>
+          <div style={{fontSize:20,fontWeight:700,color:T.t,marginBottom:8}}>1.2M+ Real Licensed Agents</div>
           <div style={{fontSize:15,color:T.s,maxWidth:500,margin:"0 auto",lineHeight:1.6}}>Search by state, brokerage, name, or city. Every record is from official state licensing boards. Add agents directly to your recruiting pipeline.</div>
           <div style={{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:10,marginTop:24}}>
             {[{l:"🆕 New TX agents (30d)",f:{state:"TX",brokerage:"",name:"",city:"",newDays:"30"}},{l:"eXp agents in TX",f:{state:"TX",brokerage:"EXP REALTY",name:"",city:"",newDays:""}},{l:"Compass in NY",f:{state:"NY",brokerage:"COMPASS",name:"",city:"",newDays:""}},{l:"All LPT Realty",f:{state:"",brokerage:"LPT REALTY",name:"",city:"",newDays:""}}].map((ex,i)=>
