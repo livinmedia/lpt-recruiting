@@ -1104,6 +1104,9 @@ export default function Livi(){
   const [inlineLoading,setInlineLoading]=useState(false);
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [profileMenuOpen,setProfileMenuOpen]=useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const unreadCount = notifications.filter(n=>!n.read).length;
 
   useEffect(()=>{
     supabase.auth.getSession().then(async({data:{session}})=>{
@@ -1130,6 +1133,17 @@ export default function Livi(){
     });
     return()=>subscription.unsubscribe();
   },[]);
+
+  // Load notifications and subscribe to realtime
+  useEffect(() => {
+    if (!authUser?.id) return;
+    loadNotifications();
+    const channel = supabase.channel('notifs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${authUser.id}` },
+        (payload) => { setNotifications(prev => [payload.new, ...prev]); }
+      ).subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [authUser, loadNotifications]);
 
   const handleOnboardingComplete = (updatedData) => {
     setProfile(p => ({ ...p, ...updatedData }));
@@ -1676,6 +1690,16 @@ export default function Livi(){
     setAdminLoading(false);
   },[]);
 
+  const loadNotifications = useCallback(async () => {
+    if (!authUser?.id) return;
+    const { data } = await supabase.from('notifications')
+      .select('*')
+      .eq('user_id', authUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    setNotifications(data || []);
+  }, [authUser]);
+
   useEffect(()=>{if(view==="admin"){if(profile?.role!=="owner"){setView("home");return;}loadAdmin();}},[view,loadAdmin,profile]);
 
   const publishContent=async()=>{
@@ -2002,6 +2026,32 @@ select option{background:${T.card};color:${T.t}}
         </div>
         <div style={{marginTop:"auto",display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14}}>
           <div onClick={load} style={{width:44,height:44,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
+          <div style={{position:'relative',cursor:'pointer'}} onClick={()=>setNotifOpen(o=>!o)}>
+            <span style={{fontSize:20}}>🔔</span>
+            {unreadCount > 0 && (
+              <div style={{position:'absolute',top:-4,right:-4,background:'#EF4444',color:'#fff',borderRadius:'50%',width:16,height:16,fontSize:9,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </div>
+            )}
+            {notifOpen && (
+              <div style={{position:'absolute',bottom:32,left:50,width:320,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:1000,overflow:'hidden'}}>
+                <div style={{padding:'12px 16px',borderBottom:`1px solid ${T.b}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{fontWeight:700,color:T.t,fontSize:14}}>Notifications</span>
+                  {unreadCount > 0 && <span onClick={async(e)=>{e.stopPropagation();await supabase.from('notifications').update({read:true}).eq('user_id',authUser?.id).eq('read',false);loadNotifications();}} style={{fontSize:11,color:T.a,cursor:'pointer'}}>Mark all read</span>}
+                </div>
+                {notifications.length === 0
+                  ? <div style={{padding:24,textAlign:'center',color:T.s,fontSize:13}}>No notifications yet</div>
+                  : notifications.map(n=>(
+                    <div key={n.id} onClick={()=>{supabase.from('notifications').update({read:true}).eq('id',n.id);setNotifOpen(false);}} style={{padding:'12px 16px',borderBottom:`1px solid ${T.b}20`,background:n.read?'transparent':T.a+'10',cursor:'pointer'}}>
+                      <div style={{fontSize:13,fontWeight:n.read?400:700,color:T.t,marginBottom:2}}>{n.title}</div>
+                      <div style={{fontSize:11,color:T.s,lineHeight:1.4}}>{n.body}</div>
+                      <div style={{fontSize:10,color:T.m,marginTop:4}}>{new Date(n.created_at).toLocaleDateString()}</div>
+                    </div>
+                  ))
+                }
+              </div>
+            )}
+          </div>
           <div onClick={()=>setProfileMenuOpen(v=>!v)} title="Account" style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",padding:"8px 4px",borderRadius:8,background:profileMenuOpen?T.bh:"transparent",transition:"background 0.12s",width:64}}>
             <div style={{width:36,height:36,borderRadius:"50%",background:T.a,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:800,color:"#000"}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
             <div style={{fontSize:9,color:T.m,maxWidth:56,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center",letterSpacing:0.3}}>{profile?.full_name?.split(" ")[0]||"Account"}</div>
