@@ -1631,11 +1631,12 @@ export default function Livi(){
   const [adminContent,setAdminContent]=useState([]);
   const [newContent,setNewContent]=useState({title:"",body:"",type:"announcement"});
   const [adminLoading,setAdminLoading]=useState(false);
+  const [adminUserLeadStats, setAdminUserLeadStats] = useState({});
 
   const loadAdmin=useCallback(async()=>{
     setAdminLoading(true);
     const today=new Date().toISOString().split("T")[0];
-    const [usersCount,leadsCount,contentCount,agentsCount,usersRows,activityRows,contentRows]=await Promise.all([
+    const [usersCount,leadsCount,contentCount,agentsCount,usersRows,activityRows,contentRows,leadsRows]=await Promise.all([
       supabase.from("profiles").select("*",{count:"exact",head:true}),
       supabase.from("leads").select("*",{count:"exact",head:true}),
       supabase.from("daily_content").select("*",{count:"exact",head:true}).eq("content_date",today),
@@ -1643,11 +1644,35 @@ export default function Livi(){
       supabase.from("profiles").select("*").order("created_at",{ascending:false}).limit(100),
       supabase.from("user_activity").select("*").order("created_at",{ascending:false}).limit(20),
       supabase.from("platform_content").select("*").order("created_at",{ascending:false}).limit(20),
+      supabase.from("leads").select("user_id,pipeline_stage,volume,transaction_count"),
     ]);
-    setAdminStats({users:usersCount.count||0,leads:leadsCount.count||0,contentToday:contentCount.count||0,agents:agentsCount.count||0});
+    // Build per-user lead stats
+    const leadsData = leadsRows.data || [];
+    const userLeadStats = {};
+    leadsData.forEach(l => {
+      if (!l.user_id) return;
+      if (!userLeadStats[l.user_id]) userLeadStats[l.user_id] = {total:0,recruited:0,meeting:0,talking:0,volume:0,transactions:0};
+      userLeadStats[l.user_id].total++;
+      if (l.pipeline_stage === 'recruited') userLeadStats[l.user_id].recruited++;
+      if (l.pipeline_stage === 'meeting_booked') userLeadStats[l.user_id].meeting++;
+      if (l.pipeline_stage === 'in_conversation') userLeadStats[l.user_id].talking++;
+      if (l.volume) userLeadStats[l.user_id].volume += parseFloat(l.volume)||0;
+      if (l.transaction_count) userLeadStats[l.user_id].transactions += parseInt(l.transaction_count)||0;
+    });
+    const totalRecruited = leadsData.filter(l=>l.pipeline_stage==='recruited').length;
+    const totalMeeting = leadsData.filter(l=>l.pipeline_stage==='meeting_booked').length;
+    setAdminStats({
+      users:usersCount.count||0,
+      leads:leadsCount.count||0,
+      contentToday:contentCount.count||0,
+      agents:agentsCount.count||0,
+      recruited:totalRecruited,
+      meetings:totalMeeting,
+    });
     setAdminUsers(usersRows.data||[]);
     setAdminActivity(activityRows.data||[]);
     setAdminContent(contentRows.data||[]);
+    setAdminUserLeadStats(userLeadStats);
     setAdminLoading(false);
   },[]);
 
@@ -1661,8 +1686,8 @@ export default function Livi(){
 
   const AdminView=()=>(
     <>
-      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
-        {[["👥","Total Users",adminStats.users,"Platform accounts",T.bl],["🎯","Total Leads",adminStats.leads,"Across all users",T.a],["📝","Content Today",adminStats.contentToday,"Posts generated",T.y],["🔍","Agent Directory",adminStats.agents?.toLocaleString(),"Licensed agents",T.p]].map(([ic,l,v,s,c],i)=>
+      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:24}}>
+        {[["👥","Total Users",adminStats.users,"Platform accounts",T.bl],["🎯","Total Leads",adminStats.leads,"Across all users",T.a],["📝","Content Today",adminStats.contentToday,"Posts generated",T.y],["🔍","Agent Directory",adminStats.agents?.toLocaleString(),"Licensed agents",T.p],["🏆","Recruited",adminStats.recruited||0,"Agents recruited",T.a],["📅","Meetings",adminStats.meetings||0,"Meetings booked",T.p]].map(([ic,l,v,s,c],i)=>
           <div key={i} className="kpi-card" style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"22px 24px",display:"flex",alignItems:"center",gap:16}}>
             <div className="kpi-icon" style={{width:52,height:52,borderRadius:10,background:c+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
             <div>
@@ -1678,7 +1703,7 @@ export default function Livi(){
         <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>👥 Users ({adminUsers.length})</div>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
-            <thead><tr>{["Name","Email","Brokerage","Role","Plan","Joined","Onboarded"].map(h=>
+            <thead><tr>{["Name","Email","Brokerage","Role","Plan","Leads","Recruited","Meetings","Joined","Onboarded"].map(h=>
               <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
             )}</tr></thead>
             <tbody>{adminUsers.length>0?adminUsers.map((u,i)=>
@@ -1688,10 +1713,13 @@ export default function Livi(){
                 <td style={{padding:"13px 14px",fontSize:13,color:T.s}}>{u.brokerage||"—"}</td>
                 <td style={{padding:"13px 14px"}}><span style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:4,background:u.role==="owner"?T.r+"20":u.role==="admin"?T.p+"20":T.s+"20",color:u.role==="owner"?T.r:u.role==="admin"?T.p:T.s}}>{u.role||"user"}</span></td>
                 <td style={{padding:"13px 14px",fontSize:13,color:T.s}}>{u.plan||"free"}</td>
+                <td style={{padding:"13px 14px",fontSize:13,fontWeight:600,color:T.t}}>{adminUserLeadStats[u.id]?.total||0}</td>
+                <td style={{padding:"13px 14px",fontSize:13,fontWeight:700,color:adminUserLeadStats[u.id]?.recruited>0?T.a:T.m}}>{adminUserLeadStats[u.id]?.recruited||0}</td>
+                <td style={{padding:"13px 14px",fontSize:13,fontWeight:700,color:adminUserLeadStats[u.id]?.meeting>0?T.p:T.m}}>{adminUserLeadStats[u.id]?.meeting||0}</td>
                 <td style={{padding:"13px 14px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</td>
                 <td style={{padding:"13px 14px"}}><span style={{fontSize:12,fontWeight:700,color:u.onboarded?T.a:T.y}}>{u.onboarded?"✓ Yes":"— No"}</span></td>
               </tr>
-            ):<tr><td colSpan={7} style={{textAlign:"center",padding:"40px",color:T.m,fontSize:15}}>No users found</td></tr>}</tbody>
+            ):<tr><td colSpan={10} style={{textAlign:"center",padding:"40px",color:T.m,fontSize:15}}>No users found</td></tr>}</tbody>
           </table>
         </div>
       </div>
