@@ -546,26 +546,37 @@ function AgentDirectory({userId,userProfile}){
 
   const addToPipeline=async(agent)=>{
     try {
+      const fn=(agent.first_name||agent.full_name?.split(" ")[0]||"").replace(/\b(LLC|PA|PL|PLLC|INC|CORP|LTD)\b\.?/gi,'').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+      const ln=(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
       const body={
         user_id:userId,
-        first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",
-        last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",
+        first_name:fn,
+        last_name:ln,
+        email:agent.personal_email||null,
+        phone:agent.mobile_phone||null,
         brokerage:agent.brokerage_name||"",
-        market:agent.city?`${agent.city}, ${agent.state}`:(agent.county?`${agent.county}, ${agent.state}`:agent.state),
-        source:"Agent Directory",
+        market:agent.city||"",
+        source:"agent_directory",
         pipeline_stage:"new",
-        tier:"New",
-        urgency:"LOW",
-        notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`,
         license_number:agent.license_number||null,
         license_state:agent.state||null,
+        license_status:agent.license_status||null,
+        notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`,
       };
+      console.log('Adding to pipeline:',JSON.stringify(body));
       const r=await fetch(`${LIVI_SUPA}/leads`,{
         method:"POST",
         headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
         body:JSON.stringify(body)
       });
-      if(r.ok){setAdded(p=>({...p,[agent.license_number]:true}));logActivity(userId,'add_lead_from_directory',{agent_name:agent.full_name});}
+      if(r.ok){
+        setAdded(p=>({...p,[agent.license_number]:true}));
+        logActivity(userId,'add_lead_from_directory',{agent_name:agent.full_name});
+        setSelectedAgent(null);cleanupZillowState();
+      } else {
+        const err=await r.text();
+        console.error('Add to pipeline failed:',r.status,err);
+      }
     } catch(e) { console.error("Add to pipeline error:", e); }
   };
 
@@ -604,6 +615,9 @@ function AgentDirectory({userId,userProfile}){
       const proxyUrl=`/api/zillow-proxy?url=${encodeURIComponent(zillow_url)}`;
       const res=await fetch(proxyUrl);
       const html=await res.text();
+      console.log('Zillow proxy status:',res.status);
+      console.log('Zillow HTML length:',html.length);
+      console.log('Zillow HTML preview:',html.substring(0,500));
       if(!html||html.length<1000){await saveEnrichedData(enrichedData);return;}
       const getName=(h)=>h.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1]?.trim()||null;
       const getRating=(h)=>{const m=h.match(/(\d\.\d)\s*<[^>]*>\s*\d+\s*reviews/);return m?parseFloat(m[1]):null;};
