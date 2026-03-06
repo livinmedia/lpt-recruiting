@@ -1157,19 +1157,21 @@ function ContentTab({userId,userProfile}){
         </div>);
       })()}
 
-      {/* Date nav + filter */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
+      {/* Date nav + greeting + filter */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,flexWrap:"wrap",gap:12,padding:"8px 0"}}>
         <div>
-          <div style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:2}}>{isToday?"TODAY":"CONTENT FOR"}</div>
-          <div style={{fontSize:16,color:T.s}}>{dayLabel}</div>
-        </div>
-        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          <input type="date" value={selectedDate} onChange={ev=>setSelectedDate(ev.target.value)} style={{padding:"8px 12px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}/>
-          <div style={{display:"flex",gap:6}}>
-            {[["all","All",T.t],["facebook","📘 FB","#1877F2"],["instagram","📸 IG","#E1306C"]].map(([id,label,c])=>(
-              <div key={id} onClick={()=>setFilter(id)} style={{padding:"8px 14px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:13,fontWeight:600,cursor:"pointer"}}>{label}</div>
-            ))}
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <span style={{background:"#1f2937",color:"#6b7280",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",padding:"3px 8px",borderRadius:4}}>{isToday?"TODAY":dayLabel}</span>
+            <input type="date" value={selectedDate} onChange={ev=>setSelectedDate(ev.target.value)} style={{padding:"4px 8px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`,color:T.t,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
           </div>
+          <div style={{fontSize:20,fontWeight:800,color:"#f9fafb"}}>{greeting}, {firstName}!</div>
+          <div style={{fontSize:14,fontWeight:400,color:"#9ca3af",marginTop:2}}>Here's your content for today.</div>
+          <div style={{fontSize:12,color:"#6b7280",marginTop:4}}>{"\uD83D\uDFE2"} Auto-generated · {dailyContent.length} posts ready</div>
+        </div>
+        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+          {[["all","All",T.t],["facebook","\uD83D\uDCD8 FB","#1877F2"],["instagram","\uD83D\uDCF8 IG","#E1306C"]].map(([id,label,c])=>(
+            <div key={id} onClick={()=>setFilter(id)} style={{padding:"8px 14px",borderRadius:8,background:filter===id?c+"18":T.d,border:`1px solid ${filter===id?c+"40":T.b}`,color:filter===id?c:T.s,fontSize:13,fontWeight:600,cursor:"pointer"}}>{label}</div>
+          ))}
         </div>
       </div>
 
@@ -1179,13 +1181,6 @@ function ContentTab({userId,userProfile}){
         <>
           {/* ── SECTION 1: DAILY BRIEF ── */}
           <div style={{marginBottom:32}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
-              <div>
-                <div style={{fontSize:11,color:T.a,fontWeight:700,letterSpacing:2,marginBottom:4}}>☀️ DAILY BRIEF</div>
-                <div style={{fontSize:18,fontWeight:800,color:T.t}}>{greeting}, {firstName}! Here's your content for today.</div>
-                <div style={{fontSize:13,color:T.s,marginTop:2}}>Auto-generated every morning · {dailyContent.length} posts ready</div>
-              </div>
-            </div>
             {filtered_daily.length===0?(
               <div style={{background:T.card,border:`1px dashed ${T.b}`,borderRadius:12,padding:"32px",textAlign:"center"}}>
                 <div style={{fontSize:32,marginBottom:8}}>⏰</div>
