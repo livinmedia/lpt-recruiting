@@ -72,6 +72,10 @@ nav{padding:0 24px;border-bottom:1px solid var(--border);background:rgba(10,10,1
 
 .btn-view{background:var(--purple-dim);border:1px solid var(--purple-mid);color:var(--purple)}
 .btn-view:hover{background:var(--purple-mid)}
+.btn-live{background:var(--green)15;border:1px solid var(--green)30;color:var(--green);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.btn-live:hover{background:var(--green)30}
+.btn-delete{background:var(--red)10;border:1px solid var(--red)20;color:var(--red)}
+.btn-delete:hover{background:var(--red)25}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -198,14 +202,18 @@ function renderCard(post) {
       <button class="btn btn-reject" onclick="reject('${post.id}')">Reject</button>
     `;
   } else if (post.status === 'approved') {
+    const liveUrl = post.brokerages?.slug && post.slug ? `https://www.rkrt.in/${esc(post.brokerages.slug)}/${esc(post.slug)}` : null;
     actions += `
       <span class="status-badge status-approved">Approved</span>
+      ${liveUrl ? `<a class="btn btn-live" href="${liveUrl}" target="_blank" rel="noopener">🔗 View Live</a>` : ''}
       <button class="btn btn-undo" onclick="setStatus('${post.id}','draft')">Revert to Draft</button>
+      <button class="btn btn-delete" onclick="deletePost('${post.id}')">🗑️ Delete</button>
     `;
   } else {
     actions += `
       <span class="status-badge status-rejected">Rejected</span>
       <button class="btn btn-undo" onclick="setStatus('${post.id}','draft')">Revert to Draft</button>
+      <button class="btn btn-delete" onclick="deletePost('${post.id}')">🗑️ Delete</button>
     `;
   }
 
@@ -249,6 +257,13 @@ async function setStatus(id, status) {
   if (status === 'draft') { update.approved_by = null; update.approved_at = null; }
   const { error } = await client.from('brokerage_posts').update(update).eq('id', id);
   if (error) { console.error('Status error:', error); alert('Failed to update: ' + error.message); return; }
+  await loadPosts();
+}
+
+async function deletePost(id) {
+  if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
+  const { error } = await client.from('brokerage_posts').delete().eq('id', id);
+  if (error) { console.error('Delete error:', error); alert('Failed to delete: ' + error.message); return; }
   await loadPosts();
 }
 
