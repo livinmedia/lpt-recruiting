@@ -25,6 +25,7 @@
     { "src": "^/new-agent$", "dest": "/new-agent.html" },
     { "src": "^/revenue-share$", "dest": "/revenue-share.html" },
     { "src": "^/why-switch$", "dest": "/why-switch.html" },
+    { "src": "^/lpt-realty$", "dest": "/lpt-realty.html" },
     { "src": "^/robots\\.txt$", "dest": "/robots.txt" },
     { "src": "^/app(/.*)?$", "dest": "/index.html" },
     { "src": "^/(.*)$", "dest": "/home.html" }

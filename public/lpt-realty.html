@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LPT Realty — The Future of Real Estate</title>
+<meta name="description" content="Discover why top agents are joining LPT Realty. 90% commission splits, $0 desk fees, AI-powered tools, and 5-tier revenue share across all 50 states."/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--border-h:#2a2a3e;--purple:#8B5CF6;--purple-dim:#8B5CF610;--purple-mid:#8B5CF630;--purple-glow:#8B5CF650;--green:#00E5A0;--text:#F0F4F8;--sub:#8899AA;--muted:#4A5568}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;line-height:1.6}
+
+/* NAV */
+nav{padding:0 24px;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.95);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1200px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:20px;font-weight:900;color:var(--purple);text-decoration:none;letter-spacing:-0.5px}
+.nav-logo span{color:var(--text);font-weight:400;font-size:14px;margin-left:8px}
+.nav-cta{padding:10px 24px;border-radius:8px;background:var(--purple);color:#fff;font-size:14px;font-weight:700;text-decoration:none;transition:all 0.15s;border:none;cursor:pointer;font-family:inherit}
+.nav-cta:hover{filter:brightness(1.15)}
+
+/* HERO */
+.hero{max-width:1200px;margin:0 auto;padding:48px 24px 32px}
+.hero-tag{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--purple);text-transform:uppercase;margin-bottom:12px}
+.hero-title{font-size:clamp(32px,5vw,52px);font-weight:900;line-height:1.1;margin-bottom:16px;background:linear-gradient(135deg,var(--purple),#a78bfa,var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:18px;color:var(--sub);max-width:600px;margin-bottom:36px;line-height:1.6}
+.hero-featured{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color 0.2s}
+.hero-featured:hover{border-color:var(--purple-glow)}
+.hero-featured-img{width:100%;height:100%;min-height:320px;object-fit:cover;display:block}
+.hero-featured-placeholder{width:100%;min-height:320px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:72px;color:var(--muted)}
+.hero-featured-body{padding:32px 28px;display:flex;flex-direction:column;justify-content:center}
+.hero-featured-brok{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--purple);text-transform:uppercase;margin-bottom:10px}
+.hero-featured-title{font-size:24px;font-weight:800;color:var(--text);margin-bottom:12px;line-height:1.3}
+.hero-featured-excerpt{font-size:15px;color:var(--sub);line-height:1.6;margin-bottom:16px}
+.hero-featured-date{font-size:12px;color:var(--muted)}
+
+/* GRID */
+.section{max-width:1200px;margin:0 auto;padding:16px 24px 48px}
+.section-title{font-size:22px;font-weight:800;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.2s;cursor:pointer}
+.card:hover{border-color:var(--purple-mid)}
+.card-img{width:100%;height:200px;object-fit:cover;display:block}
+.card-placeholder{width:100%;height:200px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--muted)}
+.card-body{padding:20px}
+.card-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4}
+.card-excerpt{font-size:13px;color:var(--sub);line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-footer{display:flex;justify-content:space-between;align-items:center}
+.card-date{font-size:11px;color:var(--muted)}
+.card-read{font-size:13px;font-weight:700;color:var(--purple);cursor:pointer;background:none;border:none;font-family:inherit}
+.card-read:hover{text-decoration:underline}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:760px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:8px;background:rgba(0,0,0,0.5);border:1px solid var(--border);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
+.modal-close:hover{background:rgba(0,0,0,0.8)}
+.modal-img{width:100%;max-height:360px;object-fit:cover;display:block;border-radius:16px 16px 0 0}
+.modal-body{padding:32px}
+.modal-title{font-size:26px;font-weight:800;margin-bottom:8px;line-height:1.3}
+.modal-date{font-size:12px;color:var(--muted);margin-bottom:24px}
+.modal-content{font-size:15px;color:var(--sub);line-height:1.8}
+.modal-content h2{font-size:20px;font-weight:700;color:var(--text);margin:28px 0 12px}
+.modal-content h3{font-size:17px;font-weight:700;color:var(--text);margin:24px 0 10px}
+.modal-content p{margin-bottom:16px}
+.modal-content ul,.modal-content ol{margin:0 0 16px 20px}
+.modal-content li{margin-bottom:6px}
+.modal-content strong{color:var(--text)}
+.modal-content blockquote{border-left:3px solid var(--purple);padding-left:16px;color:var(--sub);font-style:italic;margin:16px 0}
+
+/* LEAD FORM */
+.form-section{max-width:1200px;margin:0 auto;padding:48px 24px 64px}
+.form-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;max-width:640px;margin:0 auto}
+.form-title{font-size:26px;font-weight:800;text-align:center;margin-bottom:6px}
+.form-sub{font-size:15px;color:var(--sub);text-align:center;margin-bottom:32px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:13px 16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border-color 0.15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--purple)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group select{cursor:pointer}
+.form-group select option{background:var(--card)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-submit{width:100%;padding:15px;border-radius:10px;background:var(--purple);color:#fff;font-size:16px;font-weight:700;border:none;cursor:pointer;transition:all 0.2s;font-family:inherit;margin-top:8px}
+.form-submit:hover{filter:brightness(1.15)}
+.form-submit:disabled{opacity:0.5;cursor:not-allowed}
+.form-msg{padding:12px 16px;border-radius:8px;font-size:14px;margin-top:16px;display:none}
+.form-msg.success{display:block;background:var(--green)15;border:1px solid var(--green)30;color:var(--green)}
+.form-msg.error{display:block;background:#F5656515;border:1px solid #F5656530;color:#F56565}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
+footer a{color:var(--purple);text-decoration:none;font-weight:700}
+footer a:hover{text-decoration:underline}
+.footer-sub{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* EMPTY / LOADING */
+.loading-state{text-align:center;padding:80px 20px;color:var(--sub);font-size:16px}
+.empty-state{text-align:center;padding:60px 20px;color:var(--sub)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .hero-featured{grid-template-columns:1fr}
+  .hero-featured-img,.hero-featured-placeholder{min-height:220px}
+}
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .hero-featured-body{padding:24px 20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/lpt-realty" class="nav-logo">LPT Realty<span>| Recruiting</span></a>
+    <a href="#contact" class="nav-cta">Join LPT Realty</a>
+  </div>
+</nav>
+
+<div id="app">
+  <div class="loading-state">Loading...</div>
+</div>
+
+<script>
+const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
+const BROKERAGE_ID = 'b32c85c5-99e0-4984-b4aa-81c0702f056e';
+const { createClient } = supabase;
+const client = createClient(SUPA_URL, SUPA_KEY);
+
+const BROKERAGES = ["Keller Williams","RE/MAX","eXp Realty","Coldwell Banker","Century 21","Berkshire Hathaway HomeServices","Compass","Sotheby's International Realty","Better Homes & Gardens Real Estate","ERA Real Estate","Engel & Volkers","HomeSmart","Redfin","Side","LPT Realty","Independent","Other"];
+
+let posts = [];
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function mdToHtml(md) {
+  if (!md) return '';
+  return md
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/^(?!<[hublop])(.+)$/gm, '<p>$1</p>')
+    .replace(/<p><\/p>/g, '');
+}
+
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+async function init() {
+  const { data, error } = await client.from('brokerage_posts')
+    .select('*')
+    .eq('brokerage_id', BROKERAGE_ID)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); }
+  posts = data || [];
+  render();
+}
+
+function render() {
+  const app = document.getElementById('app');
+
+  if (posts.length === 0) {
+    app.innerHTML = `
+      <div class="hero" style="text-align:center;padding:80px 24px">
+        <div class="hero-tag">LPT Realty</div>
+        <h1 class="hero-title">The Future of Real Estate is Here</h1>
+        <p class="hero-sub" style="margin:0 auto 36px">90% commission splits. $0 desk fees. AI-powered tools. 5-tier revenue share. All 50 states.</p>
+        <a href="#contact" class="nav-cta" style="display:inline-block;padding:14px 36px;font-size:16px">Join LPT Realty</a>
+      </div>
+      ${renderForm()}
+      ${renderFooter()}
+    `;
+    return;
+  }
+
+  const featured = posts[0];
+  const rest = posts.slice(1);
+
+  const featImg = featured.image_url
+    ? `<img class="hero-featured-img" src="${esc(featured.image_url)}" alt="${esc(featured.title)}" onerror="this.outerHTML='<div class=\\'hero-featured-placeholder\\'>📰</div>'">`
+    : '<div class="hero-featured-placeholder">📰</div>';
+
+  app.innerHTML = `
+    <div class="hero">
+      <div class="hero-tag">LPT Realty</div>
+      <h1 class="hero-title">The Future of Real Estate is Here</h1>
+      <p class="hero-sub">90% commission splits. $0 desk fees. AI-powered tools. 5-tier revenue share. All 50 states.</p>
+      <div class="hero-featured" onclick="openPost(0)">
+        ${featImg}
+        <div class="hero-featured-body">
+          <div class="hero-featured-brok">Featured</div>
+          <div class="hero-featured-title">${esc(featured.title)}</div>
+          <div class="hero-featured-excerpt">${esc(featured.excerpt)}</div>
+          <div class="hero-featured-date">${fmtDate(featured.created_at)}</div>
+        </div>
+      </div>
+    </div>
+
+    ${rest.length > 0 ? `
+      <div class="section">
+        <div class="section-title">Latest Articles</div>
+        <div class="grid">
+          ${rest.map((p, i) => renderCard(p, i + 1)).join('')}
+        </div>
+      </div>
+    ` : ''}
+
+    ${renderForm()}
+    ${renderFooter()}
+  `;
+}
+
+function renderCard(post, idx) {
+  const imgHtml = post.image_url
+    ? `<img class="card-img" src="${esc(post.image_url)}" alt="${esc(post.title)}" onerror="this.outerHTML='<div class=\\'card-placeholder\\'>📰</div>'">`
+    : '<div class="card-placeholder">📰</div>';
+
+  return `
+    <div class="card" onclick="openPost(${idx})">
+      ${imgHtml}
+      <div class="card-body">
+        <div class="card-title">${esc(post.title)}</div>
+        <div class="card-excerpt">${esc(post.excerpt)}</div>
+        <div class="card-footer">
+          <span class="card-date">${fmtDate(post.created_at)}</span>
+          <button class="card-read">Read More</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderForm() {
+  const options = BROKERAGES.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  return `
+    <div class="form-section" id="contact">
+      <div class="form-wrap">
+        <div class="form-title">Ready to Make the Switch?</div>
+        <div class="form-sub">Learn how LPT Realty can help you keep more of what you earn.</div>
+        <form id="lead-form" onsubmit="submitLead(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" id="f-name" placeholder="Your full name" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="f-email" placeholder="you@email.com" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="f-phone" placeholder="(555) 123-4567">
+            </div>
+            <div class="form-group">
+              <label>Current Brokerage</label>
+              <select id="f-brokerage"><option value="">Select...</option>${options}</select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Message (optional)</label>
+            <textarea id="f-message" placeholder="Tell us about your situation or what you're looking for..."></textarea>
+          </div>
+          <button type="submit" class="form-submit" id="f-submit">Get In Touch</button>
+          <div class="form-msg" id="f-msg"></div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderFooter() {
+  return `
+    <footer>
+      <div>Powered by <a href="https://www.rkrt.in">rkrt.in</a> — Recruiting Intelligence</div>
+      <div class="footer-sub">&copy; ${new Date().getFullYear()} LPT Realty. All rights reserved.</div>
+    </footer>
+  `;
+}
+
+function openPost(idx) {
+  const post = posts[idx];
+  if (!post) return;
+
+  const imgHtml = post.image_url
+    ? `<img class="modal-img" src="${esc(post.image_url)}" alt="${esc(post.title)}" onerror="this.style.display='none'">`
+    : '';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'post-modal';
+  overlay.onclick = (e) => { if (e.target === overlay) closePost(); };
+
+  overlay.innerHTML = `
+    <div class="modal">
+      <button class="modal-close" onclick="closePost()">&times;</button>
+      ${imgHtml}
+      <div class="modal-body">
+        <div class="modal-title">${esc(post.title)}</div>
+        <div class="modal-date">${fmtDate(post.created_at)}</div>
+        <div class="modal-content">${mdToHtml(post.content)}</div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}
+
+function closePost() {
+  const m = document.getElementById('post-modal');
+  if (m) m.remove();
+  document.body.style.overflow = '';
+}
+
+async function submitLead(e) {
+  e.preventDefault();
+  const btn = document.getElementById('f-submit');
+  const msg = document.getElementById('f-msg');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  msg.className = 'form-msg';
+
+  const name = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const brokerage_name = document.getElementById('f-brokerage').value;
+  const message = document.getElementById('f-message').value.trim();
+  const utm_source = new URLSearchParams(window.location.search).get('utm_source') || 'lpt-realty-blog';
+
+  try {
+    // Round robin assignment
+    let assigned_user_id = null;
+    const { data: assignments } = await client.from('brokerage_assignments')
+      .select('*')
+      .eq('brokerage_id', BROKERAGE_ID)
+      .order('round_robin_index', { ascending: true });
+
+    if (assignments && assignments.length > 0) {
+      const next = assignments[0];
+      assigned_user_id = next.user_id;
+      await client.from('brokerage_assignments')
+        .update({ round_robin_index: next.round_robin_index + assignments.length })
+        .eq('id', next.id);
+    }
+
+    const { error } = await client.from('brokerage_leads').insert({
+      brokerage_id: BROKERAGE_ID,
+      assigned_user_id,
+      name, email, phone, brokerage_name, message, utm_source
+    });
+
+    if (error) throw error;
+
+    msg.className = 'form-msg success';
+    msg.textContent = 'Thanks! We\'ll be in touch within 24 hours.';
+    document.getElementById('lead-form').reset();
+  } catch (err) {
+    console.error(err);
+    msg.className = 'form-msg error';
+    msg.textContent = 'Something went wrong. Please try again or email us directly.';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Get In Touch';
+}
+
+init();
+</script>
+</body>
+</html>
