@@ -568,7 +568,7 @@ function AgentDirectory({userId,userProfile}){
     try {
       const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/enrich-agent",{
         method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${LIVI_KEY}`},
-        body:JSON.stringify({agent_id:agent.id,first_name:agent.first_name||agent.full_name?.split(" ")[0]||"",last_name:agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"",brokerage_name:agent.brokerage_name||"",state:agent.state||""})
+        body:JSON.stringify({agent_id:agent.id,first_name:(agent.first_name||agent.full_name?.split(" ")[0]||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),last_name:(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_name:(agent.brokerage_name||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),state:agent.state||""})
       });
       const d=await r.json();
       if(d.enriched||d.personal_email||d.work_email||d.mobile_phone||d.linkedin_url||d.enriched_at){
