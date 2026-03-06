@@ -787,6 +787,9 @@ function ContentTab({userId,userProfile}){
   const contentLimits=getPlanLimits(userProfile);
   const trackingRef=userId?`?ref=${userId}`:"";
   const targetParam=targetBrokerage?`&target=${encodeURIComponent(targetBrokerage)}`:"";
+  const BROKERAGE_SLUGS={"LPT Realty":"lpt-realty","eXp Realty":"exp-realty","Keller Williams":"keller-williams","RE/MAX":"remax"};
+  const brokerageSlug=BROKERAGE_SLUGS[targetBrokerage]||null;
+  const brokerageBlogUrl=brokerageSlug?`https://rkrt.in/${brokerageSlug}${trackingRef}`:null;
   const remaining=isAdmin?null:Math.max(0,DAILY_LIMIT-usageToday);
 
   const LP_PREVIEWS={
@@ -948,6 +951,14 @@ function ContentTab({userId,userProfile}){
             </div>
             <div onClick={()=>{const url=`https://rkrt.in/join${trackingRef}${targetParam}`;navigator.clipboard?.writeText(url).catch(()=>{const t=document.createElement("textarea");t.value=url;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});}} style={{padding:"10px 16px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,alignSelf:"flex-end"}}>📋 Copy Link</div>
           </div>
+          {brokerageBlogUrl&&<div style={{marginTop:12,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,color:"#8B5CF6",fontWeight:700,letterSpacing:1,marginBottom:2}}>📄 BLOG TRACKING URL</div>
+              <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all"}}>{brokerageBlogUrl}</div>
+              <div style={{fontSize:11,color:T.s,marginTop:2}}>Share this — leads from the blog page route to your pipeline</div>
+            </div>
+            <div onClick={()=>{navigator.clipboard?.writeText(brokerageBlogUrl).catch(()=>{const t=document.createElement("textarea");t.value=brokerageBlogUrl;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});}} style={{padding:"8px 14px",borderRadius:8,background:"#8B5CF620",color:"#8B5CF6",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0}}>📋 Copy</div>
+          </div>}
           {targetBrokerage&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,fontSize:12,color:T.s}}>💡 Generate fresh content below to get posts targeting <strong style={{color:T.t}}>{targetBrokerage}</strong> agents</div>}
         </div>
       )}
@@ -1667,7 +1678,7 @@ export default function Livi(){
   const loadAdmin=useCallback(async()=>{
     setAdminLoading(true);
     const today=new Date().toISOString().split("T")[0];
-    const [usersCount,leadsCount,contentCount,agentsCount,usersRows,activityRows,contentRows,leadsRows,blogPendingCount,blogApprovedCount]=await Promise.all([
+    const [usersCount,leadsCount,contentCount,agentsCount,usersRows,activityRows,contentRows,leadsRows,blogPendingCount,blogApprovedCount,blogRejectedCount,blogTotalCount]=await Promise.all([
       supabase.from("profiles").select("*",{count:"exact",head:true}),
       supabase.from("leads").select("*",{count:"exact",head:true}),
       supabase.from("daily_content").select("*",{count:"exact",head:true}).eq("content_date",today),
@@ -1678,6 +1689,8 @@ export default function Livi(){
       supabase.from("leads").select("user_id,pipeline_stage,volume,transaction_count"),
       supabase.from("brokerage_posts").select("*",{count:"exact",head:true}).eq("status","draft"),
       supabase.from("brokerage_posts").select("*",{count:"exact",head:true}).eq("status","approved"),
+      supabase.from("brokerage_posts").select("*",{count:"exact",head:true}).eq("status","rejected"),
+      supabase.from("brokerage_posts").select("*",{count:"exact",head:true}),
     ]);
     // Build per-user lead stats
     const leadsData = leadsRows.data || [];
@@ -1703,6 +1716,8 @@ export default function Livi(){
       meetings:totalMeeting,
       blogPending:blogPendingCount.count||0,
       blogPublished:blogApprovedCount.count||0,
+      blogRejected:blogRejectedCount.count||0,
+      blogTotal:blogTotalCount.count||0,
     });
     setAdminUsers(usersRows.data||[]);
     setAdminActivity(activityRows.data||[]);
@@ -1734,6 +1749,18 @@ export default function Livi(){
             </div>
           </div>
         )}
+      </div>
+
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
+        <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📰 Blog Content Review</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+          {[["Pending Review",adminStats.blogPending||0,"#FBBF24"],["Approved",adminStats.blogPublished||0,T.a],["Rejected",adminStats.blogRejected||0,"#F56565"],["Total Posts",adminStats.blogTotal||0,T.t]].map(([label,val,color],i)=>
+            <div key={i} onClick={()=>window.open("https://www.rkrt.in/admin/blog","_blank")} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"18px 20px",cursor:"pointer",transition:"border-color 0.15s"}}>
+              <div style={{fontSize:28,fontWeight:800,color}}>{adminLoading?"…":val}</div>
+              <div style={{fontSize:11,color:T.m,fontWeight:700,letterSpacing:1.2,marginTop:4}}>{label.toUpperCase()}</div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
