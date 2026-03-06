@@ -626,10 +626,15 @@ function AgentDirectory({userId,userProfile}){
         body:JSON.stringify({agent_id:agent.id,first_name:cleanName(agent.first_name||agent.full_name?.split(" ")[0]||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),last_name:cleanName(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_name:(agent.brokerage_name||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_slug:getBrokerageSlug(agent.brokerage_name),state:agent.state||""})
       });
       const d=await r.json();
-      if(d.enriched||d.personal_email||d.work_email||d.mobile_phone||d.linkedin_url||d.enriched_at){
-        const enrichedData={...d,enriched_at:d.enriched_at||new Date().toISOString()};
-        if(d.zillow_url){
-          await fetchAndShowZillowConfirm(d.zillow_url,enrichedData);
+      const e=d.enriched||d;
+      if(e.mobile_phone?.includes('555'))delete e.mobile_phone;
+      if(e.personal_email?.match(/@(lptrealty|kwrealty|exprealty|coldwellbanker|remax)\.com/i))delete e.personal_email;
+      if(e.linkedin_url?.match(/\d{6,}/))delete e.linkedin_url;
+      if(e.enriched_at||e.personal_email||e.work_email||e.mobile_phone||e.linkedin_url){
+        const enrichedData={...e,enriched_at:e.enriched_at||new Date().toISOString()};
+        const zillow_url=e.zillow_url||d.profile?.zillow_url;
+        if(zillow_url){
+          await fetchAndShowZillowConfirm(zillow_url,{...enrichedData,zillow_url});
         } else {
           await saveEnrichedData(enrichedData);
         }
