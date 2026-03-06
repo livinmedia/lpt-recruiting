@@ -419,8 +419,10 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
   const [tasksLoading,setTasksLoading]=useState(true);
 
   useEffect(()=>{
-    if(!lead?.id)return;
+    console.log('tasks useEffect fired, leadTab:',leadTab,'lead.id:',lead?.id);
+    if(leadTab!=="tasks"||!lead?.id)return;
     (async()=>{
+      console.log('fetching tasks for lead:',lead?.id);
       setTasksLoading(true);
       try{
         const{data,error}=await supabase.from('lead_tasks').select('*').eq('lead_id',lead.id).order('due_date',{ascending:true});
@@ -429,7 +431,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
       }catch(e){console.error("Fetch tasks error:",e);}
       setTasksLoading(false);
     })();
-  },[lead?.id]);
+  },[lead?.id,leadTab]);
 
   const toggleTask=async(task)=>{
     const done=!task.completed_at;
