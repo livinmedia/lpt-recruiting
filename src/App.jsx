@@ -1118,9 +1118,10 @@ function ContentTab({userId,userProfile}){
         ];
         const blogPages=Object.entries(BROKERAGE_SLUGS).filter(([name])=>!targetBrokerage||name===targetBrokerage).map(([name,slug])=>({id:`blog-${slug}`,group:"Blog Pages",label:`${name} Blog`,url:`https://rkrt.in/${slug}${trackingRef}`,desc:"SEO blog page — leads who visit get tracked in your pipeline"}));
         const filteredPosts=approvedPosts.filter(p=>!targetBrokerage||p.brokerages?.name===targetBrokerage).map(p=>({id:`post-${p.id}`,group:"Blog Posts",label:p.title,url:`https://rkrt.in/${p.brokerages?.slug||"lpt-realty"}/${p.slug}${trackingRef}`,desc:"Individual blog post — great for sharing on social media"}));
-        const needsCompeting=sharePage==="calculator"||sharePage==="why-switch";
+        const needsCompeting=sharePage==="calculator"||sharePage==="why-switch"||sharePage==="join";
         const compParam=needsCompeting&&competingBrokerage?`&target=${encodeURIComponent(competingBrokerage)}`:targetParam;
-        const sel=sharePage?[...PAGES.map(p=>({...p,url:`https://rkrt.in/${p.path}${trackingRef}${(p.id==="calculator"||p.id==="why-switch")?compParam:targetParam}`})),...blogPages,...filteredPosts].find(p=>p.id===sharePage):null;
+        const compIds=new Set(["calculator","why-switch","join"]);
+        const sel=sharePage?[...PAGES.map(p=>({...p,url:`https://rkrt.in/${p.path}${trackingRef}${compIds.has(p.id)?compParam:targetParam}`})),...blogPages,...filteredPosts].find(p=>p.id===sharePage):null;
         return(
         <div style={{background:"#111827",border:"1px solid #1f2937",borderLeft:"3px solid #22c55e",borderRadius:10,padding:20,marginBottom:16}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexWrap:"wrap"}}>
