@@ -414,6 +414,45 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
   const [showDelete,setShowDelete]=useState(false);
   const [deleting,setDeleting]=useState(false);
   const [saving,setSaving]=useState(false);
+  const [tasks,setTasks]=useState([]);
+  const [tasksLoading,setTasksLoading]=useState(true);
+
+  useEffect(()=>{
+    if(!lead?.id)return;
+    (async()=>{
+      setTasksLoading(true);
+      try{
+        const r=await fetch(`${LIVI_SUPA}/lead_tasks?lead_id=eq.${lead.id}&order=due_date.asc`,{headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}});
+        if(r.ok)setTasks(await r.json());
+      }catch(e){console.error("Fetch tasks error:",e);}
+      setTasksLoading(false);
+    })();
+  },[lead?.id]);
+
+  const toggleTask=async(task)=>{
+    const done=!task.completed_at;
+    const body=done?{completed_at:new Date().toISOString()}:{completed_at:null};
+    setTasks(p=>p.map(t=>t.id===task.id?{...t,completed_at:done?new Date().toISOString():null}:t));
+    try{
+      await fetch(`${LIVI_SUPA}/lead_tasks?id=eq.${task.id}`,{method:"PATCH",headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    }catch(e){console.error("Toggle task error:",e);}
+  };
+
+  const taskIcon={call:"📞",email:"📧",text:"💬",research:"🔍",follow_up:"📋",meeting:"🤝"};
+  const priColor={high:T.r,medium:T.y,low:T.s};
+  const groupTasks=(list)=>{
+    const now=new Date();now.setHours(0,0,0,0);
+    const todayEnd=new Date(now);todayEnd.setHours(23,59,59,999);
+    const overdue=[],today=[],upcoming=[],completed=[];
+    list.forEach(t=>{
+      if(t.completed_at){completed.push(t);return;}
+      const d=new Date(t.due_date);
+      if(d<now)overdue.push(t);
+      else if(d<=todayEnd)today.push(t);
+      else upcoming.push(t);
+    });
+    return{overdue,today,upcoming,completed};
+  };
 
   if(!lead)return null;
 
@@ -499,6 +538,39 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
       </div>
 
       <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🔍 Intel Dossier</div>{lead.raw_dossier?<pre style={{fontSize:14,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{lead.raw_dossier}</pre>:<div style={{textAlign:"center",padding:"24px"}}><div style={{fontSize:14,color:T.m,marginBottom:12}}>No intel yet</div><div onClick={()=>onAskInline(`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find production, reviews, social media, outreach angle.`)} style={{display:"inline-block",padding:"10px 20px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer"}}>🔍 Ask LIVI to Research</div></div>}</div>
+
+      <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`,marginTop:24}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontSize:17,fontWeight:700,color:T.t}}>✅ Tasks</div>
+          {tasks.length>0&&<div style={{fontSize:13,color:T.m}}>{tasks.filter(t=>t.completed_at).length}/{tasks.length} done</div>}
+        </div>
+        {tasksLoading?<div style={{textAlign:"center",padding:"20px",color:T.m,fontSize:14}}>Loading tasks...</div>:tasks.length===0?<div style={{textAlign:"center",padding:"24px",color:T.m,fontSize:14}}>No tasks yet</div>:(()=>{
+          const g=groupTasks(tasks);
+          const TaskRow=({t})=>{
+            const done=!!t.completed_at;
+            const dStr=new Date(t.due_date).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+            return(<div onClick={()=>toggleTask(t)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:done?T.d+"80":T.d,border:`1px solid ${T.b}`,marginBottom:6,cursor:"pointer",opacity:done?0.6:1}} onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
+              <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${done?T.a:T.m}`,background:done?T.a:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                {done&&<span style={{color:"#000",fontSize:14,fontWeight:700}}>✓</span>}
+              </div>
+              <span style={{fontSize:16,flexShrink:0}}>{taskIcon[t.task_type]||"📋"}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:600,color:done?T.m:T.t,textDecoration:done?"line-through":"none"}}>{t.title}</div>
+                {t.description&&<div style={{fontSize:12,color:T.m,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.description}</div>}
+              </div>
+              {t.day_number!=null&&<div style={{fontSize:11,color:T.m,fontWeight:600,flexShrink:0}}>Day {t.day_number}</div>}
+              <div style={{fontSize:12,color:T.m,flexShrink:0}}>{dStr}</div>
+              <div style={{padding:"3px 8px",borderRadius:4,fontSize:11,fontWeight:700,color:priColor[t.priority]||T.s,background:(priColor[t.priority]||T.s)+"15",flexShrink:0}}>{(t.priority||"medium").toUpperCase()}</div>
+            </div>);
+          };
+          return(<div>
+            {g.overdue.length>0&&<div style={{marginBottom:16}}><div style={{fontSize:12,fontWeight:700,color:T.r,letterSpacing:1.5,marginBottom:8}}>🔴 OVERDUE ({g.overdue.length})</div>{g.overdue.map(t=><TaskRow key={t.id} t={t}/>)}</div>}
+            {g.today.length>0&&<div style={{marginBottom:16}}><div style={{fontSize:12,fontWeight:700,color:T.y,letterSpacing:1.5,marginBottom:8}}>🟡 DUE TODAY ({g.today.length})</div>{g.today.map(t=><TaskRow key={t.id} t={t}/>)}</div>}
+            {g.upcoming.length>0&&<div style={{marginBottom:16}}><div style={{fontSize:12,fontWeight:700,color:T.a,letterSpacing:1.5,marginBottom:8}}>🟢 UPCOMING ({g.upcoming.length})</div>{g.upcoming.map(t=><TaskRow key={t.id} t={t}/>)}</div>}
+            {g.completed.length>0&&<div><div style={{fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,marginBottom:8}}>✅ COMPLETED ({g.completed.length})</div>{g.completed.map(t=><TaskRow key={t.id} t={t}/>)}</div>}
+          </div>);
+        })()}
+      </div>
     </div>
   );
 }
