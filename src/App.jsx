@@ -82,6 +82,12 @@ const T = {
   t:"#E4E8F1",s:"#7B8BA3",m:"#2A3345",d:"#161C28",
 };
 
+const CopyButton=({text,label="Copy Link"})=>{
+  const[copied,setCopied]=useState(false);
+  const handleCopy=()=>{navigator.clipboard?.writeText(text).catch(()=>{const t=document.createElement("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});setCopied(true);setTimeout(()=>setCopied(false),2000);};
+  return(<button onClick={handleCopy} style={{background:copied?"#052e16":"#0a0a0a",border:"1px solid #22c55e",color:"#22c55e",padding:"6px 14px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer",transition:"transform 0.15s",transform:copied?"scale(0.95)":"scale(1)",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap",fontFamily:"inherit"}}>{copied?"✓ Copied!":`📋 ${label}`}</button>);
+};
+
 const SYSTEM = `You are LIVI, an elite AI recruiting assistant for real estate team leaders and brokers, powered by LIVIN.
 
 You help them recruit real estate agents to their brokerage or team. You seamlessly handle all aspects of the recruiting process:
@@ -588,7 +594,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
 
       {leadTab==="livi"&&<div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>{onAskInline(q);if(label==="Draft Outreach"||label==="Research")logActivity(userId,label==="Research"?"research_lead":"draft_outreach",{lead_name:`${lead.first_name} ${lead.last_name}`})}} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
       {inlineLoading&&<div style={{marginTop:16,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><CopyButton text={inlineResponse} label="Copy"/></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
       </div>}
 
       {leadTab==="notes"&&<div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
@@ -1078,9 +1084,7 @@ function ContentTab({userId,userProfile}){
             </a>
           )}
           <div style={{marginTop:"auto",display:"flex",gap:8}}>
-            <div onClick={()=>{copyPost(post.id,post.body);logActivity(userId,"copy_content",{platform:post.platform});}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:copied[post.id]?T.a+"20":T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-              {copied[post.id]?"✓ Copied":"📋 Copy"}
-            </div>
+            <div onClick={()=>logActivity(userId,"copy_content",{platform:post.platform})} style={{flex:1}}><CopyButton text={post.body} label="Copy"/></div>
             {!post.is_posted&&(
               <div onClick={()=>{markPosted(post.id);logActivity(userId,"mark_posted",{platform:post.platform});}} style={{flex:1,padding:"9px 10px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                 ✅ Posted
@@ -1114,7 +1118,7 @@ function ContentTab({userId,userProfile}){
               <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all",marginBottom:4}}>{`https://rkrt.in/join${trackingRef}${targetParam}`}</div>
               <div style={{fontSize:12,color:T.s}}>Leads route to your pipeline{targetBrokerage?` · Targeting ${targetBrokerage}`:""}</div>
             </div>
-            <div onClick={()=>{const url=`https://rkrt.in/join${trackingRef}${targetParam}`;navigator.clipboard?.writeText(url).catch(()=>{const t=document.createElement("textarea");t.value=url;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});}} style={{padding:"10px 16px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,alignSelf:"flex-end"}}>📋 Copy Link</div>
+            <CopyButton text={`https://rkrt.in/join${trackingRef}${targetParam}`} label="Copy Link"/>
           </div>
           {brokerageBlogUrl&&<div style={{marginTop:12,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}>
             <div style={{flex:1,minWidth:0}}>
@@ -1122,7 +1126,7 @@ function ContentTab({userId,userProfile}){
               <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all"}}>{brokerageBlogUrl}</div>
               <div style={{fontSize:11,color:T.s,marginTop:2}}>Share this — leads from the blog page route to your pipeline</div>
             </div>
-            <div onClick={()=>{navigator.clipboard?.writeText(brokerageBlogUrl).catch(()=>{const t=document.createElement("textarea");t.value=brokerageBlogUrl;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});}} style={{padding:"8px 14px",borderRadius:8,background:"#8B5CF620",color:"#8B5CF6",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0}}>📋 Copy</div>
+            <CopyButton text={brokerageBlogUrl} label="Copy"/>
           </div>}
           {targetBrokerage&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,fontSize:12,color:T.s}}>💡 Generate fresh content below to get posts targeting <strong style={{color:T.t}}>{targetBrokerage}</strong> agents</div>}
         </div>
@@ -1141,7 +1145,7 @@ function ContentTab({userId,userProfile}){
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all"}}>{url}</div>
               </div>
-              <div onClick={()=>{navigator.clipboard?.writeText(url).catch(()=>{const t=document.createElement("textarea");t.value=url;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});setCopied(p=>({...p,recruitLink:true}));setTimeout(()=>setCopied(p=>({...p,recruitLink:false})),2000);}} style={{padding:"8px 14px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0}}>{copied.recruitLink?"✓ Copied!":"📋 Copy Link"}</div>
+              <CopyButton text={url} label="Copy Link"/>
             </div>);})()}
           <div style={{fontSize:12,color:T.s}}>Share this link to attract agents from this brokerage. Leads will be assigned to you automatically.</div>
         </div>
@@ -1261,6 +1265,7 @@ export default function Livi(){
   const [authLoading,setAuthLoading]=useState(true);
   const [showOnboarding,setShowOnboarding]=useState(false);
   const [showUpgradeSuccess,setShowUpgradeSuccess]=useState(false);
+  const [previewUrl,setPreviewUrl]=useState(null);
 
   const load=useCallback(async()=>{
     if(!authUser) return;
@@ -1450,7 +1455,7 @@ export default function Livi(){
         )}
       </div>
       {inlineLoading&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><span onClick={()=>{navigator.clipboard?.writeText(inlineResponse);}} style={{fontSize:12,color:T.s,cursor:"pointer"}}>📋 Copy</span></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><CopyButton text={inlineResponse} label="Copy"/></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
     </>
   );
 
@@ -1860,6 +1865,9 @@ export default function Livi(){
   const [adminUserLeadStats, setAdminUserLeadStats] = useState({});
   const [leaderboard,setLeaderboard]=useState([]);
   const [lbRefreshing,setLbRefreshing]=useState(false);
+  const [blogTab,setBlogTab]=useState("brokerage");
+  const [dailyContent,setDailyContent]=useState([]);
+  const [dcExpanded,setDcExpanded]=useState({});
 
   const loadAdmin=useCallback(async()=>{
     setAdminLoading(true);
@@ -1917,6 +1925,8 @@ export default function Livi(){
     setAdminUserLeadStats(userLeadStats);
     const lbRes=await supabase.from('user_scores').select('*,profiles(full_name,email,avatar_url,plan,created_at)').order('activity_score',{ascending:false}).limit(20);
     setLeaderboard(lbRes.data||[]);
+    const dcRes=await supabase.from('daily_content').select('*').order('content_date',{ascending:false}).limit(30);
+    setDailyContent(dcRes.data||[]);
     setAdminLoading(false);
   },[]);
 
@@ -1946,15 +1956,38 @@ export default function Livi(){
       </div>
 
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
-        <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📰 Blog Content Review</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontSize:18,fontWeight:700,color:T.t}}>📰 Blog & Content</div>
+          <div style={{display:"flex",gap:6}}>
+            {[["brokerage","Brokerage Posts"],["daily","Daily Content"]].map(([id,label])=>
+              <div key={id} onClick={()=>setBlogTab(id)} style={{padding:"8px 16px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",background:blogTab===id?T.a+"18":T.d,color:blogTab===id?T.a:T.s,border:`1px solid ${blogTab===id?T.a+"40":T.b}`}}>{label}</div>
+            )}
+          </div>
+        </div>
+        {blogTab==="brokerage"&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
           {[["Pending Review",adminStats.blogPending||0,"#FBBF24"],["Approved",adminStats.blogPublished||0,T.a],["Rejected",adminStats.blogRejected||0,"#F56565"],["Total Posts",adminStats.blogTotal||0,T.t]].map(([label,val,color],i)=>
-            <div key={i} onClick={()=>window.open("https://www.rkrt.in/admin/blog","_blank")} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"18px 20px",cursor:"pointer",transition:"border-color 0.15s"}}>
+            <div key={i} onClick={()=>setPreviewUrl("https://www.rkrt.in/admin/blog")} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"18px 20px",cursor:"pointer",transition:"border-color 0.15s"}}>
               <div style={{fontSize:28,fontWeight:800,color}}>{adminLoading?"…":val}</div>
               <div style={{fontSize:11,color:T.m,fontWeight:700,letterSpacing:1.2,marginTop:4}}>{label.toUpperCase()}</div>
             </div>
           )}
-        </div>
+        </div>}
+        {blogTab==="daily"&&<div>
+          {dailyContent.length>0?dailyContent.map((dc,i)=>{
+            const expanded=dcExpanded[dc.id];
+            const platformColor=dc.platform==="facebook"?"#3B82F6":dc.platform==="instagram"?"#E040FB":"#F59E0B";
+            return(
+            <div key={dc.id||i} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 18px",marginBottom:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:4,background:platformColor+"20",color:platformColor,textTransform:"capitalize"}}>{dc.platform||"post"}</span>
+                <span style={{fontSize:12,color:T.m}}>{dc.content_date||new Date(dc.created_at).toLocaleDateString()}</span>
+                {dc.is_posted&&<span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:T.a+"20",color:T.a}}>Posted</span>}
+              </div>
+              <div style={{fontSize:14,color:T.t,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{expanded?(dc.body||dc.content||""):(dc.body||dc.content||"").substring(0,150)}{!expanded&&(dc.body||dc.content||"").length>150?"…":""}</div>
+              {(dc.body||dc.content||"").length>150&&<div onClick={()=>setDcExpanded(p=>({...p,[dc.id]:!expanded}))} style={{fontSize:12,color:T.a,fontWeight:600,cursor:"pointer",marginTop:6}}>{expanded?"Show less":"Show more"}</div>}
+            </div>);
+          }):<div style={{textAlign:"center",padding:"24px",color:T.m,fontSize:14}}>No daily content yet</div>}
+        </div>}
       </div>
 
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
@@ -2439,6 +2472,16 @@ select option{background:${T.card};color:${T.t}}
           </div>
         )}
       </div>
+      {previewUrl&&<div style={{position:"fixed",top:0,right:0,width:"60%",height:"100vh",zIndex:1000,background:T.card,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column",boxShadow:"-4px 0 30px rgba(0,0,0,0.5)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderBottom:`1px solid ${T.b}`,flexShrink:0}}>
+          <div style={{fontSize:14,fontWeight:700,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,marginRight:12}}>{previewUrl}</div>
+          <div style={{display:"flex",gap:8}}>
+            <div onClick={()=>{window.open(previewUrl,"_blank");}} style={{padding:"6px 14px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:12,fontWeight:700,cursor:"pointer"}}>↗ Open in Tab</div>
+            <div onClick={()=>setPreviewUrl(null)} style={{padding:"6px 14px",borderRadius:6,background:T.r+"15",border:`1px solid ${T.r}20`,color:T.r,fontSize:12,fontWeight:700,cursor:"pointer"}}>✕ Close</div>
+          </div>
+        </div>
+        <iframe src={previewUrl} style={{width:"100%",flex:1,border:"none",background:"#fff"}}/>
+      </div>}
     </div>
   );
 }
