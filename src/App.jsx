@@ -423,8 +423,9 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
     (async()=>{
       setTasksLoading(true);
       try{
-        const r=await fetch(`${LIVI_SUPA}/lead_tasks?lead_id=eq.${lead.id}&order=due_date.asc`,{headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}});
-        if(r.ok)setTasks(await r.json());
+        const{data,error}=await supabase.from('lead_tasks').select('*').eq('lead_id',lead.id).order('due_date',{ascending:true});
+        console.log('tasks fetched:',data,'error:',error);
+        if(data)setTasks(data);
       }catch(e){console.error("Fetch tasks error:",e);}
       setTasksLoading(false);
     })();
@@ -435,7 +436,8 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
     const body=done?{completed_at:new Date().toISOString()}:{completed_at:null};
     setTasks(p=>p.map(t=>t.id===task.id?{...t,completed_at:done?new Date().toISOString():null}:t));
     try{
-      await fetch(`${LIVI_SUPA}/lead_tasks?id=eq.${task.id}`,{method:"PATCH",headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
+      const{error}=await supabase.from('lead_tasks').update(body).eq('id',task.id);
+      if(error)console.error("Toggle task error:",error);
     }catch(e){console.error("Toggle task error:",e);}
   };
 
