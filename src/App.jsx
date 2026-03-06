@@ -1141,6 +1141,16 @@ export default function Livi(){
     return()=>subscription.unsubscribe();
   },[]);
 
+  const loadNotifications = useCallback(async () => {
+    if (!authUser?.id) return;
+    const { data } = await supabase.from('notifications')
+      .select('*')
+      .eq('user_id', authUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    setNotifications(data || []);
+  }, [authUser]);
+
   // Load notifications and subscribe to realtime
   useEffect(() => {
     if (!authUser?.id) return;
@@ -1697,15 +1707,7 @@ export default function Livi(){
     setAdminLoading(false);
   },[]);
 
-  const loadNotifications = useCallback(async () => {
-    if (!authUser?.id) return;
-    const { data } = await supabase.from('notifications')
-      .select('*')
-      .eq('user_id', authUser.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    setNotifications(data || []);
-  }, [authUser]);
+
 
   useEffect(()=>{if(view==="admin"){if(profile?.role!=="owner"){setView("home");return;}loadAdmin();}},[view,loadAdmin,profile]);
 
