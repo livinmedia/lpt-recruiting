@@ -749,8 +749,8 @@ function AgentDirectory({userId,userProfile}){
               </div>
             ) : (
               <div style={{marginBottom:16}}>
-                {selectedAgent._enrichError&&<div style={{padding:"12px 16px",borderRadius:8,background:T.r+"15",border:`1px solid ${T.r}30`,color:T.r,fontSize:13,marginBottom:12}}>{selectedAgent._enrichError}</div>}
-                <div onClick={()=>!enriching&&enrichAgent(selectedAgent)} style={{padding:"14px 24px",borderRadius:10,background:T.a,color:"#000",fontSize:15,fontWeight:700,cursor:enriching?"not-allowed":"pointer",opacity:enriching?0.5:1,textAlign:"center"}}>{enriching?"Enriching...":"Enrich with Apollo"}</div>
+                {selectedAgent._enrichError&&<div style={{padding:"12px 16px",borderRadius:8,background:T.m+"15",border:`1px solid ${T.m}30`,color:T.s,fontSize:13,marginBottom:12}}>😕 Rue couldn't find a match for this agent</div>}
+                <div onClick={()=>!enriching&&enrichAgent(selectedAgent)} style={{padding:"14px 24px",borderRadius:10,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",color:"#000",fontSize:15,fontWeight:700,cursor:enriching?"not-allowed":"pointer",opacity:enriching?0.5:1,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{enriching?"⏳ Enriching...":"✨ Enrich with RUE AI"}</div>
               </div>
             )}
             <div style={{display:"flex",gap:10}}>
