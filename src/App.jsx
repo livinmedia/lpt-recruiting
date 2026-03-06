@@ -952,6 +952,8 @@ function ContentTab({userId,userProfile}){
   const [showUpgrade,setShowUpgrade]=useState(false);
   const [recruitBrokerages,setRecruitBrokerages]=useState([]);
   const [recruitBrokerage,setRecruitBrokerage]=useState("");
+  const [approvedPosts,setApprovedPosts]=useState([]);
+  const [sharePage,setSharePage]=useState("");
 
   const isAdmin=userProfile?.role==="owner"||userProfile?.role==="admin";
   const contentLimits=getPlanLimits(userProfile);
@@ -997,7 +999,10 @@ function ContentTab({userId,userProfile}){
   };
 
   useEffect(()=>{loadContent(selectedDate);loadUsage();},[selectedDate]);
-  useEffect(()=>{supabase.from("brokerages").select("id,name,slug").order("name").then(({data})=>{if(data)setRecruitBrokerages(data);});},[]);
+  useEffect(()=>{
+    supabase.from("brokerages").select("id,name,slug").order("name").then(({data})=>{if(data)setRecruitBrokerages(data);});
+    supabase.from("brokerage_posts").select("id,slug,title,brokerage_id,brokerages(name,slug)").eq("status","approved").order("title").then(({data})=>{if(data)setApprovedPosts(data);});
+  },[]);
 
   const generateContent=async()=>{
     if(!isAdmin&&usageToday>=DAILY_LIMIT){setShowUpgrade(true);return;}
@@ -1102,45 +1107,45 @@ function ContentTab({userId,userProfile}){
   return(
     <>
       {/* Recruiting Links Card */}
-      {userId&&(
+      {userId&&(()=>{
+        const PAGES=[
+          {id:"join",group:"Landing Pages",label:"Join LPT Realty",path:"join",desc:"Agents submit their info to join your pipeline"},
+          {id:"calculator",group:"Landing Pages",label:"Commission Calculator",path:"calculator",desc:"Shows agents how much more they'd earn at LPT"},
+          {id:"new-agent",group:"Landing Pages",label:"New Agent Program",path:"new-agent",desc:"Targets newly licensed agents looking for their first brokerage"},
+          {id:"revenue-share",group:"Landing Pages",label:"Revenue Share",path:"revenue-share",desc:"Highlights LPT's passive income opportunity"},
+          {id:"why-switch",group:"Landing Pages",label:"Why Switch?",path:"why-switch",desc:"Addresses pain points of agents at competing brokerages"},
+        ];
+        const blogPages=Object.entries(BROKERAGE_SLUGS).filter(([name])=>!targetBrokerage||name===targetBrokerage).map(([name,slug])=>({id:`blog-${slug}`,group:"Blog Pages",label:`${name} Blog`,url:`https://rkrt.in/${slug}${trackingRef}`,desc:"SEO blog page — leads who visit get tracked in your pipeline"}));
+        const filteredPosts=approvedPosts.filter(p=>!targetBrokerage||p.brokerages?.name===targetBrokerage).map(p=>({id:`post-${p.id}`,group:"Blog Posts",label:p.title,url:`https://rkrt.in/${p.brokerages?.slug||"lpt-realty"}/${p.slug}${trackingRef}`,desc:"Individual blog post — great for sharing on social media"}));
+        const sel=sharePage?[...PAGES.map(p=>({...p,url:`https://rkrt.in/${p.path}${trackingRef}${targetParam}`})),...blogPages,...filteredPosts].find(p=>p.id===sharePage):null;
+        return(
         <div style={{background:"#111827",border:"1px solid #1f2937",borderLeft:"3px solid #22c55e",borderRadius:10,padding:20,marginBottom:16}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:targetBrokerage?16:0}}>
-            <div style={{fontSize:16,fontWeight:700,color:"#f9fafb"}}>🔗 Recruiting Links</div>
-            <select value={targetBrokerage} onChange={ev=>setTargetBrokerage(ev.target.value)} style={{minWidth:200,background:"#1f2937",border:"1px solid #374151",color:"#f9fafb",borderRadius:6,padding:"8px 12px",fontSize:13,outline:"none",fontFamily:"inherit"}}>
-              <option value="">— Select brokerage —</option>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexWrap:"wrap"}}>
+            <div style={{fontSize:16,fontWeight:700,color:"#f9fafb",marginRight:"auto"}}>🔗 Recruiting Links</div>
+            <select value={targetBrokerage} onChange={ev=>{setTargetBrokerage(ev.target.value);setSharePage("");}} style={{minWidth:180,background:"#1f2937",border:"1px solid #374151",color:"#f9fafb",borderRadius:6,padding:"8px 12px",fontSize:13,outline:"none",fontFamily:"inherit"}}>
+              <option value="">All Brokerages</option>
               {TARGET_BROKERAGES.map(b=><option key={b} value={b}>{b}</option>)}
             </select>
+            <select value={sharePage} onChange={ev=>setSharePage(ev.target.value)} style={{minWidth:220,background:"#1f2937",border:"1px solid #374151",color:"#f9fafb",borderRadius:6,padding:"8px 12px",fontSize:13,outline:"none",fontFamily:"inherit"}}>
+              <option value="">— Select page to share —</option>
+              <optgroup label="Landing Pages">{PAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</optgroup>
+              {blogPages.length>0&&<optgroup label="Blog Pages">{blogPages.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</optgroup>}
+              {filteredPosts.length>0&&<optgroup label="Blog Posts">{filteredPosts.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</optgroup>}
+            </select>
           </div>
-          {targetBrokerage?(
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,background:"#1f2937",border:"1px solid #374151"}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:11,color:"#6b7280",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:3}}>LANDING PAGE</div>
-                  <div style={{fontSize:13,color:"#d1d5db",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{`https://rkrt.in/join${trackingRef}${targetParam}`}</div>
-                </div>
-                <CopyButton text={`https://rkrt.in/join${trackingRef}${targetParam}`} label="Copy"/>
+          {sel?(
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:"#1f2937",border:"1px solid #374151"}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,color:"#d1d5db",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sel.url}</div>
+                <div style={{fontSize:11,color:"#6b7280",marginTop:4}}>{sel.desc}</div>
               </div>
-              {brokerageBlogUrl&&<div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,background:"#1f2937",border:"1px solid #374151"}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:11,color:"#6b7280",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:3}}>BLOG PAGE</div>
-                  <div style={{fontSize:13,color:"#d1d5db",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{brokerageBlogUrl}</div>
-                </div>
-                <CopyButton text={brokerageBlogUrl} label="Copy"/>
-              </div>}
-              {recruitBrokerages.length>0&&(()=>{const slug=recruitBrokerages.find(b=>b.name===targetBrokerage)?.slug;if(!slug)return null;const url=`https://rkrt.in/${slug}?ref=${userId}`;return(
-                <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,background:"#1f2937",border:"1px solid #374151"}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:11,color:"#6b7280",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:3}}>RECRUITING PAGE</div>
-                    <div style={{fontSize:13,color:"#d1d5db",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{url}</div>
-                  </div>
-                  <CopyButton text={url} label="Copy"/>
-                </div>);})()}
+              <CopyButton text={sel.url} label="Copy"/>
             </div>
           ):(
-            <div style={{fontSize:13,color:"#6b7280",marginTop:12}}>Select a brokerage to get your tracking links</div>
+            <div style={{fontSize:13,color:"#6b7280"}}>Select a page to get your shareable tracking link</div>
           )}
-        </div>
-      )}
+        </div>);
+      })()}
 
       {/* Date nav + filter */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
