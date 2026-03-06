@@ -1792,7 +1792,7 @@ export default function Livi(){
             )}
           </div>
           <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>QUICK LINKS</div>
-          {[["🗄️","Supabase Dashboard","https://supabase.com/dashboard/project/usknntguurefeyzusbdh"],["▲","Vercel Dashboard","https://vercel.com/livinmedias-projects/lpt-recruiting"],["🐙","GitHub Repo","https://github.com/livinmedia/lpt-recruiting"]].map(([ic,label,url])=>
+          {[["📰","Blog Admin","https://www.rkrt.in/admin/blog"],["🗄️","Supabase Dashboard","https://supabase.com/dashboard/project/usknntguurefeyzusbdh"],["▲","Vercel Dashboard","https://vercel.com/livinmedias-projects/lpt-recruiting"],["🐙","GitHub Repo","https://github.com/livinmedia/lpt-recruiting"]].map(([ic,label,url])=>
             <a key={label} href={url} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6,textDecoration:"none",color:T.t}}>
               <span style={{fontSize:18}}>{ic}</span><span style={{fontSize:13,fontWeight:600}}>{label}</span><span style={{marginLeft:"auto",fontSize:12,color:T.s}}>→</span>
             </a>
@@ -2026,7 +2026,7 @@ select option{background:${T.card};color:${T.t}}
         </div>
       )}
 
-      <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",flexShrink:0}}>
+      <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflow:"hidden"}}>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14,width:"100%"}}>
           <div style={{width:44,height:44,borderRadius:9,marginBottom:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,letterSpacing:"-0.5px",lineHeight:1}}><span style={{color:"#fff"}}>rkrt</span><span style={{color:"#000"}}>.in</span></div>
           {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["calculator","🧮"],["revenue","💰"]].map(([id,ic])=>
