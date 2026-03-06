@@ -601,14 +601,28 @@ function AgentDirectory({userId,userProfile}){
     setFetchingZillow(true);
     setPendingEnrichedData(enrichedData);
     try {
-      const {data,error}=await supabase.functions.invoke('fetch-zillow',{body:{zillow_url}});
-      if(error||!data?.profile){
-        await saveEnrichedData(enrichedData);
-        return;
-      }
-      setZillowConfirmData(data.profile);
+      const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(zillow_url)}`;
+      const res=await fetch(proxyUrl);
+      const json=await res.json();
+      const html=json.contents;
+      if(!html||html.length<1000){await saveEnrichedData(enrichedData);return;}
+      const getName=(h)=>h.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1]?.trim()||null;
+      const getRating=(h)=>{const m=h.match(/(\d\.\d)\s*<[^>]*>\s*\d+\s*reviews/);return m?parseFloat(m[1]):null;};
+      const getReviews=(h)=>{const m=h.match(/(\d+)\s*reviews/);return m?parseInt(m[1]):null;};
+      const getSales12=(h)=>{const m=h.match(/(\d+)\s*[Ss]ales last 12 months/);return m?parseInt(m[1]):null;};
+      const getTotalSales=(h)=>{const m=h.match(/(\d+)\s*[Tt]otal sales/);return m?parseInt(m[1]):null;};
+      const getAvgPrice=(h)=>{const m=h.match(/\$(\d[\d,.]+K?)\s*(?:<[^>]*>)?\s*[Aa]verage price/);return m?`$${m[1]}`:null;};
+      const getPhone=(h)=>{const m=h.match(/href="tel:([^"]+)"/);if(!m)return null;const d=m[1].replace(/[^\d]/g,'');return d.length===10?d.replace(/(\d{3})(\d{3})(\d{4})/,'($1) $2-$3'):null;};
+      const getEmail=(h)=>h.match(/href="mailto:([^"]+)"/)?.[1]||null;
+      const getPhoto=(h)=>h.match(/https:\/\/photos\.zillowstatic\.com\/fp\/[a-z0-9]+-h_l\.jpg/)?.[0]||null;
+      const getListings=(h)=>{const m=h.match(/For Sale \((\d+)\)/);return m?parseInt(m[1]):null;};
+      const phones=[...html.matchAll(/href="tel:([^"]+)"/g)].map(m=>{const d=m[1].replace(/[^\d]/g,'');return d.length===10?d.replace(/(\d{3})(\d{3})(\d{4})/,'($1) $2-$3'):null;}).filter(Boolean);
+      const profile={name:getName(html),photo_url:getPhoto(html),rating:getRating(html),reviews:getReviews(html),sales_last_12_months:getSales12(html),total_sales:getTotalSales(html),avg_price:getAvgPrice(html),phones:phones.length?phones:null,email:getEmail(html),current_listings:getListings(html),zillow_url};
+      console.log('Zillow profile parsed:',profile);
+      setZillowConfirmData(profile);
       setShowZillowConfirm(true);
     } catch(e){
+      console.error('Zillow fetch failed:',e);
       await saveEnrichedData(enrichedData);
     } finally {
       setFetchingZillow(false);
