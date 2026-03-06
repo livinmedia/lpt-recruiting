@@ -11,6 +11,7 @@
     }
   ],
   "routes": [
+    { "src": "/api/zillow-proxy", "dest": "/api/zillow-proxy.js" },
     { "src": "^/og/(.*)", "dest": "/og/$1" },
     { "src": "^/assets/(.*)", "dest": "/assets/$1" },
     { "src": "^/(.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp|mp4|pdf))$", "dest": "/$1" },

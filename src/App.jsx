@@ -601,10 +601,9 @@ function AgentDirectory({userId,userProfile}){
     setFetchingZillow(true);
     setPendingEnrichedData(enrichedData);
     try {
-      const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(zillow_url)}`;
+      const proxyUrl=`/api/zillow-proxy?url=${encodeURIComponent(zillow_url)}`;
       const res=await fetch(proxyUrl);
-      const json=await res.json();
-      const html=json.contents;
+      const html=await res.text();
       if(!html||html.length<1000){await saveEnrichedData(enrichedData);return;}
       const getName=(h)=>h.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1]?.trim()||null;
       const getRating=(h)=>{const m=h.match(/(\d\.\d)\s*<[^>]*>\s*\d+\s*reviews/);return m?parseFloat(m[1]):null;};
