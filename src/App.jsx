@@ -615,12 +615,15 @@ function AgentDirectory({userId,userProfile}){
     }
   };
 
+  const cleanName=(n)=>(n||'').replace(/\b(LLC|PA|PL|PLLC|INC|CORP|LTD|JR|SR|II|III|IV)\b\.?/gi,'').trim();
+  const getBrokerageSlug=(b)=>{const name=(b||'').toUpperCase();if(name.includes('LPT'))return'LPT';if(name.includes('EXP'))return'eXp';if(name.includes('KELLER'))return'KW';if(name.includes('REMAX')||name.includes('RE/MAX'))return'REMAX';if(name.includes('COMPASS'))return'Compass';if(name.includes('COLDWELL'))return'CB';return'';};
+
   const enrichAgent=async(agent)=>{
     setEnriching(true);
     try {
       const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/enrich-agent",{
         method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${LIVI_KEY}`},
-        body:JSON.stringify({agent_id:agent.id,first_name:(agent.first_name||agent.full_name?.split(" ")[0]||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),last_name:(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_name:(agent.brokerage_name||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),state:agent.state||""})
+        body:JSON.stringify({agent_id:agent.id,first_name:cleanName(agent.first_name||agent.full_name?.split(" ")[0]||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),last_name:cleanName(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_name:(agent.brokerage_name||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_slug:getBrokerageSlug(agent.brokerage_name),state:agent.state||""})
       });
       const d=await r.json();
       if(d.enriched||d.personal_email||d.work_email||d.mobile_phone||d.linkedin_url||d.enriched_at){
