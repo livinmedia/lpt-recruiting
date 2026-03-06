@@ -560,8 +560,6 @@ function AgentDirectory({userId,userProfile}){
         pipeline_stage:"new",
         license_number:agent.license_number||null,
         license_state:agent.state||null,
-        license_status:agent.license_status||null,
-        notes:`License: ${agent.license_number} (${agent.license_type||"Agent"})\nState: ${agent.state}\nBrokerage: ${agent.brokerage_name||"N/A"}${agent.original_license_date?`\nLicensed: ${agent.original_license_date}`:""}`,
       };
       console.log('Adding to pipeline:',JSON.stringify(body));
       const r=await fetch(`${LIVI_SUPA}/leads`,{
