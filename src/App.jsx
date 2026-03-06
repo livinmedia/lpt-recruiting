@@ -574,17 +574,27 @@ function AgentDirectory({userId,userProfile}){
 
   const saveEnrichedData=async(enrichedData)=>{
     if(!selectedAgent) return;
-    await supabase.from('agent_directory').update(enrichedData).eq('id',selectedAgent.id);
-    if(enrichedData.personal_email||enrichedData.mobile_phone){
+    const updates={enriched_at:enrichedData.enriched_at||new Date().toISOString()};
+    if(enrichedData.personal_email)updates.personal_email=enrichedData.personal_email;
+    if(enrichedData.work_email)updates.work_email=enrichedData.work_email;
+    if(enrichedData.mobile_phone)updates.mobile_phone=enrichedData.mobile_phone;
+    if(enrichedData.linkedin_url)updates.linkedin_url=enrichedData.linkedin_url;
+    if(enrichedData.zillow_url)updates.zillow_url=enrichedData.zillow_url;
+    if(enrichedData.zillow_rating)updates.zillow_rating=enrichedData.zillow_rating;
+    if(enrichedData.zillow_reviews)updates.zillow_reviews=enrichedData.zillow_reviews;
+    if(enrichedData.recent_sales_count)updates.recent_sales_count=enrichedData.recent_sales_count;
+    if(enrichedData.sales_volume)updates.sales_volume=enrichedData.sales_volume;
+    await supabase.from('agent_directory').update(updates).eq('id',selectedAgent.id);
+    if(updates.personal_email||updates.mobile_phone){
       const leadUpdate={};
-      if(enrichedData.personal_email) leadUpdate.email=enrichedData.personal_email;
-      if(enrichedData.mobile_phone) leadUpdate.phone=enrichedData.mobile_phone;
-      if(enrichedData.linkedin_url) leadUpdate.linkedin=enrichedData.linkedin_url;
-      if(enrichedData.zillow_url) leadUpdate.zillow=enrichedData.zillow_url;
+      if(updates.personal_email)leadUpdate.email=updates.personal_email;
+      if(updates.mobile_phone)leadUpdate.phone=updates.mobile_phone;
+      if(updates.linkedin_url)leadUpdate.linkedin=updates.linkedin_url;
+      if(updates.zillow_url)leadUpdate.zillow=updates.zillow_url;
       await supabase.from('leads').update(leadUpdate).eq('license_number',selectedAgent.license_number).eq('license_state',selectedAgent.state);
     }
-    setSelectedAgent(prev=>({...prev,...enrichedData}));
-    setResults(prev=>prev.map(a=>a.id===selectedAgent.id?{...a,...enrichedData}:a));
+    setSelectedAgent(prev=>({...prev,...updates}));
+    setResults(prev=>prev.map(a=>a.id===selectedAgent.id?{...a,...updates}:a));
   };
 
   const cleanName=(n)=>(n||'').replace(/\b(LLC|PA|PL|PLLC|INC|CORP|LTD|JR|SR|II|III|IV)\b\.?/gi,'').trim();
