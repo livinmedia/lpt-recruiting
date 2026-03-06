@@ -403,7 +403,7 @@ function DeleteModal({ lead, onConfirm, onCancel, deleting }) {
 }
 
 // ━━━ LEAD DETAIL PAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,onDelete}){
+function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,onDelete,userProfile}){
   const [editing,setEditing]=useState(false);
   const [info,setInfo]=useState({first_name:lead.first_name||"",last_name:lead.last_name||"",email:lead.email||"",phone:lead.phone||"",market:lead.market||"",brokerage:lead.brokerage||""});
   const [notes,setNotes]=useState(lead._notes||[]);
@@ -417,6 +417,8 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
   const [leadTab,setLeadTab]=useState("livi");
   const [tasks,setTasks]=useState([]);
   const [tasksLoading,setTasksLoading]=useState(true);
+  const [emailModal,setEmailModal]=useState(null);
+  const [emailSending,setEmailSending]=useState(false);
 
   useEffect(()=>{
     console.log('tasks useEffect fired, leadTab:',leadTab,'lead.id:',lead?.id);
@@ -441,6 +443,27 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
       const{error}=await supabase.from('lead_tasks').update(body).eq('id',task.id);
       if(error)console.error("Toggle task error:",error);
     }catch(e){console.error("Toggle task error:",e);}
+  };
+
+  const openEmailForTask=(task)=>{
+    const fn=lead.first_name||"";
+    const subjectMap={call:`Following up, ${fn}`,email:`Quick note for you, ${fn}`,follow_up:`Quick note for you, ${fn}`,text:`Hey ${fn}!`};
+    setEmailModal({taskId:task.id,subject:subjectMap[task.task_type]||`Following up, ${fn}`,body:""});
+  };
+
+  const sendTaskEmail=async()=>{
+    if(!emailModal)return;
+    setEmailSending(true);
+    try{
+      const{error}=await supabase.functions.invoke('send-email',{body:{type:'outreach',to_email:lead.email,subject:emailModal.subject,body:emailModal.body,lead_id:lead.id,from_name:userProfile?.full_name||""}});
+      if(error)console.error("Send email error:",error);
+      else{
+        const task=tasks.find(t=>t.id===emailModal.taskId);
+        if(task)toggleTask(task);
+        setEmailModal(null);
+      }
+    }catch(e){console.error("Send email error:",e);}
+    setEmailSending(false);
   };
 
   const taskIcon={call:"📞",email:"📧",text:"💬",research:"🔍",follow_up:"📋",meeting:"🤝"};
@@ -499,6 +522,18 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
   return(
     <div style={{flex:1,overflow:"auto",padding:"24px 32px"}}>
       {showDelete&&<DeleteModal lead={lead} onConfirm={handleDelete} onCancel={()=>setShowDelete(false)} deleting={deleting}/>}
+      {emailModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setEmailModal(null)}>
+        <div onClick={ev=>ev.stopPropagation()} style={{background:T.card,borderRadius:14,padding:"28px 30px",width:480,maxWidth:"90vw",border:`1px solid ${T.b}`}}>
+          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:18}}>✉️ Send Email</div>
+          <div style={{marginBottom:12}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:4}}>TO</div><div style={{padding:"10px 14px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:14}}>{lead.email}</div></div>
+          <div style={{marginBottom:12}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:4}}>SUBJECT</div><input value={emailModal.subject} onChange={ev=>setEmailModal(p=>({...p,subject:ev.target.value}))} style={{width:"100%",padding:"10px 14px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
+          <div style={{marginBottom:16}}><div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:4}}>BODY</div><textarea value={emailModal.body} onChange={ev=>setEmailModal(p=>({...p,body:ev.target.value}))} rows={6} placeholder="Write your message..." style={{width:"100%",padding:"12px 14px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.5,boxSizing:"border-box"}}/></div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+            <div onClick={()=>setEmailModal(null)} style={{padding:"10px 18px",borderRadius:8,background:T.d,color:T.m,fontSize:14,fontWeight:700,cursor:"pointer",border:`1px solid ${T.b}`}}>Cancel</div>
+            <div onClick={emailSending?null:sendTaskEmail} style={{padding:"10px 18px",borderRadius:8,background:emailModal.body.trim()?T.a:T.d,color:emailModal.body.trim()?"#000":T.m,fontSize:14,fontWeight:700,cursor:emailSending?"wait":emailModal.body.trim()?"pointer":"default"}}>{emailSending?"Sending…":"Send & Complete Task"}</div>
+          </div>
+        </div>
+      </div>}
       <div onClick={onBack} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back to Pipeline</div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:12}}>
         <div><h1 style={{fontSize:32,fontWeight:800,margin:"0 0 6px"}}>{info.first_name} {info.last_name}</h1><div style={{fontSize:16,color:T.s}}>{info.market||"Unknown Market"} · {info.brokerage||"Unknown Brokerage"}</div></div>
@@ -532,12 +567,12 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
         </div>
       </div>
 
-      {(()=>{const incompleteTasks=tasks.filter(t=>!t.completed_at).length;return(
+      {(()=>{const incompleteTasks=tasks.filter(t=>!t.completed_at).length;const tg=groupTasks(tasks);const urgent=tg.overdue.length+tg.today.length>0;return(
       <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
         {[["livi","🤖 LIVI"],["notes","📝 Notes"],["intel","🔍 Intel"],["tasks","✅ Tasks"]].map(([id,label])=>(
           <div key={id} onClick={()=>setLeadTab(id)} style={{padding:"10px 18px",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",background:leadTab===id?T.a+"18":T.d,color:leadTab===id?T.a:T.s,border:`1px solid ${leadTab===id?T.a+"40":T.b}`,display:"flex",alignItems:"center",gap:6}}>
             {label}
-            {id==="tasks"&&incompleteTasks>0&&<span style={{background:T.r,color:"#fff",fontSize:11,fontWeight:700,padding:"1px 7px",borderRadius:10,minWidth:18,textAlign:"center"}}>{incompleteTasks}</span>}
+            {id==="tasks"&&incompleteTasks>0&&<span style={{background:T.r,color:"#fff",fontSize:11,fontWeight:700,padding:"1px 7px",borderRadius:10,minWidth:18,textAlign:"center",animation:urgent?"pulse 1.5s infinite":"none"}}>{incompleteTasks}</span>}
           </div>
         ))}
       </div>);})()}
@@ -564,8 +599,8 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
           const TaskRow=({t})=>{
             const done=!!t.completed_at;
             const dStr=new Date(t.due_date).toLocaleDateString("en-US",{month:"short",day:"numeric"});
-            return(<div onClick={()=>toggleTask(t)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:done?T.d+"80":T.d,border:`1px solid ${T.b}`,marginBottom:6,cursor:"pointer",opacity:done?0.6:1}} onMouseOver={ev=>ev.currentTarget.style.borderColor=T.bh} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
-              <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${done?T.a:T.m}`,background:done?T.a:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            return(<div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:done?T.d+"80":T.d,border:`1px solid ${T.b}`,marginBottom:6,opacity:done?0.6:1}}>
+              <div onClick={()=>toggleTask(t)} style={{width:22,height:22,borderRadius:6,border:`2px solid ${done?T.a:T.m}`,background:done?T.a:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"pointer"}}>
                 {done&&<span style={{color:"#000",fontSize:14,fontWeight:700}}>✓</span>}
               </div>
               <span style={{fontSize:16,flexShrink:0}}>{taskIcon[t.task_type]||"📋"}</span>
@@ -573,6 +608,8 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
                 <div style={{fontSize:14,fontWeight:600,color:done?T.m:T.t,textDecoration:done?"line-through":"none"}}>{t.title}</div>
                 {t.description&&<div style={{fontSize:12,color:T.m,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.description}</div>}
               </div>
+              {!done&&<div onClick={(ev)=>{ev.stopPropagation();setLeadTab("livi");onAskInline(`I have a task: ${t.title} for lead ${lead.first_name} (${lead.brokerage||"unknown brokerage"}). Their outreach angle is: ${lead.outreach_angle||"not set"}. What's the best way to approach this task?`);}} style={{padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:600,background:T.bl+"15",color:T.bl,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>🤖 Ask Rue</div>}
+              {!done&&lead.email&&<div onClick={(ev)=>{ev.stopPropagation();openEmailForTask(t);}} style={{padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:600,background:T.p+"15",color:T.p,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>✉️ Email</div>}
               {t.day_number!=null&&<div style={{fontSize:11,color:T.m,fontWeight:600,flexShrink:0}}>Day {t.day_number}</div>}
               <div style={{fontSize:12,color:T.m,flexShrink:0}}>{dStr}</div>
               <div style={{padding:"3px 8px",borderRadius:4,fontSize:11,fontWeight:700,color:priColor[t.priority]||T.s,background:(priColor[t.priority]||T.s)+"15",flexShrink:0}}>{(t.priority||"medium").toUpperCase()}</div>
@@ -2266,7 +2303,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="content"&&<ContentTab userId={authUser?.id} userProfile={profile}/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="profile"&&<ProfileView/>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={authUser?.id} onDelete={handleDeleteLead}/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={authUser?.id} onDelete={handleDeleteLead} userProfile={profile}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
