@@ -633,7 +633,7 @@ function AgentDirectory({userId,userProfile}){
       if(e.mobile_phone?.includes('555'))delete e.mobile_phone;
       if(e.personal_email?.match(/@(lptrealty|kwrealty|exprealty|coldwellbanker|remax)\.com/i))delete e.personal_email;
       if(e.linkedin_url?.match(/\d{6,}/))delete e.linkedin_url;
-      if(e.enriched_at||e.personal_email||e.work_email||e.mobile_phone||e.linkedin_url){
+      if(e.enriched_at||e.personal_email||e.work_email||e.mobile_phone||e.linkedin_url||e.zillow_url||d.profile?.zillow_url){
         const enrichedData={...e,enriched_at:e.enriched_at||new Date().toISOString()};
         const zillow_url=e.zillow_url||d.profile?.zillow_url;
         if(zillow_url){
