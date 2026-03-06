@@ -1858,6 +1858,8 @@ export default function Livi(){
   const [newContent,setNewContent]=useState({title:"",body:"",type:"announcement"});
   const [adminLoading,setAdminLoading]=useState(false);
   const [adminUserLeadStats, setAdminUserLeadStats] = useState({});
+  const [leaderboard,setLeaderboard]=useState([]);
+  const [lbRefreshing,setLbRefreshing]=useState(false);
 
   const loadAdmin=useCallback(async()=>{
     setAdminLoading(true);
@@ -1913,6 +1915,8 @@ export default function Livi(){
     setAdminActivity(activityRows.data||[]);
     setAdminContent(contentRows.data||[]);
     setAdminUserLeadStats(userLeadStats);
+    const lbRes=await supabase.from('user_scores').select('*,profiles(full_name,email,avatar_url,plan,created_at)').order('activity_score',{ascending:false}).limit(20);
+    setLeaderboard(lbRes.data||[]);
     setAdminLoading(false);
   },[]);
 
@@ -1977,6 +1981,102 @@ export default function Livi(){
           </table>
         </div>
       </div>
+
+      {(()=>{
+        const now=new Date();
+        const d7=new Date(now);d7.setDate(d7.getDate()-7);
+        const d14=new Date(now);d14.setDate(d14.getDate()-14);
+        const d30Start=new Date(now.getFullYear(),now.getMonth(),1);
+        const activeUsers=leaderboard.filter(u=>u.last_active_at&&new Date(u.last_active_at)>d7).length;
+        const avgScore=leaderboard.length>0?Math.round(leaderboard.reduce((s,u)=>s+(u.accountability_score||0),0)/leaderboard.length):0;
+        const totalLeadsMonth=leaderboard.reduce((s,u)=>s+(u.leads_added||0),0);
+        const totalRecruits=leaderboard.reduce((s,u)=>s+(u.recruits_closed||0),0);
+        const atRisk=leaderboard.filter(u=>(u.accountability_score||0)<20||(u.last_active_at&&new Date(u.last_active_at)<d14)||(u.days_active_last_30d!=null&&u.days_active_last_30d<3));
+        const top3=leaderboard.slice(0,3);
+        const rest=leaderboard.slice(3);
+        const podiumColors=["#FFD700","#C0C0C0","#CD7F32"];
+        const scoreBorder=(s)=>s>=80?T.a:s>=50?T.y:s>=20?"#f97316":T.r;
+        const refreshScores=async()=>{
+          setLbRefreshing(true);
+          for(const u of leaderboard){
+            try{await supabase.rpc('recalculate_user_score',{p_user_id:u.user_id});}catch(e){console.error('Refresh score error:',u.user_id,e);}
+          }
+          await loadAdmin();
+          setLbRefreshing(false);
+        };
+        return(
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <div style={{fontSize:18,fontWeight:700,color:T.t}}>🏆 User Performance Leaderboard</div>
+            <div onClick={lbRefreshing?null:refreshScores} style={{padding:"8px 16px",borderRadius:8,background:lbRefreshing?T.d:T.bl+"18",color:lbRefreshing?T.m:T.bl,fontSize:13,fontWeight:700,cursor:lbRefreshing?"wait":"pointer",border:`1px solid ${lbRefreshing?T.b:T.bl+"40"}`}}>{lbRefreshing?"⏳ Refreshing…":"🔄 Refresh Scores"}</div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:24}}>
+            {[["👥","Active Users (7d)",activeUsers,T.bl],["📊","Avg Score",avgScore,T.a],["🎯","Leads This Month",totalLeadsMonth,T.y],["🏆","Total Recruits",totalRecruits,T.p]].map(([ic,l,v,c],i)=>
+              <div key={i} style={{background:T.d,borderRadius:10,padding:"16px 18px",border:`1px solid ${T.b}`,textAlign:"center"}}>
+                <div style={{fontSize:20,marginBottom:4}}>{ic}</div>
+                <div style={{fontSize:24,fontWeight:800,color:c}}>{adminLoading?"…":v}</div>
+                <div style={{fontSize:11,color:T.m,fontWeight:600,letterSpacing:1}}>{l.toUpperCase()}</div>
+              </div>)}
+          </div>
+
+          {top3.length>0&&<div style={{display:"grid",gridTemplateColumns:top3.length===1?"1fr":top3.length===2?"1fr 1fr":"1fr 1fr 1fr",gap:16,marginBottom:24}}>
+            {top3.map((u,i)=>{const sc=u.accountability_score||0;const p=u.profiles||{};return(
+              <div key={u.id} style={{background:T.d,borderRadius:14,padding:"24px 20px",border:`2px solid ${podiumColors[i]}30`,textAlign:"center",position:"relative"}}>
+                <div style={{position:"absolute",top:-12,left:"50%",transform:"translateX(-50%)",background:podiumColors[i],color:"#000",fontWeight:800,fontSize:14,padding:"4px 14px",borderRadius:20}}>#{i+1}</div>
+                <div style={{fontSize:18,fontWeight:700,color:T.t,marginTop:12}}>{p.full_name||p.email||"—"}</div>
+                <div style={{fontSize:12,color:T.s,marginTop:2}}>{p.email||""}</div>
+                <div style={{fontSize:42,fontWeight:800,color:podiumColors[i],marginTop:12}}>{sc}</div>
+                <div style={{fontSize:12,color:T.m,fontWeight:600}}>Accountability Score</div>
+                {u.streak_days>0&&<div style={{marginTop:8,fontSize:13,fontWeight:700,color:T.r}}>🔥 {u.streak_days} day streak</div>}
+                {u.rank_change!=null&&u.rank_change!==0&&<div style={{marginTop:6,fontSize:12,fontWeight:700,color:u.rank_change>0?T.a:T.r}}>{u.rank_change>0?`+${u.rank_change} ↑`:`${u.rank_change} ↓`}</div>}
+                <div style={{display:"flex",gap:6,justifyContent:"center",flexWrap:"wrap",marginTop:10}}>
+                  <span style={{fontSize:11,padding:"3px 8px",borderRadius:4,background:T.bl+"15",color:T.bl,fontWeight:600}}>{u.leads_added||0} leads</span>
+                  <span style={{fontSize:11,padding:"3px 8px",borderRadius:4,background:T.a+"15",color:T.a,fontWeight:600}}>{u.recruits_closed||0} recruits</span>
+                </div>
+              </div>);})}
+          </div>}
+
+          {rest.length>0&&<div style={{overflowX:"auto",marginBottom:24}}>
+            <table style={{width:"100%",borderCollapse:"collapse",minWidth:900}}>
+              <thead><tr>{["Rank","User","Score","Leads","Tasks Done","Emails Sent","Pipeline Moves","Recruits","Days Active","Streak","Last Active"].map(h=>
+                <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:T.m,letterSpacing:1.2,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
+              )}</tr></thead>
+              <tbody>{rest.map((u,i)=>{const sc=u.accountability_score||0;const p=u.profiles||{};const la=u.last_active_at?new Date(u.last_active_at):null;return(
+                <tr key={u.id} style={{borderBottom:`1px solid ${T.b}`,borderLeft:`3px solid ${scoreBorder(sc)}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                  <td style={{padding:"10px 12px",fontSize:14,fontWeight:700,color:T.m}}>#{i+4}</td>
+                  <td style={{padding:"10px 12px"}}><div style={{fontSize:13,fontWeight:600,color:T.t}}>{p.full_name||"—"}</div><div style={{fontSize:11,color:T.s}}>{p.email||""}</div></td>
+                  <td style={{padding:"10px 12px",fontSize:16,fontWeight:800,color:scoreBorder(sc)}}>{sc}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.leads_added||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.tasks_completed||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.emails_sent||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.pipeline_moves||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,fontWeight:700,color:u.recruits_closed>0?T.a:T.m}}>{u.recruits_closed||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.days_active_last_30d||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:u.streak_days>0?T.r:T.m,fontWeight:u.streak_days>0?700:400}}>{u.streak_days>0?`🔥 ${u.streak_days}`:"—"}</td>
+                  <td style={{padding:"10px 12px",fontSize:12,color:T.m,whiteSpace:"nowrap"}}>{la?la.toLocaleDateString():"—"}</td>
+                </tr>);})}</tbody>
+            </table>
+          </div>}
+
+          {atRisk.length>0&&<div style={{background:T.r+"08",borderRadius:12,padding:"20px 22px",border:`1px solid ${T.r}20`}}>
+            <div style={{fontSize:15,fontWeight:700,color:T.r,marginBottom:12}}>⚠️ At Risk ({atRisk.length} users)</div>
+            <div style={{fontSize:12,color:T.m,marginBottom:12}}>Score below 20, inactive 14+ days, or fewer than 3 active days in last 30</div>
+            {atRisk.map(u=>{const p=u.profiles||{};const sc=u.accountability_score||0;const la=u.last_active_at?new Date(u.last_active_at):null;const daysInactive=la?Math.floor((now-la)/(1000*60*60*24)):999;return(
+              <div key={u.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:T.t}}>{p.full_name||p.email||"—"}</div>
+                  <div style={{fontSize:11,color:T.s}}>{p.email||""}</div>
+                </div>
+                <span style={{fontSize:13,fontWeight:700,color:scoreBorder(sc)}}>{sc}</span>
+                {daysInactive>14&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,background:T.r+"20",color:T.r,fontWeight:700}}>{daysInactive}d inactive</span>}
+                {(u.days_active_last_30d!=null&&u.days_active_last_30d<3)&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,background:T.y+"20",color:T.y,fontWeight:700}}>{u.days_active_last_30d}d active/30</span>}
+              </div>);})}
+          </div>}
+
+          {leaderboard.length===0&&!adminLoading&&<div style={{textAlign:"center",padding:"40px",color:T.m}}><div style={{fontSize:28,marginBottom:8}}>🏆</div><div style={{fontSize:14}}>No score data yet</div></div>}
+        </div>);
+      })()}
 
       <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
