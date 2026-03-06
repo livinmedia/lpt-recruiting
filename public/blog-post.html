@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Loading...</title>
+<meta name="description" content=""/>
+<meta property="og:title" content=""/>
+<meta property="og:description" content=""/>
+<meta property="og:image" content=""/>
+<meta property="og:type" content="article"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--border-h:#2a2a3e;--purple:#8B5CF6;--purple-dim:#8B5CF610;--purple-mid:#8B5CF630;--purple-glow:#8B5CF650;--green:#00E5A0;--text:#F0F4F8;--sub:#8899AA;--muted:#4A5568}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;line-height:1.6}
+
+/* NAV */
+nav{padding:0 24px;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.95);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1200px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:20px;font-weight:900;color:var(--purple);text-decoration:none;letter-spacing:-0.5px}
+.nav-logo span{color:var(--text);font-weight:400;font-size:14px;margin-left:8px}
+.nav-cta{padding:10px 24px;border-radius:8px;background:var(--purple);color:#fff;font-size:14px;font-weight:700;text-decoration:none;transition:all 0.15s;border:none;cursor:pointer;font-family:inherit}
+.nav-cta:hover{filter:brightness(1.15)}
+
+/* ARTICLE */
+.article-wrap{max-width:800px;margin:0 auto;padding:32px 24px 48px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--purple);text-decoration:none;margin-bottom:28px;font-weight:600}
+.back-link:hover{text-decoration:underline}
+.article-img{width:100%;max-height:440px;object-fit:cover;border-radius:16px;display:block;margin-bottom:32px;border:1px solid var(--border)}
+.article-title{font-size:clamp(28px,4vw,42px);font-weight:900;line-height:1.15;margin-bottom:12px}
+.article-meta{font-size:13px;color:var(--muted);margin-bottom:32px;display:flex;align-items:center;gap:12px}
+.article-meta .brok-badge{color:var(--purple);font-weight:700}
+.article-content{font-size:17px;color:var(--sub);line-height:1.85}
+.article-content h2{font-size:24px;font-weight:800;color:var(--text);margin:36px 0 14px}
+.article-content h3{font-size:20px;font-weight:700;color:var(--text);margin:28px 0 12px}
+.article-content p{margin-bottom:18px}
+.article-content ul,.article-content ol{margin:0 0 18px 24px}
+.article-content li{margin-bottom:8px}
+.article-content strong{color:var(--text)}
+.article-content blockquote{border-left:3px solid var(--purple);padding-left:20px;color:var(--sub);font-style:italic;margin:20px 0}
+.article-content a{color:var(--purple)}
+
+/* LEAD FORM */
+.form-section{max-width:1200px;margin:0 auto;padding:48px 24px 64px}
+.form-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;max-width:640px;margin:0 auto}
+.form-title{font-size:26px;font-weight:800;text-align:center;margin-bottom:6px}
+.form-sub{font-size:15px;color:var(--sub);text-align:center;margin-bottom:32px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:13px 16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border-color 0.15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--purple)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group select{cursor:pointer}
+.form-group select option{background:var(--card)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-submit{width:100%;padding:15px;border-radius:10px;background:var(--purple);color:#fff;font-size:16px;font-weight:700;border:none;cursor:pointer;transition:all 0.2s;font-family:inherit;margin-top:8px}
+.form-submit:hover{filter:brightness(1.15)}
+.form-submit:disabled{opacity:0.5;cursor:not-allowed}
+.form-msg{padding:12px 16px;border-radius:8px;font-size:14px;margin-top:16px;display:none}
+.form-msg.success{display:block;background:var(--green)15;border:1px solid var(--green)30;color:var(--green)}
+.form-msg.error{display:block;background:#F5656515;border:1px solid #F5656530;color:#F56565}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
+footer a{color:var(--purple);text-decoration:none;font-weight:700}
+footer a:hover{text-decoration:underline}
+.footer-sub{font-size:13px;color:var(--muted);margin-top:6px}
+
+.loading-state{text-align:center;padding:80px 20px;color:var(--sub);font-size:16px}
+
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr}
+  .article-wrap{padding:24px 16px 40px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="" class="nav-logo" id="nav-logo">Loading...</a>
+    <a href="#contact" class="nav-cta" id="nav-cta">Join Now</a>
+  </div>
+</nav>
+
+<div id="app">
+  <div class="loading-state">Loading...</div>
+</div>
+
+<script>
+const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
+const { createClient } = supabase;
+const client = createClient(SUPA_URL, SUPA_KEY);
+
+const BROKERAGES_LIST = ["Keller Williams","RE/MAX","eXp Realty","Coldwell Banker","Century 21","Berkshire Hathaway HomeServices","Compass","Sotheby's International Realty","Better Homes & Gardens Real Estate","ERA Real Estate","Engel & Volkers","HomeSmart","Redfin","Side","LPT Realty","Independent","Other"];
+
+let brokerage = null;
+let post = null;
+
+// Extract brokerage slug and post slug from URL
+const pathParts = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').split('/');
+const brokerageSlug = pathParts[0] || '';
+const postSlug = pathParts.slice(1).join('/') || '';
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function mdToHtml(md) {
+  if (!md) return '';
+  return md
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/^(?!<[hublop])(.+)$/gm, '<p>$1</p>')
+    .replace(/<p><\/p>/g, '');
+}
+
+async function init() {
+  if (!brokerageSlug || !postSlug) {
+    document.getElementById('app').innerHTML = '<div class="loading-state">Post not found.</div>';
+    return;
+  }
+
+  // Look up brokerage
+  const { data: brok, error: bErr } = await client.from('brokerages')
+    .select('id, name, slug')
+    .eq('slug', brokerageSlug)
+    .single();
+
+  if (bErr || !brok) {
+    document.getElementById('app').innerHTML = '<div class="loading-state">Brokerage not found.</div>';
+    return;
+  }
+  brokerage = brok;
+
+  // Look up post
+  const { data: p, error: pErr } = await client.from('brokerage_posts')
+    .select('*')
+    .eq('brokerage_id', brokerage.id)
+    .eq('slug', postSlug)
+    .eq('status', 'approved')
+    .single();
+
+  if (pErr || !p) {
+    document.getElementById('app').innerHTML = '<div class="loading-state">Article not found.</div>';
+    return;
+  }
+  post = p;
+
+  // Update SEO meta tags
+  document.title = `${post.title} | ${brokerage.name}`;
+  document.querySelector('meta[name="description"]').setAttribute('content', post.excerpt || '');
+  document.querySelector('meta[property="og:title"]').setAttribute('content', post.title || '');
+  document.querySelector('meta[property="og:description"]').setAttribute('content', post.excerpt || '');
+  if (post.image_url) {
+    document.querySelector('meta[property="og:image"]').setAttribute('content', post.image_url);
+  }
+
+  // Update nav
+  const navLogo = document.getElementById('nav-logo');
+  navLogo.innerHTML = `${esc(brokerage.name)}<span>| Recruiting</span>`;
+  navLogo.href = '/' + brokerage.slug;
+  document.getElementById('nav-cta').textContent = `Join ${brokerage.name}`;
+
+  render();
+}
+
+function render() {
+  const app = document.getElementById('app');
+  const name = esc(brokerage.name);
+
+  const imgHtml = post.image_url
+    ? `<img class="article-img" src="${esc(post.image_url)}" alt="${esc(post.title)}" onerror="this.style.display='none'">`
+    : '';
+
+  app.innerHTML = `
+    <div class="article-wrap">
+      <a href="/${brokerage.slug}" class="back-link">← Back to ${name}</a>
+      ${imgHtml}
+      <h1 class="article-title">${esc(post.title)}</h1>
+      <div class="article-meta">
+        <span class="brok-badge">${name}</span>
+        <span>·</span>
+        <span>${fmtDate(post.created_at)}</span>
+      </div>
+      <div class="article-content">${mdToHtml(post.content)}</div>
+    </div>
+
+    ${renderForm()}
+    ${renderFooter()}
+  `;
+}
+
+function renderForm() {
+  const name = esc(brokerage.name);
+  const options = BROKERAGES_LIST.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  return `
+    <div class="form-section" id="contact">
+      <div class="form-wrap">
+        <div class="form-title">Ready to Make the Switch?</div>
+        <div class="form-sub">Learn how ${name} can help you keep more of what you earn.</div>
+        <form id="lead-form" onsubmit="submitLead(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" id="f-name" placeholder="Your full name" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="f-email" placeholder="you@email.com" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="f-phone" placeholder="(555) 123-4567">
+            </div>
+            <div class="form-group">
+              <label>Current Brokerage</label>
+              <select id="f-brokerage"><option value="">Select...</option>${options}</select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Message (optional)</label>
+            <textarea id="f-message" placeholder="Tell us about your situation or what you're looking for..."></textarea>
+          </div>
+          <button type="submit" class="form-submit" id="f-submit">Get In Touch</button>
+          <div class="form-msg" id="f-msg"></div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderFooter() {
+  return `
+    <footer>
+      <div>Powered by <a href="https://www.rkrt.in">rkrt.in</a> — Recruiting Intelligence</div>
+      <div class="footer-sub">&copy; ${new Date().getFullYear()} ${esc(brokerage.name)}. All rights reserved.</div>
+    </footer>
+  `;
+}
+
+async function submitLead(e) {
+  e.preventDefault();
+  const btn = document.getElementById('f-submit');
+  const msg = document.getElementById('f-msg');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  msg.className = 'form-msg';
+
+  const name = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const brokerage_name = document.getElementById('f-brokerage').value;
+  const message = document.getElementById('f-message').value.trim();
+  const utm_source = new URLSearchParams(window.location.search).get('utm_source') || brokerage.slug + '-blog-post';
+
+  try {
+    let assigned_user_id = null;
+    const { data: assignments } = await client.from('brokerage_assignments')
+      .select('*')
+      .eq('brokerage_id', brokerage.id)
+      .order('round_robin_index', { ascending: true });
+
+    if (assignments && assignments.length > 0) {
+      const next = assignments[0];
+      assigned_user_id = next.user_id;
+      await client.from('brokerage_assignments')
+        .update({ round_robin_index: next.round_robin_index + assignments.length })
+        .eq('id', next.id);
+    }
+
+    const { error } = await client.from('brokerage_leads').insert({
+      brokerage_id: brokerage.id,
+      assigned_user_id,
+      name, email, phone, brokerage_name, message, utm_source
+    });
+
+    if (error) throw error;
+
+    msg.className = 'form-msg success';
+    msg.textContent = "Thanks! We'll be in touch within 24 hours.";
+    document.getElementById('lead-form').reset();
+  } catch (err) {
+    console.error(err);
+    msg.className = 'form-msg error';
+    msg.textContent = 'Something went wrong. Please try again or email us directly.';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Get In Touch';
+}
+
+init();
+</script>
+</body>
+</html>

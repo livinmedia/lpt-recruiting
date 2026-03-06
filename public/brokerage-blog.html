@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>LPT Realty — The Future of Real Estate</title>
-<meta name="description" content="Discover why top agents are joining LPT Realty. 90% commission splits, $0 desk fees, AI-powered tools, and 5-tier revenue share across all 50 states."/>
+<title>Loading...</title>
+<meta name="description" content=""/>
+<meta property="og:title" content=""/>
+<meta property="og:description" content=""/>
+<meta property="og:type" content="website"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -25,7 +28,7 @@ nav{padding:0 24px;border-bottom:1px solid var(--border);background:rgba(10,10,1
 .hero-tag{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--purple);text-transform:uppercase;margin-bottom:12px}
 .hero-title{font-size:clamp(32px,5vw,52px);font-weight:900;line-height:1.1;margin-bottom:16px;background:linear-gradient(135deg,var(--purple),#a78bfa,var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hero-sub{font-size:18px;color:var(--sub);max-width:600px;margin-bottom:36px;line-height:1.6}
-.hero-featured{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color 0.2s}
+.hero-featured{display:grid;grid-template-columns:1.2fr 1fr;gap:0;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color 0.2s;text-decoration:none;color:inherit}
 .hero-featured:hover{border-color:var(--purple-glow)}
 .hero-featured-img{width:100%;height:100%;min-height:320px;object-fit:cover;display:block}
 .hero-featured-placeholder{width:100%;min-height:320px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:72px;color:var(--muted)}
@@ -39,7 +42,7 @@ nav{padding:0 24px;border-bottom:1px solid var(--border);background:rgba(10,10,1
 .section{max-width:1200px;margin:0 auto;padding:16px 24px 48px}
 .section-title{font-size:22px;font-weight:800;margin-bottom:20px}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.2s;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.2s;text-decoration:none;color:inherit;display:block}
 .card:hover{border-color:var(--purple-mid)}
 .card-img{width:100%;height:200px;object-fit:cover;display:block}
 .card-placeholder{width:100%;height:200px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--muted)}
@@ -48,26 +51,7 @@ nav{padding:0 24px;border-bottom:1px solid var(--border);background:rgba(10,10,1
 .card-excerpt{font-size:13px;color:var(--sub);line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .card-footer{display:flex;justify-content:space-between;align-items:center}
 .card-date{font-size:11px;color:var(--muted)}
-.card-read{font-size:13px;font-weight:700;color:var(--purple);cursor:pointer;background:none;border:none;font-family:inherit}
-.card-read:hover{text-decoration:underline}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:760px;max-height:90vh;overflow-y:auto;position:relative}
-.modal-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:8px;background:rgba(0,0,0,0.5);border:1px solid var(--border);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
-.modal-close:hover{background:rgba(0,0,0,0.8)}
-.modal-img{width:100%;max-height:360px;object-fit:cover;display:block;border-radius:16px 16px 0 0}
-.modal-body{padding:32px}
-.modal-title{font-size:26px;font-weight:800;margin-bottom:8px;line-height:1.3}
-.modal-date{font-size:12px;color:var(--muted);margin-bottom:24px}
-.modal-content{font-size:15px;color:var(--sub);line-height:1.8}
-.modal-content h2{font-size:20px;font-weight:700;color:var(--text);margin:28px 0 12px}
-.modal-content h3{font-size:17px;font-weight:700;color:var(--text);margin:24px 0 10px}
-.modal-content p{margin-bottom:16px}
-.modal-content ul,.modal-content ol{margin:0 0 16px 20px}
-.modal-content li{margin-bottom:6px}
-.modal-content strong{color:var(--text)}
-.modal-content blockquote{border-left:3px solid var(--purple);padding-left:16px;color:var(--sub);font-style:italic;margin:16px 0}
+.card-read{font-size:13px;font-weight:700;color:var(--purple)}
 
 /* LEAD FORM */
 .form-section{max-width:1200px;margin:0 auto;padding:48px 24px 64px}
@@ -95,7 +79,7 @@ footer a{color:var(--purple);text-decoration:none;font-weight:700}
 footer a:hover{text-decoration:underline}
 .footer-sub{font-size:13px;color:var(--muted);margin-top:6px}
 
-/* EMPTY / LOADING */
+/* LOADING / EMPTY */
 .loading-state{text-align:center;padding:80px 20px;color:var(--sub);font-size:16px}
 .empty-state{text-align:center;padding:60px 20px;color:var(--sub)}
 .empty-icon{font-size:48px;margin-bottom:12px}
@@ -116,8 +100,8 @@ footer a:hover{text-decoration:underline}
 
 <nav>
   <div class="nav-inner">
-    <a href="/lpt-realty" class="nav-logo">LPT Realty<span>| Recruiting</span></a>
-    <a href="#contact" class="nav-cta">Join LPT Realty</a>
+    <a href="" class="nav-logo" id="nav-logo">Loading...</a>
+    <a href="#contact" class="nav-cta" id="nav-cta">Join Now</a>
   </div>
 </nav>
 
@@ -128,33 +112,20 @@ footer a:hover{text-decoration:underline}
 <script>
 const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
-const BROKERAGE_ID = 'b32c85c5-99e0-4984-b4aa-81c0702f056e';
 const { createClient } = supabase;
 const client = createClient(SUPA_URL, SUPA_KEY);
 
-const BROKERAGES = ["Keller Williams","RE/MAX","eXp Realty","Coldwell Banker","Century 21","Berkshire Hathaway HomeServices","Compass","Sotheby's International Realty","Better Homes & Gardens Real Estate","ERA Real Estate","Engel & Volkers","HomeSmart","Redfin","Side","LPT Realty","Independent","Other"];
+const BROKERAGES_LIST = ["Keller Williams","RE/MAX","eXp Realty","Coldwell Banker","Century 21","Berkshire Hathaway HomeServices","Compass","Sotheby's International Realty","Better Homes & Gardens Real Estate","ERA Real Estate","Engel & Volkers","HomeSmart","Redfin","Side","LPT Realty","Independent","Other"];
 
+let brokerage = null;
 let posts = [];
+
+// Extract brokerage slug from URL path
+const pathSlug = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
 
 function esc(s) {
   if (!s) return '';
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function mdToHtml(md) {
-  if (!md) return '';
-  return md
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-    .replace(/\n{2,}/g, '</p><p>')
-    .replace(/^(?!<[hublop])(.+)$/gm, '<p>$1</p>')
-    .replace(/<p><\/p>/g, '');
 }
 
 function fmtDate(d) {
@@ -162,27 +133,56 @@ function fmtDate(d) {
 }
 
 async function init() {
+  // Look up brokerage by slug
+  const { data: brok, error: bErr } = await client.from('brokerages')
+    .select('id, name, slug')
+    .eq('slug', pathSlug)
+    .single();
+
+  if (bErr || !brok) {
+    document.getElementById('app').innerHTML = '<div class="loading-state">Brokerage not found.</div>';
+    return;
+  }
+
+  brokerage = brok;
+
+  // Update page meta
+  document.title = `${brokerage.name} — Recruiting Blog`;
+  document.querySelector('meta[name="description"]').setAttribute('content', `Discover why top agents are joining ${brokerage.name}. Read the latest recruiting insights and industry analysis.`);
+  document.querySelector('meta[property="og:title"]').setAttribute('content', `${brokerage.name} — Recruiting Blog`);
+  document.querySelector('meta[property="og:description"]').setAttribute('content', `Discover why top agents are joining ${brokerage.name}.`);
+
+  // Update nav
+  const navLogo = document.getElementById('nav-logo');
+  navLogo.textContent = '';
+  navLogo.innerHTML = `${esc(brokerage.name)}<span>| Recruiting</span>`;
+  navLogo.href = '/' + brokerage.slug;
+
+  document.getElementById('nav-cta').textContent = `Join ${brokerage.name}`;
+
+  // Fetch approved posts
   const { data, error } = await client.from('brokerage_posts')
     .select('*')
-    .eq('brokerage_id', BROKERAGE_ID)
+    .eq('brokerage_id', brokerage.id)
     .eq('status', 'approved')
     .order('created_at', { ascending: false });
 
-  if (error) { console.error(error); }
+  if (error) console.error(error);
   posts = data || [];
   render();
 }
 
 function render() {
   const app = document.getElementById('app');
+  const name = esc(brokerage.name);
 
   if (posts.length === 0) {
     app.innerHTML = `
       <div class="hero" style="text-align:center;padding:80px 24px">
-        <div class="hero-tag">LPT Realty</div>
+        <div class="hero-tag">${name}</div>
         <h1 class="hero-title">The Future of Real Estate is Here</h1>
-        <p class="hero-sub" style="margin:0 auto 36px">90% commission splits. $0 desk fees. AI-powered tools. 5-tier revenue share. All 50 states.</p>
-        <a href="#contact" class="nav-cta" style="display:inline-block;padding:14px 36px;font-size:16px">Join LPT Realty</a>
+        <p class="hero-sub" style="margin:0 auto 36px">Discover why top agents are making the switch. Stay tuned for insights and analysis.</p>
+        <a href="#contact" class="nav-cta" style="display:inline-block;padding:14px 36px;font-size:16px">Join ${name}</a>
       </div>
       ${renderForm()}
       ${renderFooter()}
@@ -192,6 +192,7 @@ function render() {
 
   const featured = posts[0];
   const rest = posts.slice(1);
+  const featHref = '/' + brokerage.slug + '/' + featured.slug;
 
   const featImg = featured.image_url
     ? `<img class="hero-featured-img" src="${esc(featured.image_url)}" alt="${esc(featured.title)}" onerror="this.outerHTML='<div class=\\'hero-featured-placeholder\\'>📰</div>'">`
@@ -199,10 +200,10 @@ function render() {
 
   app.innerHTML = `
     <div class="hero">
-      <div class="hero-tag">LPT Realty</div>
+      <div class="hero-tag">${name}</div>
       <h1 class="hero-title">The Future of Real Estate is Here</h1>
-      <p class="hero-sub">90% commission splits. $0 desk fees. AI-powered tools. 5-tier revenue share. All 50 states.</p>
-      <div class="hero-featured" onclick="openPost(0)">
+      <p class="hero-sub">Discover why top agents are making the switch. Read the latest recruiting insights and industry analysis.</p>
+      <a href="${featHref}" class="hero-featured">
         ${featImg}
         <div class="hero-featured-body">
           <div class="hero-featured-brok">Featured</div>
@@ -210,14 +211,14 @@ function render() {
           <div class="hero-featured-excerpt">${esc(featured.excerpt)}</div>
           <div class="hero-featured-date">${fmtDate(featured.created_at)}</div>
         </div>
-      </div>
+      </a>
     </div>
 
     ${rest.length > 0 ? `
       <div class="section">
         <div class="section-title">Latest Articles</div>
         <div class="grid">
-          ${rest.map((p, i) => renderCard(p, i + 1)).join('')}
+          ${rest.map(p => renderCard(p)).join('')}
         </div>
       </div>
     ` : ''}
@@ -227,33 +228,35 @@ function render() {
   `;
 }
 
-function renderCard(post, idx) {
+function renderCard(post) {
+  const href = '/' + brokerage.slug + '/' + post.slug;
   const imgHtml = post.image_url
     ? `<img class="card-img" src="${esc(post.image_url)}" alt="${esc(post.title)}" onerror="this.outerHTML='<div class=\\'card-placeholder\\'>📰</div>'">`
     : '<div class="card-placeholder">📰</div>';
 
   return `
-    <div class="card" onclick="openPost(${idx})">
+    <a href="${href}" class="card">
       ${imgHtml}
       <div class="card-body">
         <div class="card-title">${esc(post.title)}</div>
         <div class="card-excerpt">${esc(post.excerpt)}</div>
         <div class="card-footer">
           <span class="card-date">${fmtDate(post.created_at)}</span>
-          <button class="card-read">Read More</button>
+          <span class="card-read">Read More →</span>
         </div>
       </div>
-    </div>
+    </a>
   `;
 }
 
 function renderForm() {
-  const options = BROKERAGES.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  const name = esc(brokerage.name);
+  const options = BROKERAGES_LIST.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
   return `
     <div class="form-section" id="contact">
       <div class="form-wrap">
         <div class="form-title">Ready to Make the Switch?</div>
-        <div class="form-sub">Learn how LPT Realty can help you keep more of what you earn.</div>
+        <div class="form-sub">Learn how ${name} can help you keep more of what you earn.</div>
         <form id="lead-form" onsubmit="submitLead(event)">
           <div class="form-row">
             <div class="form-group">
@@ -291,44 +294,9 @@ function renderFooter() {
   return `
     <footer>
       <div>Powered by <a href="https://www.rkrt.in">rkrt.in</a> — Recruiting Intelligence</div>
-      <div class="footer-sub">&copy; ${new Date().getFullYear()} LPT Realty. All rights reserved.</div>
+      <div class="footer-sub">&copy; ${new Date().getFullYear()} ${esc(brokerage.name)}. All rights reserved.</div>
     </footer>
   `;
-}
-
-function openPost(idx) {
-  const post = posts[idx];
-  if (!post) return;
-
-  const imgHtml = post.image_url
-    ? `<img class="modal-img" src="${esc(post.image_url)}" alt="${esc(post.title)}" onerror="this.style.display='none'">`
-    : '';
-
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.id = 'post-modal';
-  overlay.onclick = (e) => { if (e.target === overlay) closePost(); };
-
-  overlay.innerHTML = `
-    <div class="modal">
-      <button class="modal-close" onclick="closePost()">&times;</button>
-      ${imgHtml}
-      <div class="modal-body">
-        <div class="modal-title">${esc(post.title)}</div>
-        <div class="modal-date">${fmtDate(post.created_at)}</div>
-        <div class="modal-content">${mdToHtml(post.content)}</div>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-  document.body.style.overflow = 'hidden';
-}
-
-function closePost() {
-  const m = document.getElementById('post-modal');
-  if (m) m.remove();
-  document.body.style.overflow = '';
 }
 
 async function submitLead(e) {
@@ -344,14 +312,14 @@ async function submitLead(e) {
   const phone = document.getElementById('f-phone').value.trim();
   const brokerage_name = document.getElementById('f-brokerage').value;
   const message = document.getElementById('f-message').value.trim();
-  const utm_source = new URLSearchParams(window.location.search).get('utm_source') || 'lpt-realty-blog';
+  const utm_source = new URLSearchParams(window.location.search).get('utm_source') || brokerage.slug + '-blog';
 
   try {
     // Round robin assignment
     let assigned_user_id = null;
     const { data: assignments } = await client.from('brokerage_assignments')
       .select('*')
-      .eq('brokerage_id', BROKERAGE_ID)
+      .eq('brokerage_id', brokerage.id)
       .order('round_robin_index', { ascending: true });
 
     if (assignments && assignments.length > 0) {
@@ -363,7 +331,7 @@ async function submitLead(e) {
     }
 
     const { error } = await client.from('brokerage_leads').insert({
-      brokerage_id: BROKERAGE_ID,
+      brokerage_id: brokerage.id,
       assigned_user_id,
       name, email, phone, brokerage_name, message, utm_source
     });
@@ -371,7 +339,7 @@ async function submitLead(e) {
     if (error) throw error;
 
     msg.className = 'form-msg success';
-    msg.textContent = 'Thanks! We\'ll be in touch within 24 hours.';
+    msg.textContent = "Thanks! We'll be in touch within 24 hours.";
     document.getElementById('lead-form').reset();
   } catch (err) {
     console.error(err);
