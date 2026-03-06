@@ -626,7 +626,10 @@ function AgentDirectory({userId,userProfile}){
         body:JSON.stringify({agent_id:agent.id,first_name:cleanName(agent.first_name||agent.full_name?.split(" ")[0]||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),last_name:cleanName(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_name:(agent.brokerage_name||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_slug:getBrokerageSlug(agent.brokerage_name),state:agent.state||""})
       });
       const d=await r.json();
+      console.log('enrich-agent raw response:',JSON.stringify(d));
       const e=d.enriched||d;
+      const zillow_url_debug=e.zillow_url||d.profile?.zillow_url;
+      console.log('zillow_url extracted:',zillow_url_debug);
       if(e.mobile_phone?.includes('555'))delete e.mobile_phone;
       if(e.personal_email?.match(/@(lptrealty|kwrealty|exprealty|coldwellbanker|remax)\.com/i))delete e.personal_email;
       if(e.linkedin_url?.match(/\d{6,}/))delete e.linkedin_url;
