@@ -1667,7 +1667,7 @@ export default function Livi(){
   const loadAdmin=useCallback(async()=>{
     setAdminLoading(true);
     const today=new Date().toISOString().split("T")[0];
-    const [usersCount,leadsCount,contentCount,agentsCount,usersRows,activityRows,contentRows,leadsRows]=await Promise.all([
+    const [usersCount,leadsCount,contentCount,agentsCount,usersRows,activityRows,contentRows,leadsRows,blogPendingCount,blogApprovedCount]=await Promise.all([
       supabase.from("profiles").select("*",{count:"exact",head:true}),
       supabase.from("leads").select("*",{count:"exact",head:true}),
       supabase.from("daily_content").select("*",{count:"exact",head:true}).eq("content_date",today),
@@ -1676,6 +1676,8 @@ export default function Livi(){
       supabase.from("user_activity").select("*").order("created_at",{ascending:false}).limit(20),
       supabase.from("platform_content").select("*").order("created_at",{ascending:false}).limit(20),
       supabase.from("leads").select("user_id,pipeline_stage,volume,transaction_count"),
+      supabase.from("brokerage_posts").select("*",{count:"exact",head:true}).eq("status","draft"),
+      supabase.from("brokerage_posts").select("*",{count:"exact",head:true}).eq("status","approved"),
     ]);
     // Build per-user lead stats
     const leadsData = leadsRows.data || [];
@@ -1699,6 +1701,8 @@ export default function Livi(){
       agents:agentsCount.count||0,
       recruited:totalRecruited,
       meetings:totalMeeting,
+      blogPending:blogPendingCount.count||0,
+      blogPublished:blogApprovedCount.count||0,
     });
     setAdminUsers(usersRows.data||[]);
     setAdminActivity(activityRows.data||[]);
@@ -1719,8 +1723,8 @@ export default function Livi(){
 
   const AdminView=()=>(
     <>
-      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:24}}>
-        {[["👥","Total Users",adminStats.users,"Platform accounts",T.bl],["🎯","Total Leads",adminStats.leads,"Across all users",T.a],["📝","Content Today",adminStats.contentToday,"Posts generated",T.y],["🔍","Agent Directory",adminStats.agents?.toLocaleString(),"Licensed agents",T.p],["🏆","Recruited",adminStats.recruited||0,"Agents recruited",T.a],["📅","Meetings",adminStats.meetings||0,"Meetings booked",T.p]].map(([ic,l,v,s,c],i)=>
+      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        {[["👥","Total Users",adminStats.users,"Platform accounts",T.bl],["🎯","Total Leads",adminStats.leads,"Across all users",T.a],["📝","Content Today",adminStats.contentToday,"Posts generated",T.y],["🔍","Agent Directory",adminStats.agents?.toLocaleString(),"Licensed agents",T.p],["🏆","Recruited",adminStats.recruited||0,"Agents recruited",T.a],["📅","Meetings",adminStats.meetings||0,"Meetings booked",T.p],["📰","Blog Pending",adminStats.blogPending||0,"Awaiting review","#FBBF24"],["✅","Blog Published",adminStats.blogPublished||0,"Live on site",T.a]].map(([ic,l,v,s,c],i)=>
           <div key={i} className="kpi-card" style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"22px 24px",display:"flex",alignItems:"center",gap:16}}>
             <div className="kpi-icon" style={{width:52,height:52,borderRadius:10,background:c+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
             <div>
@@ -2032,7 +2036,7 @@ select option{background:${T.card};color:${T.t}}
           {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["calculator","🧮"],["revenue","💰"]].map(([id,ic])=>
             <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s",flexShrink:0}}>{ic}</div>
           )}
-          {(profile?.role==="owner"||profile?.role==="admin")&&<div onClick={()=>window.open("https://www.rkrt.in/admin/blog","_blank")} title="Blog Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:"transparent",color:T.m,transition:"all 0.12s",flexShrink:0}}>📰</div>}
+          {(profile?.role==="owner"||profile?.role==="admin")&&<div onClick={()=>window.open("https://www.rkrt.in/admin/blog","_blank")} title="Blog Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"transparent",color:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>📰</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Blog</span></div>}
         </div>
         <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14,paddingBottom:4}}>
           <div onClick={load} style={{width:44,height:44,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>

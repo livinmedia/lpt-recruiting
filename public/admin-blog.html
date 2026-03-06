@@ -229,23 +229,26 @@ function switchTab(tab) {
 }
 
 async function approve(id) {
-  await client.from('brokerage_posts').update({
+  const { error } = await client.from('brokerage_posts').update({
     status: 'approved',
     approved_by: currentUser.id,
     approved_at: new Date().toISOString()
   }).eq('id', id);
+  if (error) { console.error('Approve error:', error); alert('Failed to approve: ' + error.message); return; }
   await loadPosts();
 }
 
 async function reject(id) {
-  await client.from('brokerage_posts').update({ status: 'rejected' }).eq('id', id);
+  const { error } = await client.from('brokerage_posts').update({ status: 'rejected' }).eq('id', id);
+  if (error) { console.error('Reject error:', error); alert('Failed to reject: ' + error.message); return; }
   await loadPosts();
 }
 
 async function setStatus(id, status) {
   const update = { status };
   if (status === 'draft') { update.approved_by = null; update.approved_at = null; }
-  await client.from('brokerage_posts').update(update).eq('id', id);
+  const { error } = await client.from('brokerage_posts').update(update).eq('id', id);
+  if (error) { console.error('Status error:', error); alert('Failed to update: ' + error.message); return; }
   await loadPosts();
 }
 
@@ -325,15 +328,17 @@ async function savePost(id) {
 }
 
 async function approveFromModal(id) {
+  const btn = document.querySelector('.modal-actions .btn-approve');
+  if (btn) { btn.disabled = true; btn.textContent = 'Approving...'; }
   await approve(id);
-  const el = document.getElementById('modal-status');
-  if (el) el.textContent = 'Status: approved';
+  closeModal();
 }
 
 async function rejectFromModal(id) {
+  const btn = document.querySelector('.modal-actions .btn-reject');
+  if (btn) { btn.disabled = true; btn.textContent = 'Rejecting...'; }
   await reject(id);
-  const el = document.getElementById('modal-status');
-  if (el) el.textContent = 'Status: rejected';
+  closeModal();
 }
 
 init();
