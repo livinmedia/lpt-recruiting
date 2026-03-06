@@ -515,6 +515,12 @@ function AgentDirectory({userId,userProfile}){
   const [error,setError]=useState(null);
   const [selectedAgent,setSelectedAgent]=useState(null);
   const [enriching,setEnriching]=useState(false);
+  const [pendingEnrichData,setPendingEnrichData]=useState(null);
+  const [zillowConfirmData,setZillowConfirmData]=useState(null);
+  const [showZillowConfirm,setShowZillowConfirm]=useState(false);
+  const [manualZillowUrl,setManualZillowUrl]=useState("");
+  const [zillowLoading,setZillowLoading]=useState(false);
+  const [zillowManualMode,setZillowManualMode]=useState(false);
   const PER=50;
 
   const doSearch=async(filtersOverride,pg=0)=>{
@@ -572,18 +578,70 @@ function AgentDirectory({userId,userProfile}){
       });
       const d=await r.json();
       if(d.enriched||d.personal_email||d.work_email||d.mobile_phone||d.linkedin_url||d.enriched_at){
-        const updated={...agent,...d,enriched_at:d.enriched_at||new Date().toISOString()};
-        setSelectedAgent(updated);
-        setResults(prev=>prev.map(a=>a.id===agent.id?updated:a));
+        if(d.zillow_url){
+          setPendingEnrichData(d);
+          setZillowManualMode(false);
+          setManualZillowUrl("");
+          fetchZillowProfile(d.zillow_url);
+        } else {
+          const updated={...agent,...d,enriched_at:d.enriched_at||new Date().toISOString()};
+          setSelectedAgent(updated);
+          setResults(prev=>prev.map(a=>a.id===agent.id?updated:a));
+        }
       } else if(d.error){
         setSelectedAgent({...agent,_enrichError:d.error});
       } else {
-        setSelectedAgent({...agent,_enrichError:"No match found on Apollo"});
+        setSelectedAgent({...agent,_enrichError:"No match found"});
       }
     } catch(e) {
       setSelectedAgent({...agent,_enrichError:"Enrichment failed. Try again."});
     }
     setEnriching(false);
+  };
+
+  const fetchZillowProfile=async(url)=>{
+    setZillowLoading(true);
+    setShowZillowConfirm(true);
+    setZillowConfirmData(null);
+    try {
+      const {data,error}=await supabase.functions.invoke('fetch-zillow',{body:{zillow_url:url}});
+      if(error) throw error;
+      setZillowConfirmData(data);
+    } catch(e) {
+      setZillowConfirmData({_error:"Could not fetch Zillow profile. You can enter a URL manually."});
+    }
+    setZillowLoading(false);
+  };
+
+  const confirmZillow=async()=>{
+    if(!selectedAgent||!pendingEnrichData) return;
+    const zd=zillowConfirmData||{};
+    const merged={...selectedAgent,...pendingEnrichData,enriched_at:pendingEnrichData.enriched_at||new Date().toISOString(),zillow_url:zd.profile_url||pendingEnrichData.zillow_url||null,zillow_photo:zd.photo_url||null,zillow_rating:zd.rating||null,zillow_reviews:zd.reviews_count||null,zillow_sales_last_12:zd.sales_last_12_months||null,zillow_total_sales:zd.total_sales||null};
+    try {
+      const updateFields={personal_email:merged.personal_email||null,work_email:merged.work_email||null,mobile_phone:merged.mobile_phone||null,linkedin_url:merged.linkedin_url||null,zillow_url:merged.zillow_url,enriched_at:merged.enriched_at};
+      await supabase.from("agent_directory").update(updateFields).eq("id",selectedAgent.id);
+      if(selectedAgent.license_number){
+        const {data:lead}=await supabase.from("leads").select("id").eq("license_number",selectedAgent.license_number).maybeSingle();
+        if(lead){
+          const leadUpdate={};
+          if(merged.personal_email) leadUpdate.email=merged.personal_email;
+          if(merged.mobile_phone) leadUpdate.phone=merged.mobile_phone;
+          if(Object.keys(leadUpdate).length) await supabase.from("leads").update(leadUpdate).eq("id",lead.id);
+        }
+      }
+    } catch(e){ console.error("Save enriched data error:",e); }
+    setSelectedAgent(merged);
+    setResults(prev=>prev.map(a=>a.id===selectedAgent.id?merged:a));
+    setShowZillowConfirm(false);
+    setZillowConfirmData(null);
+    setPendingEnrichData(null);
+    setZillowManualMode(false);
+  };
+
+  const rejectZillow=()=>{
+    setZillowConfirmData(null);
+    setZillowManualMode(true);
+    setManualZillowUrl("");
   };
 
   const topBrokerages=[
@@ -719,9 +777,9 @@ function AgentDirectory({userId,userProfile}){
       )}
 
       {selectedAgent && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setSelectedAgent(null)}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>{setSelectedAgent(null);setShowZillowConfirm(false);setZillowConfirmData(null);setPendingEnrichData(null);setZillowManualMode(false);}}>
           <div onClick={e=>e.stopPropagation()} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:"32px 28px",maxWidth:520,width:"100%",maxHeight:"85vh",overflowY:"auto",position:"relative"}}>
-            <div onClick={()=>setSelectedAgent(null)} style={{position:"absolute",top:16,right:16,cursor:"pointer",color:T.s,fontSize:18,fontWeight:700}}>✕</div>
+            <div onClick={()=>{setSelectedAgent(null);setShowZillowConfirm(false);setZillowConfirmData(null);setPendingEnrichData(null);setZillowManualMode(false);}} style={{position:"absolute",top:16,right:16,cursor:"pointer",color:T.s,fontSize:18,fontWeight:700}}>✕</div>
             <div style={{fontSize:22,fontWeight:800,color:T.t,marginBottom:4}}>{selectedAgent.full_name||"—"}</div>
             <div style={{fontSize:14,color:T.s,marginBottom:20}}>{selectedAgent.brokerage_name||"—"}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
@@ -760,6 +818,52 @@ function AgentDirectory({userId,userProfile}){
                 <div onClick={()=>addToPipeline(selectedAgent)} style={{flex:1,padding:"12px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center",border:`1px solid ${T.a}30`}}>+ Add to Pipeline</div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zillow Confirmation Popup */}
+      {showZillowConfirm&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>{setShowZillowConfirm(false);setZillowConfirmData(null);setPendingEnrichData(null);setZillowManualMode(false);}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#0f1117",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"28px 24px",maxWidth:480,width:"100%",maxHeight:"85vh",overflowY:"auto",position:"relative"}}>
+            <div onClick={()=>{setShowZillowConfirm(false);setZillowConfirmData(null);setPendingEnrichData(null);setZillowManualMode(false);}} style={{position:"absolute",top:14,right:14,cursor:"pointer",color:T.s,fontSize:18,fontWeight:700}}>✕</div>
+            <div style={{fontSize:16,fontWeight:800,color:T.t,marginBottom:16,textAlign:"center"}}>Confirm Zillow Match</div>
+
+            {zillowLoading?(
+              <div style={{textAlign:"center",padding:"40px 0"}}>
+                <div style={{fontSize:28,marginBottom:8}}>🔍</div>
+                <div style={{color:T.s,fontSize:14}}>Fetching Zillow profile...</div>
+              </div>
+            ):zillowConfirmData&&!zillowConfirmData._error?(
+              <div>
+                {zillowConfirmData.photo_url&&<div style={{textAlign:"center",marginBottom:16}}><img src={zillowConfirmData.photo_url} alt="" style={{width:80,height:80,borderRadius:"50%",objectFit:"cover",border:`2px solid ${T.a}40`}}/></div>}
+                <div style={{textAlign:"center",marginBottom:16}}>
+                  <div style={{fontSize:18,fontWeight:700,color:T.t}}>{zillowConfirmData.name||selectedAgent?.full_name||"—"}</div>
+                  {zillowConfirmData.brokerage&&<div style={{fontSize:13,color:T.s,marginTop:2}}>{zillowConfirmData.brokerage}</div>}
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+                  {(zillowConfirmData.rating||zillowConfirmData.reviews_count)&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}><span style={{fontSize:12,color:T.m,fontWeight:700}}>RATING</span><span style={{fontSize:14,color:"#FBBF24",fontWeight:700}}>{zillowConfirmData.rating||"—"} ★{zillowConfirmData.reviews_count?` · ${zillowConfirmData.reviews_count} reviews`:""}</span></div>}
+                  {zillowConfirmData.sales_last_12_months!=null&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}><span style={{fontSize:12,color:T.m,fontWeight:700}}>SALES (12 MO)</span><span style={{fontSize:14,color:T.t,fontWeight:700}}>{zillowConfirmData.sales_last_12_months}</span></div>}
+                  {zillowConfirmData.total_sales!=null&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}><span style={{fontSize:12,color:T.m,fontWeight:700}}>TOTAL SALES</span><span style={{fontSize:14,color:T.t,fontWeight:700}}>{zillowConfirmData.total_sales}</span></div>}
+                  {zillowConfirmData.avg_price&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}><span style={{fontSize:12,color:T.m,fontWeight:700}}>AVG PRICE</span><span style={{fontSize:14,color:T.t,fontWeight:700}}>{zillowConfirmData.avg_price}</span></div>}
+                  {zillowConfirmData.phone&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}><span style={{fontSize:12,color:T.m,fontWeight:700}}>PHONE</span><span style={{fontSize:14,color:T.a,fontWeight:600}}>{Array.isArray(zillowConfirmData.phone)?zillowConfirmData.phone.join(", "):zillowConfirmData.phone}</span></div>}
+                  {zillowConfirmData.email&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:T.d,borderRadius:8,border:`1px solid ${T.b}`}}><span style={{fontSize:12,color:T.m,fontWeight:700}}>EMAIL</span><span style={{fontSize:14,color:T.a,fontWeight:600}}>{zillowConfirmData.email}</span></div>}
+                </div>
+                <div style={{display:"flex",gap:10}}>
+                  <div onClick={confirmZillow} style={{flex:1,padding:"12px",borderRadius:10,background:T.a,color:"#000",fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center"}}>✓ This is them</div>
+                  <div onClick={rejectZillow} style={{flex:1,padding:"12px",borderRadius:10,background:"transparent",border:`1px solid ${T.r}40`,color:T.r,fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center"}}>✗ Not them</div>
+                </div>
+              </div>
+            ):(
+              <div>
+                {(zillowConfirmData?._error||zillowManualMode)&&<div style={{color:T.s,fontSize:13,marginBottom:16,textAlign:"center"}}>{zillowConfirmData?._error||"Enter the correct Zillow profile URL"}</div>}
+                <div style={{display:"flex",gap:8,marginBottom:16}}>
+                  <input value={manualZillowUrl} onChange={e=>setManualZillowUrl(e.target.value)} placeholder="https://www.zillow.com/profile/..." style={{flex:1,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit"}}/>
+                  <div onClick={()=>manualZillowUrl&&fetchZillowProfile(manualZillowUrl)} style={{padding:"10px 18px",borderRadius:8,background:T.a,color:"#000",fontSize:14,fontWeight:700,cursor:manualZillowUrl?"pointer":"not-allowed",opacity:manualZillowUrl?1:0.5}}>Fetch</div>
+                </div>
+                {pendingEnrichData&&<div onClick={()=>{const updated={...selectedAgent,...pendingEnrichData,enriched_at:pendingEnrichData.enriched_at||new Date().toISOString()};setSelectedAgent(updated);setResults(prev=>prev.map(a=>a.id===selectedAgent.id?updated:a));setShowZillowConfirm(false);setPendingEnrichData(null);setZillowManualMode(false);}} style={{padding:"10px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:13,cursor:"pointer",textAlign:"center"}}>Skip Zillow — save enriched data without it</div>}
+              </div>
+            )}
           </div>
         </div>
       )}
