@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Blog Admin — rkrt.in</title>
+<meta name="robots" content="noindex"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--purple:#8B5CF6;--purple-dim:#8B5CF610;--purple-mid:#8B5CF630;--green:#00E5A0;--red:#F56565;--yellow:#FBBF24;--text:#F0F4F8;--sub:#8899AA;--muted:#4A5568}
+body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+
+nav{padding:0 24px;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.95);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1200px;margin:0 auto;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:17px;font-weight:800;color:var(--text);text-decoration:none}
+.nav-logo .accent{color:var(--purple)}
+.nav-back{font-size:14px;color:var(--sub);text-decoration:none}
+.nav-back:hover{color:var(--text)}
+
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.page-title{font-size:28px;font-weight:800;margin-bottom:6px}
+.page-sub{font-size:15px;color:var(--sub);margin-bottom:28px}
+
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:4px}
+.tab{flex:1;padding:10px 16px;text-align:center;font-size:14px;font-weight:700;border-radius:8px;cursor:pointer;color:var(--sub);transition:all 0.15s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--purple);color:#fff}
+.tab .badge{display:inline-block;background:rgba(255,255,255,0.2);border-radius:10px;padding:1px 8px;font-size:11px;margin-left:6px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.15s}
+.card:hover{border-color:var(--purple-mid)}
+.card-img{width:100%;height:180px;object-fit:cover;display:block}
+.card-placeholder{width:100%;height:180px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--muted)}
+.card-body{padding:18px 20px}
+.card-brokerage{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--purple);text-transform:uppercase;margin-bottom:8px}
+.card-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4}
+.card-excerpt{font-size:13px;color:var(--sub);line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:11px;color:var(--muted);margin-bottom:14px}
+.card-actions{display:flex;gap:8px}
+.btn{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all 0.15s}
+.btn-approve{background:var(--green);color:#000}
+.btn-approve:hover{filter:brightness(1.1)}
+.btn-reject{background:var(--red)20;border:1px solid var(--red)30;color:var(--red)}
+.btn-reject:hover{background:var(--red)30}
+.btn-undo{background:var(--purple-dim);border:1px solid var(--purple-mid);color:var(--purple)}
+.btn-undo:hover{background:var(--purple-mid)}
+
+.status-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:0.5px}
+.status-approved{background:var(--green)15;color:var(--green);border:1px solid var(--green)30}
+.status-rejected{background:var(--red)15;color:var(--red);border:1px solid var(--red)30}
+
+.empty{text-align:center;padding:60px 20px;color:var(--sub)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-text{font-size:16px}
+
+.loading{text-align:center;padding:80px;color:var(--sub);font-size:16px}
+.access-denied{text-align:center;padding:100px 20px}
+.access-denied h2{font-size:24px;margin-bottom:8px}
+.access-denied p{color:var(--sub)}
+
+.stats{display:flex;gap:12px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;flex:1}
+.stat-val{font-size:24px;font-weight:800}
+.stat-label{font-size:11px;color:var(--muted);letter-spacing:1px;font-weight:700;text-transform:uppercase;margin-top:2px}
+
+@media(max-width:768px){
+  .grid{grid-template-columns:1fr}
+  .stats{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="https://app.rkrt.in" class="nav-logo">rkrt<span class="accent">.in</span> — Blog Admin</a>
+    <a href="https://app.rkrt.in" class="nav-back">← Back to dashboard</a>
+  </div>
+</nav>
+
+<div class="container" id="app">
+  <div class="loading" id="loading">Loading...</div>
+</div>
+
+<script>
+const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
+const { createClient } = supabase;
+const client = createClient(SUPA_URL, SUPA_KEY);
+
+let currentUser = null;
+let allPosts = [];
+let activeTab = 'draft';
+
+async function init() {
+  const { data: { session } } = await client.auth.getSession();
+  if (!session) { window.location.href = '/login'; return; }
+  currentUser = session.user;
+
+  const { data: profile } = await client.from('profiles').select('role').eq('id', currentUser.id).single();
+  if (!profile || (profile.role !== 'owner' && profile.role !== 'admin')) {
+    document.getElementById('app').innerHTML = '<div class="access-denied"><h2>Access Denied</h2><p>You need admin or owner access to view this page.</p></div>';
+    return;
+  }
+
+  await loadPosts();
+}
+
+async function loadPosts() {
+  const { data, error } = await client.from('brokerage_posts')
+    .select('*, brokerages(name, slug)')
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); return; }
+  allPosts = data || [];
+  render();
+}
+
+function render() {
+  const draft = allPosts.filter(p => p.status === 'draft');
+  const approved = allPosts.filter(p => p.status === 'approved');
+  const rejected = allPosts.filter(p => p.status === 'rejected');
+
+  const counts = { draft: draft.length, approved: approved.length, rejected: rejected.length };
+  const current = activeTab === 'draft' ? draft : activeTab === 'approved' ? approved : rejected;
+
+  document.getElementById('app').innerHTML = `
+    <h1 class="page-title">Blog Content Review</h1>
+    <p class="page-sub">Review and approve AI-generated brokerage content before publishing.</p>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-val" style="color:var(--yellow)">${counts.draft}</div><div class="stat-label">Pending Review</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--green)">${counts.approved}</div><div class="stat-label">Approved</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--red)">${counts.rejected}</div><div class="stat-label">Rejected</div></div>
+      <div class="stat"><div class="stat-val">${allPosts.length}</div><div class="stat-label">Total Posts</div></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab ${activeTab === 'draft' ? 'active' : ''}" onclick="switchTab('draft')">Pending<span class="badge">${counts.draft}</span></div>
+      <div class="tab ${activeTab === 'approved' ? 'active' : ''}" onclick="switchTab('approved')">Approved<span class="badge">${counts.approved}</span></div>
+      <div class="tab ${activeTab === 'rejected' ? 'active' : ''}" onclick="switchTab('rejected')">Rejected<span class="badge">${counts.rejected}</span></div>
+    </div>
+
+    ${current.length === 0 ? `
+      <div class="empty">
+        <div class="empty-icon">${activeTab === 'draft' ? '✅' : activeTab === 'approved' ? '📝' : '🗑️'}</div>
+        <div class="empty-text">${activeTab === 'draft' ? 'No posts pending review' : activeTab === 'approved' ? 'No approved posts yet' : 'No rejected posts'}</div>
+      </div>
+    ` : `
+      <div class="grid">
+        ${current.map(p => renderCard(p)).join('')}
+      </div>
+    `}
+  `;
+}
+
+function renderCard(post) {
+  const brokName = post.brokerages?.name || 'Unknown';
+  const date = new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const imgHtml = post.image_url
+    ? `<img class="card-img" src="${post.image_url}" alt="${post.title}"/>`
+    : `<div class="card-placeholder">📝</div>`;
+
+  let actions = '';
+  if (post.status === 'draft') {
+    actions = `
+      <button class="btn btn-approve" onclick="approve('${post.id}')">Approve</button>
+      <button class="btn btn-reject" onclick="reject('${post.id}')">Reject</button>
+    `;
+  } else if (post.status === 'approved') {
+    actions = `
+      <span class="status-badge status-approved">Approved</span>
+      <button class="btn btn-undo" onclick="setStatus('${post.id}','draft')">Revert to Draft</button>
+    `;
+  } else {
+    actions = `
+      <span class="status-badge status-rejected">Rejected</span>
+      <button class="btn btn-undo" onclick="setStatus('${post.id}','draft')">Revert to Draft</button>
+    `;
+  }
+
+  return `
+    <div class="card">
+      ${imgHtml}
+      <div class="card-body">
+        <div class="card-brokerage">${brokName}</div>
+        <div class="card-title">${post.title || 'Untitled'}</div>
+        <div class="card-excerpt">${post.excerpt || ''}</div>
+        <div class="card-meta">${date}</div>
+        <div class="card-actions">${actions}</div>
+      </div>
+    </div>
+  `;
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  render();
+}
+
+async function approve(id) {
+  await client.from('brokerage_posts').update({
+    status: 'approved',
+    approved_by: currentUser.id,
+    approved_at: new Date().toISOString()
+  }).eq('id', id);
+  const post = allPosts.find(p => p.id === id);
+  if (post) { post.status = 'approved'; post.approved_by = currentUser.id; post.approved_at = new Date().toISOString(); }
+  render();
+}
+
+async function reject(id) {
+  await client.from('brokerage_posts').update({ status: 'rejected' }).eq('id', id);
+  const post = allPosts.find(p => p.id === id);
+  if (post) post.status = 'rejected';
+  render();
+}
+
+async function setStatus(id, status) {
+  const update = { status };
+  if (status === 'draft') { update.approved_by = null; update.approved_at = null; }
+  await client.from('brokerage_posts').update(update).eq('id', id);
+  const post = allPosts.find(p => p.id === id);
+  if (post) { post.status = status; if (status === 'draft') { post.approved_by = null; post.approved_at = null; } }
+  render();
+}
+
+init();
+</script>
+</body>
+</html>

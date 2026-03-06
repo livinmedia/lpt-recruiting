@@ -16,6 +16,7 @@
     { "src": "^/(.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp|mp4|pdf))$", "dest": "/$1" },
     { "src": "^/login$", "dest": "/login.html" },
     { "src": "^/signup$", "dest": "/signup.html" },
+    { "src": "^/admin/blog$", "dest": "/admin-blog.html" },
     { "src": "^/(.*)", "has": [{ "type": "host", "value": "app.rkrt.in" }], "dest": "/index.html" },
     { "src": "^/$", "dest": "/home.html" },
     { "src": "^/home$", "dest": "/home.html" },
