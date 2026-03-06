@@ -1101,53 +1101,44 @@ function ContentTab({userId,userProfile}){
 
   return(
     <>
-      {/* Target brokerage + tracking link */}
+      {/* Recruiting Links Card */}
       {userId&&(
-        <div style={{background:T.a+"10",border:`1px solid ${T.a}25`,borderRadius:10,padding:"16px 18px",marginBottom:20}}>
-          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-            <div style={{flex:1,minWidth:200}}>
-              <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🎯 TARGET BROKERAGE</div>
-              <div style={{fontSize:13,color:T.s,marginBottom:8}}>Posts and landing pages personalized for agents at this brokerage</div>
-              <select value={targetBrokerage} onChange={ev=>setTargetBrokerage(ev.target.value)} style={{width:"100%",maxWidth:280,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${targetBrokerage?T.a+"50":T.b}`,color:targetBrokerage?T.t:T.s,fontSize:14,outline:"none",fontFamily:"inherit"}}>
-                <option value="">— Generic (no target) —</option>
-                {TARGET_BROKERAGES.map(b=><option key={b} value={b}>{b}</option>)}
-              </select>
-            </div>
-            <div style={{flex:1,minWidth:200}}>
-              <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:3}}>🔗 YOUR TRACKING LINK</div>
-              <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all",marginBottom:4}}>{`https://rkrt.in/join${trackingRef}${targetParam}`}</div>
-              <div style={{fontSize:12,color:T.s}}>Leads route to your pipeline{targetBrokerage?` · Targeting ${targetBrokerage}`:""}</div>
-            </div>
-            <CopyButton text={`https://rkrt.in/join${trackingRef}${targetParam}`} label="Copy Link"/>
+        <div style={{background:"#111827",border:"1px solid #1f2937",borderLeft:"3px solid #22c55e",borderRadius:10,padding:20,marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:targetBrokerage?16:0}}>
+            <div style={{fontSize:16,fontWeight:700,color:"#f9fafb"}}>🔗 Recruiting Links</div>
+            <select value={targetBrokerage} onChange={ev=>setTargetBrokerage(ev.target.value)} style={{minWidth:200,background:"#1f2937",border:"1px solid #374151",color:"#f9fafb",borderRadius:6,padding:"8px 12px",fontSize:13,outline:"none",fontFamily:"inherit"}}>
+              <option value="">— Select brokerage —</option>
+              {TARGET_BROKERAGES.map(b=><option key={b} value={b}>{b}</option>)}
+            </select>
           </div>
-          {brokerageBlogUrl&&<div style={{marginTop:12,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,color:"#8B5CF6",fontWeight:700,letterSpacing:1,marginBottom:2}}>📄 BLOG TRACKING URL</div>
-              <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all"}}>{brokerageBlogUrl}</div>
-              <div style={{fontSize:11,color:T.s,marginTop:2}}>Share this — leads from the blog page route to your pipeline</div>
-            </div>
-            <CopyButton text={brokerageBlogUrl} label="Copy"/>
-          </div>}
-          {targetBrokerage&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,fontSize:12,color:T.s}}>💡 Generate fresh content below to get posts targeting <strong style={{color:T.t}}>{targetBrokerage}</strong> agents</div>}
-        </div>
-      )}
-
-      {/* Your Recruiting Link */}
-      {userId&&recruitBrokerages.length>0&&(
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 18px",marginBottom:20}}>
-          <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:8}}>🔗 YOUR RECRUITING LINK</div>
-          <select value={recruitBrokerage} onChange={ev=>setRecruitBrokerage(ev.target.value)} style={{width:"100%",maxWidth:300,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${recruitBrokerage?T.a+"50":T.b}`,color:recruitBrokerage?T.t:T.s,fontSize:14,outline:"none",fontFamily:"inherit",marginBottom:10}}>
-            <option value="">— Select a brokerage —</option>
-            {recruitBrokerages.map(b=><option key={b.id} value={b.slug}>{b.name}</option>)}
-          </select>
-          {recruitBrokerage&&(()=>{const url=`https://rkrt.in/${recruitBrokerage}?ref=${userId}`;return(
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8}}>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all"}}>{url}</div>
+          {targetBrokerage?(
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,background:"#1f2937",border:"1px solid #374151"}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:11,color:"#6b7280",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:3}}>LANDING PAGE</div>
+                  <div style={{fontSize:13,color:"#d1d5db",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{`https://rkrt.in/join${trackingRef}${targetParam}`}</div>
+                </div>
+                <CopyButton text={`https://rkrt.in/join${trackingRef}${targetParam}`} label="Copy"/>
               </div>
-              <CopyButton text={url} label="Copy Link"/>
-            </div>);})()}
-          <div style={{fontSize:12,color:T.s}}>Share this link to attract agents from this brokerage. Leads will be assigned to you automatically.</div>
+              {brokerageBlogUrl&&<div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,background:"#1f2937",border:"1px solid #374151"}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:11,color:"#6b7280",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:3}}>BLOG PAGE</div>
+                  <div style={{fontSize:13,color:"#d1d5db",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{brokerageBlogUrl}</div>
+                </div>
+                <CopyButton text={brokerageBlogUrl} label="Copy"/>
+              </div>}
+              {recruitBrokerages.length>0&&(()=>{const slug=recruitBrokerages.find(b=>b.name===targetBrokerage)?.slug;if(!slug)return null;const url=`https://rkrt.in/${slug}?ref=${userId}`;return(
+                <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,background:"#1f2937",border:"1px solid #374151"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:11,color:"#6b7280",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:3}}>RECRUITING PAGE</div>
+                    <div style={{fontSize:13,color:"#d1d5db",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{url}</div>
+                  </div>
+                  <CopyButton text={url} label="Copy"/>
+                </div>);})()}
+            </div>
+          ):(
+            <div style={{fontSize:13,color:"#6b7280",marginTop:12}}>Select a brokerage to get your tracking links</div>
+          )}
         </div>
       )}
 
