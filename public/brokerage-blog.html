@@ -353,5 +353,15 @@ async function submitLead(e) {
 
 init();
 </script>
+<script>
+(function(){
+  var p=new URLSearchParams(window.location.search);
+  var lid=p.get('lid'),ref=p.get('ref');
+  if(lid||ref){
+    var src=window.location.pathname.split('/')[1]||'unknown';
+    fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/track?e=blog_visit&lid='+(lid||'')+'&ref='+(ref||'')+'&src='+src);
+  }
+})();
+</script>
 </body>
 </html>
