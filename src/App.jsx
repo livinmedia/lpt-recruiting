@@ -504,7 +504,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
 }
 
 // ━━━ AGENT DIRECTORY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function AgentDirectory({userId,userProfile}){
+function AgentDirectory({userId,userProfile,onAddLead}){
   const [results,setResults]=useState([]);
   const [total,setTotal]=useState(0);
   const [loading,setLoading]=useState(false);
@@ -538,38 +538,21 @@ function AgentDirectory({userId,userProfile}){
     doSearch(f,0);
   };
 
-  const addToPipeline=async(agent)=>{
-    try {
-      const fn=(agent.first_name||agent.full_name?.split(" ")[0]||"").replace(/\b(LLC|PA|PL|PLLC|INC|CORP|LTD)\b\.?/gi,'').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
-      const ln=(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
-      const body={
-        user_id:userId,
-        first_name:fn,
-        last_name:ln,
-        email:agent.personal_email||null,
-        phone:agent.mobile_phone||null,
-        brokerage:agent.brokerage_name||"",
-        market:agent.city||"",
-        source:"agent_directory",
-        pipeline_stage:"new",
-        license_number:agent.license_number||null,
-        license_state:agent.state||null,
-      };
-      console.log('Adding to pipeline:',JSON.stringify(body));
-      const r=await fetch(`${LIVI_SUPA}/leads`,{
-        method:"POST",
-        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
-        body:JSON.stringify(body)
-      });
-      if(r.ok){
-        setAdded(p=>({...p,[agent.license_number]:true}));
-        logActivity(userId,'add_lead_from_directory',{agent_name:agent.full_name});
-        setSelectedAgent(null);
-      } else {
-        const err=await r.text();
-        console.error('Add to pipeline failed:',r.status,err);
-      }
-    } catch(e) { console.error("Add to pipeline error:", e); }
+  const addAsNewLead=(agent)=>{
+    if(!onAddLead)return;
+    const fn=(agent.first_name||agent.full_name?.split(" ")[0]||"").replace(/\b(LLC|PA|PL|PLLC|INC|CORP|LTD)\b\.?/gi,'').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    const ln=(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    setSelectedAgent(null);
+    onAddLead({
+      first_name:fn,
+      last_name:ln,
+      email:agent.personal_email||"",
+      phone:agent.mobile_phone||"",
+      brokerage:agent.brokerage_name||"",
+      market:agent.city||"",
+      source:"Agent Directory",
+      notes:"",
+    });
   };
 
   const saveEnrichedData=async(enrichedData)=>{
@@ -733,7 +716,7 @@ function AgentDirectory({userId,userProfile}){
                       {added[a.license_number] ? (
                         <span style={{fontSize:13,color:T.a,fontWeight:600}}>✓ Added</span>
                       ) : (
-                        <div onClick={(e)=>{e.stopPropagation();addToPipeline(a);}} style={{padding:"6px 14px",borderRadius:6,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",display:"inline-block"}}>+ Pipeline</div>
+                        <div onClick={(e)=>{e.stopPropagation();addAsNewLead(a);}} style={{padding:"6px 14px",borderRadius:6,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",display:"inline-block"}}>+ Add Lead</div>
                       )}
                     </td>
                   </tr>
@@ -800,9 +783,9 @@ function AgentDirectory({userId,userProfile}){
             )}
             <div style={{display:"flex",gap:10}}>
               {added[selectedAgent.license_number] ? (
-                <div style={{flex:1,padding:"12px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,textAlign:"center"}}>✓ In Pipeline</div>
+                <div style={{flex:1,padding:"12px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,textAlign:"center"}}>✓ Added</div>
               ) : (
-                <div onClick={()=>addToPipeline(selectedAgent)} style={{flex:1,padding:"12px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center",border:`1px solid ${T.a}30`}}>+ Add to Pipeline</div>
+                <div onClick={()=>addAsNewLead(selectedAgent)} style={{flex:1,padding:"12px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center",border:`1px solid ${T.a}30`}}>+ Add as New Lead</div>
               )}
             </div>
           </div>
@@ -2190,7 +2173,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.${profile?.brokerage?" I recruit for "+profile.brokerage:""}`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.${profile?.brokerage?" Context: I'm at "+profile.brokerage:""}`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents${profile?.market?" in "+profile.market:""} who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.${profile?.brokerage?" I'm at "+profile.brokerage:""}`,T.y]]}/><Dash/></>}
         {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline/></>}
         {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM/></>}
-        {view==="agents"&&<ProGate feature="Agent Directory" userId={authUser?.id} userProfile={profile}><AgentDirectory userId={authUser?.id} userProfile={profile}/></ProGate>}
+        {view==="agents"&&<ProGate feature="Agent Directory" userId={authUser?.id} userProfile={profile}><AgentDirectory userId={authUser?.id} userProfile={profile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
         {view==="calculator"&&<ProGate feature="Commission Calculator" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Calculator coming soon</div></ProGate>}
         {view==="revenue"&&<ProGate feature="Revenue Share Projections" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Revenue share projections coming soon</div></ProGate>}
         {view==="content"&&<ContentTab userId={authUser?.id} userProfile={profile}/>}
