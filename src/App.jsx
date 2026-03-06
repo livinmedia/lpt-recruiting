@@ -954,6 +954,7 @@ function ContentTab({userId,userProfile}){
   const [recruitBrokerage,setRecruitBrokerage]=useState("");
   const [approvedPosts,setApprovedPosts]=useState([]);
   const [sharePage,setSharePage]=useState("");
+  const [competingBrokerage,setCompetingBrokerage]=useState("");
 
   const isAdmin=userProfile?.role==="owner"||userProfile?.role==="admin";
   const contentLimits=getPlanLimits(userProfile);
@@ -1117,7 +1118,9 @@ function ContentTab({userId,userProfile}){
         ];
         const blogPages=Object.entries(BROKERAGE_SLUGS).filter(([name])=>!targetBrokerage||name===targetBrokerage).map(([name,slug])=>({id:`blog-${slug}`,group:"Blog Pages",label:`${name} Blog`,url:`https://rkrt.in/${slug}${trackingRef}`,desc:"SEO blog page — leads who visit get tracked in your pipeline"}));
         const filteredPosts=approvedPosts.filter(p=>!targetBrokerage||p.brokerages?.name===targetBrokerage).map(p=>({id:`post-${p.id}`,group:"Blog Posts",label:p.title,url:`https://rkrt.in/${p.brokerages?.slug||"lpt-realty"}/${p.slug}${trackingRef}`,desc:"Individual blog post — great for sharing on social media"}));
-        const sel=sharePage?[...PAGES.map(p=>({...p,url:`https://rkrt.in/${p.path}${trackingRef}${targetParam}`})),...blogPages,...filteredPosts].find(p=>p.id===sharePage):null;
+        const needsCompeting=sharePage==="calculator"||sharePage==="why-switch";
+        const compParam=needsCompeting&&competingBrokerage?`&target=${encodeURIComponent(competingBrokerage)}`:targetParam;
+        const sel=sharePage?[...PAGES.map(p=>({...p,url:`https://rkrt.in/${p.path}${trackingRef}${(p.id==="calculator"||p.id==="why-switch")?compParam:targetParam}`})),...blogPages,...filteredPosts].find(p=>p.id===sharePage):null;
         return(
         <div style={{background:"#111827",border:"1px solid #1f2937",borderLeft:"3px solid #22c55e",borderRadius:10,padding:20,marginBottom:16}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexWrap:"wrap"}}>
@@ -1126,12 +1129,18 @@ function ContentTab({userId,userProfile}){
               <option value="">All Brokerages</option>
               {TARGET_BROKERAGES.map(b=><option key={b} value={b}>{b}</option>)}
             </select>
-            <select value={sharePage} onChange={ev=>setSharePage(ev.target.value)} style={{minWidth:220,background:"#1f2937",border:"1px solid #374151",color:"#f9fafb",borderRadius:6,padding:"8px 12px",fontSize:13,outline:"none",fontFamily:"inherit"}}>
+            <select value={sharePage} onChange={ev=>{setSharePage(ev.target.value);setCompetingBrokerage("");}} style={{minWidth:220,background:"#1f2937",border:"1px solid #374151",color:"#f9fafb",borderRadius:6,padding:"8px 12px",fontSize:13,outline:"none",fontFamily:"inherit"}}>
               <option value="">— Select page to share —</option>
               <optgroup label="Landing Pages">{PAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</optgroup>
               {blogPages.length>0&&<optgroup label="Blog Pages">{blogPages.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</optgroup>}
               {filteredPosts.length>0&&<optgroup label="Blog Posts">{filteredPosts.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</optgroup>}
             </select>
+            {needsCompeting&&(
+              <select value={competingBrokerage} onChange={ev=>setCompetingBrokerage(ev.target.value)} style={{minWidth:180,background:"#1f2937",border:"1px solid #f59e0b40",color:"#f9fafb",borderRadius:6,padding:"8px 12px",fontSize:13,outline:"none",fontFamily:"inherit"}}>
+                <option value="">Competing Brokerage →</option>
+                {TARGET_BROKERAGES.filter(b=>b!=="Other").map(b=><option key={b} value={b}>{b}</option>)}
+              </select>
+            )}
           </div>
           {sel?(
             <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,background:"#1f2937",border:"1px solid #374151"}}>
