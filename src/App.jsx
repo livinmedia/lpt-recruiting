@@ -736,7 +736,7 @@ function AgentDirectory({userId,userProfile}){
               <div style={{background:T.d,borderRadius:12,border:`1px solid ${T.a}20`,padding:"20px 18px",marginBottom:16}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                   <div style={{fontSize:13,fontWeight:700,color:T.a,letterSpacing:1}}>ENRICHED DATA</div>
-                  <div style={{fontSize:11,color:T.m}}>via Apollo · {new Date(selectedAgent.enriched_at).toLocaleDateString()}</div>
+                  <div style={{fontSize:11,color:T.m}}>via RUE AI · {new Date(selectedAgent.enriched_at).toLocaleDateString()}</div>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   {selectedAgent.personal_email&&<div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:12,color:T.m,fontWeight:700,width:90}}>Personal</span><a href={`mailto:${selectedAgent.personal_email}`} style={{color:T.a,fontSize:14,textDecoration:"none",fontWeight:600}}>{selectedAgent.personal_email}</a></div>}
