@@ -782,6 +782,8 @@ function ContentTab({userId,userProfile}){
   const [targetBrokerage,setTargetBrokerage]=useState(userProfile?.brokerage||"");
   const [usageToday,setUsageToday]=useState(0);
   const [showUpgrade,setShowUpgrade]=useState(false);
+  const [recruitBrokerages,setRecruitBrokerages]=useState([]);
+  const [recruitBrokerage,setRecruitBrokerage]=useState("");
 
   const isAdmin=userProfile?.role==="owner"||userProfile?.role==="admin";
   const contentLimits=getPlanLimits(userProfile);
@@ -827,6 +829,7 @@ function ContentTab({userId,userProfile}){
   };
 
   useEffect(()=>{loadContent(selectedDate);loadUsage();},[selectedDate]);
+  useEffect(()=>{supabase.from("brokerages").select("id,name,slug").order("name").then(({data})=>{if(data)setRecruitBrokerages(data);});},[]);
 
   const generateContent=async()=>{
     if(!isAdmin&&usageToday>=DAILY_LIMIT){setShowUpgrade(true);return;}
@@ -960,6 +963,25 @@ function ContentTab({userId,userProfile}){
             <div onClick={()=>{navigator.clipboard?.writeText(brokerageBlogUrl).catch(()=>{const t=document.createElement("textarea");t.value=brokerageBlogUrl;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});}} style={{padding:"8px 14px",borderRadius:8,background:"#8B5CF620",color:"#8B5CF6",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0}}>📋 Copy</div>
           </div>}
           {targetBrokerage&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,fontSize:12,color:T.s}}>💡 Generate fresh content below to get posts targeting <strong style={{color:T.t}}>{targetBrokerage}</strong> agents</div>}
+        </div>
+      )}
+
+      {/* Your Recruiting Link */}
+      {userId&&recruitBrokerages.length>0&&(
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 18px",marginBottom:20}}>
+          <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:8}}>🔗 YOUR RECRUITING LINK</div>
+          <select value={recruitBrokerage} onChange={ev=>setRecruitBrokerage(ev.target.value)} style={{width:"100%",maxWidth:300,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${recruitBrokerage?T.a+"50":T.b}`,color:recruitBrokerage?T.t:T.s,fontSize:14,outline:"none",fontFamily:"inherit",marginBottom:10}}>
+            <option value="">— Select a brokerage —</option>
+            {recruitBrokerages.map(b=><option key={b.id} value={b.slug}>{b.name}</option>)}
+          </select>
+          {recruitBrokerage&&(()=>{const url=`https://rkrt.in/${recruitBrokerage}?ref=${userId}`;return(
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:8}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,color:T.t,fontFamily:"monospace",wordBreak:"break-all"}}>{url}</div>
+              </div>
+              <div onClick={()=>{navigator.clipboard?.writeText(url).catch(()=>{const t=document.createElement("textarea");t.value=url;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});setCopied(p=>({...p,recruitLink:true}));setTimeout(()=>setCopied(p=>({...p,recruitLink:false})),2000);}} style={{padding:"8px 14px",borderRadius:8,background:T.am,color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0}}>{copied.recruitLink?"✓ Copied!":"📋 Copy Link"}</div>
+            </div>);})()}
+          <div style={{fontSize:12,color:T.s}}>Share this link to attract agents from this brokerage. Leads will be assigned to you automatically.</div>
         </div>
       )}
 
@@ -1692,6 +1714,12 @@ export default function Livi(){
       supabase.from("brokerage_posts").select("*",{count:"exact",head:true}).eq("status","rejected"),
       supabase.from("brokerage_posts").select("*",{count:"exact",head:true}),
     ]);
+    console.log("Blog stats debug:", {
+      pending: { count: blogPendingCount.count, error: blogPendingCount.error },
+      approved: { count: blogApprovedCount.count, error: blogApprovedCount.error },
+      rejected: { count: blogRejectedCount.count, error: blogRejectedCount.error },
+      total: { count: blogTotalCount.count, error: blogTotalCount.error },
+    });
     // Build per-user lead stats
     const leadsData = leadsRows.data || [];
     const userLeadStats = {};
