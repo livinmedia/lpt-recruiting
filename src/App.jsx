@@ -1267,6 +1267,7 @@ export default function App(){
   const [showOnboarding,setShowOnboarding]=useState(false);
   const [showUpgradeSuccess,setShowUpgradeSuccess]=useState(false);
   const [previewUrl,setPreviewUrl]=useState(null);
+  const [recentLeads,setRecentLeads]=useState([]);
 
   const load=useCallback(async()=>{
     if(!authUser) return;
@@ -1279,6 +1280,7 @@ export default function App(){
       const leadsData = leadsRes.ok ? await leadsRes.json() : [];
       const actData = actRes.ok ? await actRes.json() : [];
       setLeads(Array.isArray(leadsData)?leadsData:[]);
+      setRecentLeads((Array.isArray(leadsData)?leadsData:[]).slice(0,5));
       setActivity(Array.isArray(actData)?actData:[]);
     } catch(e) { console.error("Load error:", e); }
     setLoading(false);
@@ -1533,6 +1535,16 @@ export default function App(){
         )}
       </div>
 
+      <div style={{display:"flex",gap:12,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
+    {recentLeads.map((l,i)=>(
+      <div key={i} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{flex:"0 0 200px",background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"14px 16px",cursor:"pointer",transition:"border-color 0.12s"}} onMouseOver={ev=>ev.currentTarget.style.borderColor=T.a} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
+        <div style={{fontSize:14,fontWeight:700,color:T.t,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</div>
+        <div style={{fontSize:12,color:T.s,marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.brokerage?.substring(0,20)||"—"}</div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"new"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></div>
+        <div style={{fontSize:11,color:T.m,marginTop:6}}>{ago(l.created_at)}</div>
+      </div>
+    ))}
+  </div>
       <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
           <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Today's Actions</div>
