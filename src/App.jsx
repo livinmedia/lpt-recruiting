@@ -7,10 +7,10 @@ const rechartsReady = import("recharts").then(m => {
 });
 import { createClient } from "@supabase/supabase-js";
 
-// rkrt.in Platform — LIVI AI Recruiting Intelligence
-const LIVI_SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
-const LIVI_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
-const supabase = createClient('https://usknntguurefeyzusbdh.supabase.co', LIVI_KEY);
+// rkrt.in Platform — RUE AI Recruiting Intelligence
+const RUE_SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
+const RUE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
+const supabase = createClient('https://usknntguurefeyzusbdh.supabase.co', RUE_KEY);
 
 // Brokerage list for dropdown
 const BROKERAGES = [
@@ -62,10 +62,10 @@ async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}
   params.push(`offset=${offset}`);
   params.push(`select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration,original_license_date,personal_email,work_email,mobile_phone,linkedin_url,enriched_at`);
   try {
-    const url = `${LIVI_SUPA}/agent_directory?${params.join("&")}`;
+    const url = `${RUE_SUPA}/agent_directory?${params.join("&")}`;
     console.log('Agent search URL:', url);
     const r = await fetch(url,{
-      headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Prefer":"count=exact"}
+      headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`,"Prefer":"count=exact"}
     });
     if(!r.ok) { console.error("Agent search HTTP error:", r.status, await r.text()); return { data: [], total: 0 }; }
     const total = parseInt(r.headers.get("content-range")?.split("/")?.[1] || "0");
@@ -88,7 +88,7 @@ const CopyButton=({text,label="Copy Link"})=>{
   return(<button onClick={handleCopy} style={{background:copied?"#052e16":"#0a0a0a",border:"1px solid #22c55e",color:"#22c55e",padding:"6px 14px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer",transition:"transform 0.15s",transform:copied?"scale(0.95)":"scale(1)",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap",fontFamily:"inherit"}}>{copied?"✓ Copied!":`📋 ${label}`}</button>);
 };
 
-const SYSTEM = `You are LIVI, an elite AI recruiting assistant for real estate team leaders and brokers, powered by LIVIN.
+const SYSTEM = `You are RUE, an elite AI recruiting assistant for real estate team leaders and brokers, powered by RKRT.
 
 You help them recruit real estate agents to their brokerage or team. You seamlessly handle all aspects of the recruiting process:
 
@@ -266,7 +266,7 @@ function OnboardingFlow({ userId, email, onComplete }) {
             <div style={{width:44,height:44,borderRadius:10,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:"#fff"}}>rkrt</div>
             <span style={{fontSize:22,fontWeight:800,color:T.t}}>.in</span>
           </div>
-          <div style={{fontSize:24,fontWeight:800,color:T.t,marginBottom:6}}>Welcome to LIVI AI</div>
+          <div style={{fontSize:24,fontWeight:800,color:T.t,marginBottom:6}}>Welcome to RUE AI</div>
           <div style={{fontSize:15,color:T.s}}>Let's set up your recruiting command center</div>
         </div>
 
@@ -290,7 +290,7 @@ function OnboardingFlow({ userId, email, onComplete }) {
           {step===1&&(
             <>
               <div style={{fontSize:20,fontWeight:800,color:T.t,marginBottom:6}}>Tell us about yourself</div>
-              <div style={{fontSize:14,color:T.s,marginBottom:24}}>This personalizes your entire LIVI experience</div>
+              <div style={{fontSize:14,color:T.s,marginBottom:24}}>This personalizes your entire RUE experience</div>
               <div style={{display:"flex",flexDirection:"column",gap:16}}>
                 <div>
                   <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>FULL NAME *</div>
@@ -313,7 +313,7 @@ function OnboardingFlow({ userId, email, onComplete }) {
           {step===2&&(
             <>
               <div style={{fontSize:20,fontWeight:800,color:T.t,marginBottom:6}}>Your current brokerage</div>
-              <div style={{fontSize:14,color:T.s,marginBottom:24}}>LIVI uses this to personalize content, outreach, and landing pages</div>
+              <div style={{fontSize:14,color:T.s,marginBottom:24}}>RUE uses this to personalize content, outreach, and landing pages</div>
               <div style={{display:"flex",flexDirection:"column",gap:16}}>
                 <div>
                   <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>BROKERAGE *</div>
@@ -352,7 +352,7 @@ function OnboardingFlow({ userId, email, onComplete }) {
           {step===3&&(
             <>
               <div style={{fontSize:20,fontWeight:800,color:T.t,marginBottom:6}}>Your target market</div>
-              <div style={{fontSize:14,color:T.s,marginBottom:24}}>Where are you recruiting agents? LIVI will focus intelligence here</div>
+              <div style={{fontSize:14,color:T.s,marginBottom:24}}>Where are you recruiting agents? RUE will focus intelligence here</div>
               <div>
                 <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>PRIMARY MARKET *</div>
                 <input value={data.market} onChange={e=>update("market",e.target.value)} placeholder="Austin, TX" style={{...inp,border:`1px solid ${data.market.trim()?T.a+"40":T.b}`}} autoFocus/>
@@ -362,7 +362,7 @@ function OnboardingFlow({ userId, email, onComplete }) {
               {/* Preview of what gets personalized */}
               {brokerageValue&&(
                 <div style={{marginTop:20,padding:"16px 18px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}>
-                  <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:8}}>🎯 LIVI WILL PERSONALIZE</div>
+                  <div style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1,marginBottom:8}}>🎯 RUE WILL PERSONALIZE</div>
                   <div style={{fontSize:13,color:T.s,lineHeight:1.7}}>
                     • Landing pages: "Why top <strong style={{color:T.t}}>{brokerageValue}</strong> agents are switching"<br/>
                     • Content angles: Targeting {brokerageValue} agents in {data.market||"your market"}<br/>
@@ -374,7 +374,7 @@ function OnboardingFlow({ userId, email, onComplete }) {
               <div style={{marginTop:24,display:"flex",justifyContent:"space-between"}}>
                 <div onClick={()=>setStep(2)} style={{padding:"13px 24px",borderRadius:8,background:T.d,color:T.s,fontSize:15,fontWeight:700,cursor:"pointer"}}>← Back</div>
                 <div onClick={canFinish&&!saving?finish:null} style={{padding:"13px 32px",borderRadius:8,background:canFinish&&!saving?T.a:"#333",color:canFinish&&!saving?"#000":T.m,fontSize:15,fontWeight:700,cursor:canFinish&&!saving?"pointer":"default",transition:"all 0.2s",display:"flex",alignItems:"center",gap:8}}>
-                  {saving?"Setting up…":"🚀 Launch LIVI"}
+                  {saving?"Setting up…":"🚀 Launch RUE"}
                 </div>
               </div>
             </>
@@ -420,7 +420,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
   const [showDelete,setShowDelete]=useState(false);
   const [deleting,setDeleting]=useState(false);
   const [saving,setSaving]=useState(false);
-  const [leadTab,setLeadTab]=useState("livi");
+  const [leadTab,setLeadTab]=useState("rue");
   const [tasks,setTasks]=useState([]);
   const [tasksLoading,setTasksLoading]=useState(true);
   const [emailModal,setEmailModal]=useState(null);
@@ -497,9 +497,9 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
   const saveEdits = async () => {
     setSaving(true);
     try {
-      await fetch(`${LIVI_SUPA}/leads?id=eq.${lead.id}`, {
+      await fetch(`${RUE_SUPA}/leads?id=eq.${lead.id}`, {
         method:"PATCH",
-        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
+        headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
         body:JSON.stringify(info)
       });
       setEditing(false);
@@ -510,9 +510,9 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const r = await fetch(`${LIVI_SUPA}/leads?id=eq.${lead.id}`, {
+      const r = await fetch(`${RUE_SUPA}/leads?id=eq.${lead.id}`, {
         method:"DELETE",
-        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}
+        headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}
       });
       if(r.ok) {
         logActivity(userId, 'delete_lead', {lead_name:`${lead.first_name} ${lead.last_name}`});
@@ -584,7 +584,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
 
       {(()=>{const incompleteTasks=tasks.filter(t=>!t.completed_at).length;const tg=groupTasks(tasks);const urgent=tg.overdue.length+tg.today.length>0;return(
       <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
-        {[["livi","🤖 LIVI"],["notes","📝 Notes"],["intel","🔍 Intel"],["tasks","✅ Tasks"]].map(([id,label])=>(
+        {[["rue","🤖 RUE"],["notes","📝 Notes"],["intel","🔍 Intel"],["tasks","✅ Tasks"]].map(([id,label])=>(
           <div key={id} onClick={()=>setLeadTab(id)} style={{padding:"10px 18px",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",background:leadTab===id?T.a+"18":T.d,color:leadTab===id?T.a:T.s,border:`1px solid ${leadTab===id?T.a+"40":T.b}`,display:"flex",alignItems:"center",gap:6}}>
             {label}
             {id==="tasks"&&incompleteTasks>0&&<span style={{background:T.r,color:"#fff",fontSize:11,fontWeight:700,padding:"1px 7px",borderRadius:10,minWidth:18,textAlign:"center",animation:urgent?"pulse 1.5s infinite":"none"}}>{incompleteTasks}</span>}
@@ -592,9 +592,9 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
         ))}
       </div>);})()}
 
-      {leadTab==="livi"&&<div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask LIVI</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>{onAskInline(q);if(label==="Draft Outreach"||label==="Research")logActivity(userId,label==="Research"?"research_lead":"draft_outreach",{lead_name:`${lead.first_name} ${lead.last_name}`})}} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
-      {inlineLoading&&<div style={{marginTop:16,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>LIVI RESPONSE</span><CopyButton text={inlineResponse} label="Copy"/></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
+      {leadTab==="rue"&&<div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🤖 Ask RUE</div><div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["📱","Draft Outreach",`Draft a personalized recruiting message to ${lead.first_name} ${lead.last_name}. They're at ${lead.brokerage||"unknown"} in ${lead.market||"unknown"}.${lead.outreach_angle?" Angle: "+lead.outreach_angle:""}`],["🔄","Follow Up",`Write a follow-up to ${lead.first_name} ${lead.last_name}. Casual and value-driven.`],["📋","Meeting Prep",`Meeting prep for ${lead.first_name} ${lead.last_name} at ${lead.brokerage||"unknown"}. Talking points, objections, close.`],["🎯","Close Script",`Closing script for ${lead.first_name} ${lead.last_name}.`],["🔍","Research",`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}.`],["💡","Objections",`Objections ${lead.first_name} will have about switching from ${lead.brokerage||"their brokerage"} to LPT?`],["📊","Compare",`Compare LPT vs ${lead.brokerage||"their brokerage"} in ${lead.market||"this market"}.`],["🎨","Recruit Post",`Recruiting post for ${lead.market||"this market"} agents.`]].map(([icon,label,q],i)=><div key={i} onClick={()=>{onAskInline(q);if(label==="Draft Outreach"||label==="Research")logActivity(userId,label==="Research"?"research_lead":"draft_outreach",{lead_name:`${lead.first_name} ${lead.last_name}`})}} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,padding:"12px 14px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,opacity:inlineLoading?0.5:1}} onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.borderColor=T.bh}} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}><span style={{fontSize:18}}>{icon}</span><span style={{fontSize:14,color:T.s,fontWeight:600}}>{label}</span></div>)}</div>
+      {inlineLoading&&<div style={{marginTop:16,padding:"16px 20px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>RUE is thinking...</span></div></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginTop:16,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:13,color:T.a,fontWeight:700,letterSpacing:1.5}}>RUE RESPONSE</span><CopyButton text={inlineResponse} label="Copy"/></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{inlineResponse}</pre></div>}
       </div>}
 
       {leadTab==="notes"&&<div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
@@ -602,7 +602,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
         <div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>📞 Communication</div><div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>{Object.entries(commIcons).map(([k,v])=><div key={k} onClick={()=>setCommType(k)} style={{padding:"6px 12px",borderRadius:6,background:commType===k?T.am:T.d,color:commType===k?T.a:T.s,fontSize:13,fontWeight:600,cursor:"pointer"}}>{v} {k.charAt(0).toUpperCase()+k.slice(1)}</div>)}</div><div style={{display:"flex",gap:8,marginBottom:14}}><input value={commNote} onChange={ev=>setCommNote(ev.target.value)} onKeyDown={ev=>{if(ev.key==="Enter")addComm();}} placeholder={`Log ${commType}...`} style={{flex:1,padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,fontFamily:"inherit",outline:"none"}}/><div onClick={addComm} style={{padding:"12px 18px",borderRadius:8,background:commNote.trim()?T.am:T.d,color:commNote.trim()?T.a:T.m,fontSize:14,fontWeight:700,cursor:commNote.trim()?"pointer":"default"}}>Log</div></div><div style={{maxHeight:300,overflow:"auto"}}>{commLog.length>0?commLog.map(c=><div key={c.id} style={{display:"flex",gap:10,padding:"10px 0",borderBottom:`1px solid ${T.b}`}}><span style={{fontSize:18}}>{commIcons[c.type]||"📌"}</span><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:13,fontWeight:700,color:T.t,textTransform:"capitalize"}}>{c.type}</span><span style={{fontSize:11,color:T.m}}>{new Date(c.date).toLocaleString()}</span></div><div style={{fontSize:14,color:T.s,lineHeight:1.5,marginTop:2}}>{c.note}</div></div></div>):<div style={{fontSize:14,color:T.m,textAlign:"center",padding:"20px"}}>No communication logged</div>}</div></div>
       </div>}
 
-      {leadTab==="intel"&&<div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🔍 Intel Dossier</div>{lead.raw_dossier?<pre style={{fontSize:14,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{lead.raw_dossier}</pre>:<div style={{textAlign:"center",padding:"24px"}}><div style={{fontSize:14,color:T.m,marginBottom:12}}>No intel yet</div><div onClick={()=>{setLeadTab("livi");onAskInline(`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find production, reviews, social media, outreach angle.`);}} style={{display:"inline-block",padding:"10px 20px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer"}}>🔍 Ask LIVI to Research</div></div>}</div>}
+      {leadTab==="intel"&&<div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}><div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:14}}>🔍 Intel Dossier</div>{lead.raw_dossier?<pre style={{fontSize:14,color:T.s,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{lead.raw_dossier}</pre>:<div style={{textAlign:"center",padding:"24px"}}><div style={{fontSize:14,color:T.m,marginBottom:12}}>No intel yet</div><div onClick={()=>{setLeadTab("rue");onAskInline(`Research ${lead.first_name} ${lead.last_name} in ${lead.market||"their market"}. Find production, reviews, social media, outreach angle.`);}} style={{display:"inline-block",padding:"10px 20px",borderRadius:8,background:T.am,color:T.a,fontSize:14,fontWeight:700,cursor:"pointer"}}>🔍 Ask RUE to Research</div></div>}</div>}
 
       {leadTab==="tasks"&&<div style={{background:T.card,borderRadius:12,padding:"24px 26px",border:`1px solid ${T.b}`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -623,7 +623,7 @@ function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,o
                 <div style={{fontSize:14,fontWeight:600,color:done?T.m:T.t,textDecoration:done?"line-through":"none"}}>{t.title}</div>
                 {t.description&&<div style={{fontSize:12,color:T.m,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.description}</div>}
               </div>
-              {!done&&<div onClick={(ev)=>{ev.stopPropagation();setLeadTab("livi");onAskInline(`I have a task: ${t.title} for lead ${lead.first_name} (${lead.brokerage||"unknown brokerage"}). Their outreach angle is: ${lead.outreach_angle||"not set"}. What's the best way to approach this task?`);}} style={{padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:600,background:T.bl+"15",color:T.bl,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>🤖 Ask Rue</div>}
+              {!done&&<div onClick={(ev)=>{ev.stopPropagation();setLeadTab("rue");onAskInline(`I have a task: ${t.title} for lead ${lead.first_name} (${lead.brokerage||"unknown brokerage"}). Their outreach angle is: ${lead.outreach_angle||"not set"}. What's the best way to approach this task?`);}} style={{padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:600,background:T.bl+"15",color:T.bl,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>🤖 Ask Rue</div>}
               {!done&&lead.email&&<div onClick={(ev)=>{ev.stopPropagation();openEmailForTask(t);}} style={{padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:600,background:T.p+"15",color:T.p,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>✉️ Email</div>}
               {t.day_number!=null&&<div style={{fontSize:11,color:T.m,fontWeight:600,flexShrink:0}}>Day {t.day_number}</div>}
               <div style={{fontSize:12,color:T.m,flexShrink:0}}>{dStr}</div>
@@ -726,7 +726,7 @@ function AgentDirectory({userId,userProfile,onAddLead}){
     setEnriching(true);
     try {
       const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/enrich-agent",{
-        method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${LIVI_KEY}`},
+        method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${RUE_KEY}`},
         body:JSON.stringify({agent_id:agent.id,first_name:cleanName(agent.first_name||agent.full_name?.split(" ")[0]||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),last_name:cleanName(agent.last_name||agent.full_name?.split(" ").slice(1).join(" ")||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_name:(agent.brokerage_name||"").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()),brokerage_slug:getBrokerageSlug(agent.brokerage_name),state:agent.state||""})
       });
       const d=await r.json();
@@ -976,8 +976,8 @@ function ContentTab({userId,userProfile}){
   const loadContent=async(date)=>{
     setLoading(true);
     try{
-      const r=await fetch(`${LIVI_SUPA}/daily_content?content_date=eq.${date}&order=content_source.asc,platform.asc,created_at.asc`,{
-        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}
+      const r=await fetch(`${RUE_SUPA}/daily_content?content_date=eq.${date}&order=content_source.asc,platform.asc,created_at.asc`,{
+        headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}
       });
       if(r.ok){
         const d=await r.json();
@@ -992,8 +992,8 @@ function ContentTab({userId,userProfile}){
     if(!userId||isAdmin)return;
     try{
       const today=new Date().toISOString().split("T")[0];
-      const r=await fetch(`${LIVI_SUPA}/content_generation_log?user_id=eq.${userId}&date=eq.${today}&select=id`,{
-        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}
+      const r=await fetch(`${RUE_SUPA}/content_generation_log?user_id=eq.${userId}&date=eq.${today}&select=id`,{
+        headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}
       });
       if(r.ok){const d=await r.json();setUsageToday(d.length);}
     }catch(e){}
@@ -1038,9 +1038,9 @@ function ContentTab({userId,userProfile}){
 
   const markPosted=async(id)=>{
     try{
-      await fetch(`${LIVI_SUPA}/daily_content?id=eq.${id}`,{
+      await fetch(`${RUE_SUPA}/daily_content?id=eq.${id}`,{
         method:"PATCH",
-        headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
+        headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
         body:JSON.stringify({is_posted:true,posted_at:new Date().toISOString()})
       });
       const upd=p=>p.map(c=>c.id===id?{...c,is_posted:true}:c);
@@ -1254,7 +1254,7 @@ function ContentTab({userId,userProfile}){
 }
 
 // ━━━ MAIN APP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export default function Livi(){
+export default function App(){
   const [view,setView]=useState("home");
   const [leads,setLeads]=useState([]);
   const [activity,setActivity]=useState([]);
@@ -1273,8 +1273,8 @@ export default function Livi(){
     setLoading(true);
     try {
       const [leadsRes, actRes] = await Promise.all([
-        fetch(`${LIVI_SUPA}/leads?user_id=eq.${authUser.id}&order=created_at.desc&limit=100`,{headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}}),
-        fetch(`${LIVI_SUPA}/user_activity?user_id=eq.${authUser.id}&order=created_at.desc&limit=50`,{headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`}})
+        fetch(`${RUE_SUPA}/leads?user_id=eq.${authUser.id}&order=created_at.desc&limit=100`,{headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}}),
+        fetch(`${RUE_SUPA}/user_activity?user_id=eq.${authUser.id}&order=created_at.desc&limit=50`,{headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}})
       ]);
       const leadsData = leadsRes.ok ? await leadsRes.json() : [];
       const actData = actRes.ok ? await actRes.json() : [];
@@ -1401,7 +1401,7 @@ export default function Livi(){
     setProfileSaving(false);
   };
 
-  const askLiviInline=async(q)=>{
+  const askRueInline=async(q)=>{
     setInlineLoading(true);setInlineResponse(null);
     try{
       let sys=SYSTEM;
@@ -1421,6 +1421,7 @@ export default function Livi(){
   const setViewWithHistory=(v)=>{
     window.history.pushState({view:v},"",`#${v}`);
     setView(v);
+    setInlineResponse(null);
   };
   useEffect(()=>{
     const onPop=(ev)=>{
@@ -1445,18 +1446,18 @@ export default function Livi(){
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
 
-  const AskLiviBar=({prompts})=>(
+  const AskRueBar=({prompts})=>(
     <>
-      <div className="ask-livi-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
+      <div className="ask-rue-grid" style={{display:"grid",gridTemplateColumns:`repeat(${prompts.length},1fr)`,gap:12,marginBottom:20}}>
         {prompts.map(([icon,label,q,c],i)=>
-          <div key={i} onClick={()=>askLiviInline(q)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
+          <div key={i} onClick={()=>askRueInline(q)} style={{background:(c||T.bl)+"10",border:`1px solid ${(c||T.bl)}20`,borderRadius:10,padding:"18px 20px",cursor:inlineLoading?"wait":"pointer",display:"flex",alignItems:"center",gap:12,opacity:inlineLoading?0.5:1,transition:"all 0.15s"}}
             onMouseOver={ev=>{if(!inlineLoading)ev.currentTarget.style.background=(c||T.bl)+"20"}} onMouseOut={ev=>ev.currentTarget.style.background=(c||T.bl)+"10"}>
             <span style={{fontSize:24}}>{icon}</span><span style={{fontSize:15,fontWeight:700,color:T.t}}>{label}</span>
           </div>
         )}
       </div>
-      {inlineLoading&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>LIVI is thinking...</span></div></div>}
-      {inlineResponse&&!inlineLoading&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 LIVI RESPONSE</span><CopyButton text={inlineResponse} label="Copy"/></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
+      {inlineLoading&&<div style={{marginBottom:20,padding:"16px 20px",borderRadius:10,background:T.card,border:`1px solid ${T.b}`}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:8,height:8,borderRadius:"50%",background:T.a,animation:"pulse 1s infinite"}}/><span style={{fontSize:14,color:T.s}}>RUE is thinking...</span></div></div>}
+      {inlineResponse&&!inlineLoading&&<div style={{marginBottom:20,padding:"20px 24px",borderRadius:10,background:T.as,border:`1px solid ${T.a}20`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:T.a,fontWeight:700,letterSpacing:1.5}}>🤖 RUE RESPONSE</span><CopyButton text={inlineResponse} label="Copy"/></div><pre style={{fontSize:14,color:T.t,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0,maxHeight:400,overflow:"auto"}}>{inlineResponse}</pre></div>}
     </>
   );
 
@@ -1478,7 +1479,7 @@ export default function Livi(){
         tier:"New",
         urgency:"LOW"
       };
-      const r=await fetch(`${LIVI_SUPA}/leads`,{method:"POST",headers:{"apikey":LIVI_KEY,"Authorization":`Bearer ${LIVI_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
+      const r=await fetch(`${RUE_SUPA}/leads`,{method:"POST",headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
       if(!r.ok){console.error("Add lead error:",r.status,await r.text());return;}
       const saved=await r.json();
       const lead=Array.isArray(saved)?saved[0]:saved;
@@ -1487,7 +1488,7 @@ export default function Livi(){
       if(doResearch){
         setSelLead(lead);
         setViewWithHistory("lead");
-        askLiviInline(`I just met a new recruiting prospect: ${newLead.first_name} ${newLead.last_name}${newLead.brokerage?` from ${newLead.brokerage}`:""}${newLead.market?` in ${newLead.market}`:""}.${newLead.notes?` Notes: ${newLead.notes}`:""} Research them and give me an outreach strategy.`);
+        askRueInline(`I just met a new recruiting prospect: ${newLead.first_name} ${newLead.last_name}${newLead.brokerage?` from ${newLead.brokerage}`:""}${newLead.market?` in ${newLead.market}`:""}.${newLead.notes?` Notes: ${newLead.notes}`:""} Research them and give me an outreach strategy.`);
       }else{
         setViewWithHistory("crm");
       }
@@ -1507,7 +1508,7 @@ export default function Livi(){
         <div style={{background:T.bl+"10",border:`1px solid ${T.bl}20`,borderRadius:10,padding:"12px 18px",marginBottom:20,display:"flex",alignItems:"center",gap:12}}>
           <span style={{fontSize:18}}>🎯</span>
           <div style={{flex:1,fontSize:13,color:T.s}}>
-            LIVI is targeting <strong style={{color:T.t}}>{profile.brokerage}</strong> agents in <strong style={{color:T.t}}>{profile.market||"your market"}</strong> — personalized content, outreach, and landing pages are active.
+            RUE is targeting <strong style={{color:T.t}}>{profile.brokerage}</strong> agents in <strong style={{color:T.t}}>{profile.market||"your market"}</strong> — personalized content, outreach, and landing pages are active.
           </div>
           <div onClick={()=>setViewWithHistory("profile")} style={{fontSize:12,color:T.bl,fontWeight:700,cursor:"pointer",flexShrink:0}}>Edit →</div>
         </div>
@@ -1523,7 +1524,7 @@ export default function Livi(){
       </div>
 
       <div className="quick-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
-        {[["➕","Add Lead",()=>setView("addlead"),T.a],["📱","Draft Outreach",()=>askLiviInline(`Who should I reach out to next? Pick my best lead and draft me a message.${profile?.brokerage?" I recruit for "+profile.brokerage:""}${profile?.market?" in "+profile.market:""}.`),T.bl],["🔍","Find Agents",()=>setViewWithHistory("agents"),T.p],["📊","Pipeline Review",()=>setView("pipeline"),T.y]].map(([ic,label,action,c],i)=>
+        {[["➕","Add Lead",()=>setView("addlead"),T.a],["📱","Draft Outreach",()=>askRueInline(`Who should I reach out to next? Pick my best lead and draft me a message.${profile?.brokerage?" I recruit for "+profile.brokerage:""}${profile?.market?" in "+profile.market:""}.`),T.bl],["🔍","Find Agents",()=>setViewWithHistory("agents"),T.p],["📊","Pipeline Review",()=>setView("pipeline"),T.y]].map(([ic,label,action,c],i)=>
           <div key={i} onClick={action} style={{background:c+"10",border:`1px solid ${c}20`,borderRadius:10,padding:"18px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"all 0.15s"}}
             onMouseOver={ev=>ev.currentTarget.style.background=c+"20"} onMouseOut={ev=>ev.currentTarget.style.background=c+"10"}>
             <span style={{fontSize:24}}>{ic}</span>
@@ -1705,7 +1706,7 @@ export default function Livi(){
           <div style={{fontSize:14,color:T.s,marginBottom:2}}>{l.brokerage?.substring(0,22)||"Unknown"}</div>
           <div style={{display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:14,color:T.s}}>{l.market}</span><TPill t={l.tier}/></div>
         </div>
-        {act&&<div onClick={()=>askLiviInline(act.q)} style={{marginTop:6,padding:"10px 14px",borderRadius:5,background:T.as,border:`1px solid ${T.a}15`,fontSize:14,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"center",justifyContent:"center"}}>{act.icon} {act.label}</div>}
+        {act&&<div onClick={()=>{setSelLead(l);setViewWithHistory("lead");askRueInline(act.q);}} style={{marginTop:6,padding:"10px 14px",borderRadius:5,background:T.as,border:`1px solid ${T.a}15`,fontSize:14,fontWeight:700,color:T.a,cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"center",justifyContent:"center"}}>{act.icon} {act.label}</div>}
       </div>
     );
   };
@@ -1796,7 +1797,7 @@ export default function Livi(){
                   <td style={{padding:"14px"}}><UPill u={l.urgency}/></td>
                   <td style={{padding:"14px"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"—"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
                   <td style={{padding:"14px",fontSize:14,color:contactColor,fontWeight:daysSince>7?700:400}}>{daysSince!==null?`${daysSince}d ago`:"Never"}</td>
-                  <td style={{padding:"14px"}}>{act&&<span onClick={()=>askLiviInline(act.q)} style={{fontSize:14,color:T.a,cursor:"pointer",fontWeight:600}}>{act.icon} {act.label}</span>}</td>
+                  <td style={{padding:"14px"}}>{act&&<span onClick={()=>{setSelLead(l);setViewWithHistory("lead");askRueInline(act.q);}} style={{fontSize:14,color:T.a,cursor:"pointer",fontWeight:600}}>{act.icon} {act.label}</span>}</td>
                 </tr>
               );
             })}</tbody>
@@ -2352,7 +2353,7 @@ select option{background:${T.card};color:${T.t}}
 .leads-desktop{display:none!important}
 .leads-mobile{display:block!important}
 .content-header-outer{flex-direction:column!important;align-items:stretch!important;gap:10px!important}
-.ask-livi-grid{grid-template-columns:1fr!important}
+.ask-rue-grid{grid-template-columns:1fr!important}
 .pipe-stats{gap:4px!important}
 .pipe-stats>div{padding:8px 4px!important}
 .form-grid{grid-template-columns:1fr!important}
@@ -2437,16 +2438,16 @@ select option{background:${T.card};color:${T.t}}
             </div>
           )}
         </div>}
-        {view==="home"&&<><AskLiviBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.${profile?.brokerage?" I recruit for "+profile.brokerage:""}`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.${profile?.brokerage?" Context: I'm at "+profile.brokerage:""}`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents${profile?.market?" in "+profile.market:""} who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.${profile?.brokerage?" I'm at "+profile.brokerage:""}`,T.y]]}/><Dash/></>}
-        {view==="pipeline"&&<><AskLiviBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline/></>}
-        {view==="crm"&&<><AskLiviBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM/></>}
+        {view==="home"&&<><AskRueBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.${profile?.brokerage?" I recruit for "+profile.brokerage:""}`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.${profile?.brokerage?" Context: I'm at "+profile.brokerage:""}`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents${profile?.market?" in "+profile.market:""} who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.${profile?.brokerage?" I'm at "+profile.brokerage:""}`,T.y]]}/><Dash/></>}
+        {view==="pipeline"&&<><AskRueBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline/></>}
+        {view==="crm"&&<><AskRueBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM/></>}
         {view==="agents"&&<ProGate feature="Agent Directory" userId={authUser?.id} userProfile={profile}><AgentDirectory userId={authUser?.id} userProfile={profile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
         {view==="calculator"&&<ProGate feature="Commission Calculator" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Calculator coming soon</div></ProGate>}
         {view==="revenue"&&<ProGate feature="Revenue Share Projections" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Revenue share projections coming soon</div></ProGate>}
         {view==="content"&&<ContentTab userId={authUser?.id} userProfile={profile}/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="profile"&&<ProfileView/>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askLiviInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={authUser?.id} onDelete={handleDeleteLead} userProfile={profile}/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={authUser?.id} onDelete={handleDeleteLead} userProfile={profile}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
@@ -2466,7 +2467,7 @@ select option{background:${T.card};color:${T.t}}
                 <textarea value={newLead.notes} onChange={ev=>setNewLead(p=>({...p,notes:ev.target.value}))} placeholder="Where you met them, what they said, any context..." rows={3} style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",lineHeight:1.5}}/>
               </div>
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                <div onClick={()=>saveLead(true)} style={{padding:"14px 28px",borderRadius:8,background:newLead.first_name.trim()?T.a:"#333",color:newLead.first_name.trim()?"#000":T.m,fontSize:16,fontWeight:700,cursor:newLead.first_name.trim()?"pointer":"default",display:"flex",alignItems:"center",gap:8}}>🔍 Save & Research with LIVI</div>
+                <div onClick={()=>saveLead(true)} style={{padding:"14px 28px",borderRadius:8,background:newLead.first_name.trim()?T.a:"#333",color:newLead.first_name.trim()?"#000":T.m,fontSize:16,fontWeight:700,cursor:newLead.first_name.trim()?"pointer":"default",display:"flex",alignItems:"center",gap:8}}>🔍 Save & Research with RUE</div>
                 <div onClick={()=>saveLead(false)} style={{padding:"14px 28px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.s,fontSize:16,fontWeight:700,cursor:newLead.first_name.trim()?"pointer":"default",opacity:newLead.first_name.trim()?1:0.4}}>Save to CRM</div>
               </div>
             </div>
