@@ -1280,7 +1280,7 @@ export default function App(){
       const leadsData = leadsRes.ok ? await leadsRes.json() : [];
       const actData = actRes.ok ? await actRes.json() : [];
       setLeads(Array.isArray(leadsData)?leadsData:[]);
-      setRecentLeads((Array.isArray(leadsData)?leadsData:[]).slice(0,5));
+      setRecentLeads((Array.isArray(leadsData)?leadsData:[]).slice(0,6));
       setActivity(Array.isArray(actData)?actData:[]);
     } catch(e) { console.error("Load error:", e); }
     setLoading(false);
@@ -1535,16 +1535,26 @@ export default function App(){
         )}
       </div>
 
-      <div style={{display:"flex",gap:12,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
-    {recentLeads.map((l,i)=>(
-      <div key={i} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{flex:"0 0 200px",background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"14px 16px",cursor:"pointer",transition:"border-color 0.12s"}} onMouseOver={ev=>ev.currentTarget.style.borderColor=T.a} onMouseOut={ev=>ev.currentTarget.style.borderColor=T.b}>
-        <div style={{fontSize:14,fontWeight:700,color:T.t,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</div>
-        <div style={{fontSize:12,color:T.s,marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.brokerage?.substring(0,20)||"—"}</div>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"new"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></div>
-        <div style={{fontSize:11,color:T.m,marginTop:6}}>{ago(l.created_at)}</div>
+      <div style={{background:T.card,borderRadius:12,padding:"20px 24px",marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <div style={{fontSize:16,fontWeight:700,color:T.t}}>🆕 Recent Leads</div>
+          <div onClick={()=>setViewWithHistory("pipeline")} style={{fontSize:12,color:T.a,cursor:"pointer",fontWeight:600}}>View All →</div>
+        </div>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
+          <thead><tr>{["Name","Market","Brokerage","Tier","Urgency","Stage","Added"].map(h=><th key={h} style={{fontSize:10,color:T.m,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",textAlign:"left",padding:"0 8px 10px",borderBottom:`1px solid ${T.b}`}}>{h}</th>)}</tr></thead>
+          <tbody>{recentLeads.map((l,i)=>(
+            <tr key={i} onClick={()=>{setSelLead(l);setViewWithHistory("lead");}} style={{cursor:"pointer",transition:"background 0.1s"}} onMouseOver={ev=>ev.currentTarget.style.background=T.bg+"80"} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+              <td style={{padding:"10px 8px",fontSize:13,fontWeight:700,color:T.t,whiteSpace:"nowrap",borderBottom:`1px solid ${T.b}20`}}>{l.first_name} {l.last_name}</td>
+              <td style={{padding:"10px 8px",fontSize:12,color:T.s,borderBottom:`1px solid ${T.b}20`}}>{l.city&&l.state?`${l.city}, ${l.state}`:l.market||"—"}</td>
+              <td style={{padding:"10px 8px",fontSize:12,color:l.brokerage?T.a:T.m,borderBottom:`1px solid ${T.b}20`}}>{l.brokerage?.substring(0,22)||"—"}</td>
+              <td style={{padding:"10px 8px",borderBottom:`1px solid ${T.b}20`}}><TPill t={l.tier}/></td>
+              <td style={{padding:"10px 8px",borderBottom:`1px solid ${T.b}20`}}><UPill u={l.urgency}/></td>
+              <td style={{padding:"10px 8px",borderBottom:`1px solid ${T.b}20`}}><Pill text={l.pipeline_stage?.replace(/_/g," ")||"new"} color={STAGES.find(s=>s.id===l.pipeline_stage)?.c||T.s}/></td>
+              <td style={{padding:"10px 8px",fontSize:11,color:T.m,borderBottom:`1px solid ${T.b}20`}}>{ago(l.created_at)}</td>
+            </tr>
+          ))}</tbody>
+        </table>
       </div>
-    ))}
-  </div>
       <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
           <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📋 Today's Actions</div>
