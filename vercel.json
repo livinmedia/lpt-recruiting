@@ -26,8 +26,8 @@
     { "src": "^/new-agent$", "dest": "/new-agent.html" },
     { "src": "^/revenue-share$", "dest": "/revenue-share.html" },
     { "src": "^/why-switch$", "dest": "/why-switch.html" },
-    { "src": "^/(lpt-realty|exp-realty|keller-williams|remax)/(.+)$", "dest": "/blog-post.html" },
-    { "src": "^/(lpt-realty|exp-realty|keller-williams|remax)$", "dest": "/brokerage-blog.html" },
+    { "src": "^/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america)/(.+)$", "dest": "/blog-post.html" },
+    { "src": "^/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america)$", "dest": "/brokerage-blog.html" },
     { "src": "^/robots\\.txt$", "dest": "/robots.txt" },
     { "src": "^/app(/.*)?$", "dest": "/index.html" },
     { "src": "^/(.*)$", "dest": "/home.html" }
