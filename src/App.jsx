@@ -1,4 +1,4 @@
-
+import RueDrawer from "./components/RueDrawer";
 import { useState, useEffect, useCallback } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
 const rechartsReady = import("recharts").then(m => {
@@ -1317,6 +1317,7 @@ export default function App(){
   const [profileMenuOpen,setProfileMenuOpen]=useState(false);
   const [notifications, setNotifications] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [rueDrawerOpen, setRueDrawerOpen] = useState(false);
   const unreadCount = notifications.filter(n=>!n.read).length;
 
   useEffect(()=>{
@@ -3003,8 +3004,7 @@ select option{background:${T.card};color:${T.t}}
     {icon:loading?"⟳":"↻",label:"Refresh",color:loading?T.a:T.s,bg:loading?T.am:"transparent",action:()=>load()},
     {icon:"🔔",label:"Notifications",color:notifOpen?T.a:T.s,bg:notifOpen?T.am:"transparent",action:(e)=>{e.stopPropagation();setNotifOpen(o=>!o);},badge:unreadCount>0?unreadCount:null},
     {icon:null,label:"Profile",color:profileMenuOpen?T.a:T.s,bg:profileMenuOpen?T.am:"transparent",action:()=>setProfileMenuOpen(v=>!v),avatar:true},
-    {icon:"🤖",label:"Talk to Rue",color:T.s,bg:"transparent",action:()=>{setViewWithHistory("home");askRueInline("What should I focus on today?");}},
-    ...(isBeta?[{icon:"🧪",label:"Beta Hub",color:view==="beta"?T.a:T.s,bg:view==="beta"?T.am:"transparent",action:()=>setViewWithHistory("beta")}]:[]),
+    {icon:"🤖",label:"Talk to Rue",color:T.s,bg:"transparent",action:()=>setRueDrawerOpen(true)},
     {icon:"🚪",label:"Logout",color:T.r,bg:"transparent",action:()=>supabase.auth.signOut().then(()=>{window.location.href="/login";})},
   ].map((item,i)=>(
     <div key={i} onClick={item.action} className="ftb-item" style={{display:"flex",alignItems:"center",gap:0,height:42,borderRadius:10,cursor:"pointer",background:item.bg,transition:"all 0.2s",overflow:"hidden",position:"relative",whiteSpace:"nowrap",padding:"0 10px"}}>
@@ -3032,6 +3032,7 @@ select option{background:${T.card};color:${T.t}}
     }
   </div>}
   </div>
+  <RueDrawer open={rueDrawerOpen} onClose={()=>setRueDrawerOpen(false)} profile={profile} leads={leads} userId={authUser?.id}/>
         {previewUrl&&<div style={{position:"fixed",top:0,right:0,width:"60%",height:"100vh",zIndex:1000,background:T.card,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column",boxShadow:"-4px 0 30px rgba(0,0,0,0.5)"}}>
 
 
