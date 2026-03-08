@@ -2410,11 +2410,11 @@ select option{background:${T.card};color:${T.t}}
           {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["calculator","🧮"],["revenue","💰"]].map(([id,ic])=>
             <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s",flexShrink:0}}>{ic}</div>
           )}
-          {(profile?.role==="owner"||profile?.role==="admin")&&<div onClick={()=>window.open("https://www.rkrt.in/admin/blog","_blank")} title="Blog Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"transparent",color:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>📰</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Blog</span></div>}
+          {(profile?.role==="owner"||profile?.role==="admin")&&<div onClick={()=>setPreviewUrl("https://www.rkrt.in/admin/blog")} title="Blog Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"transparent",color:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>📰</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Blog</span></div>}
         </div>
         <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14,paddingBottom:4}}>
           <div onClick={load} style={{width:44,height:44,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
-          <div style={{position:'relative',cursor:'pointer'}} onClick={()=>setNotifOpen(o=>!o)}>
+          <div style={{position:'relative',cursor:'pointer',zIndex:1101}} onClick={(e)=>{e.stopPropagation();setNotifOpen(o=>!o);}}>
             <span style={{fontSize:20}}>🔔</span>
             {unreadCount > 0 && (
               <div style={{position:'absolute',top:-4,right:-4,background:'#EF4444',color:'#fff',borderRadius:'50%',width:16,height:16,fontSize:9,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -2422,7 +2422,7 @@ select option{background:${T.card};color:${T.t}}
               </div>
             )}
             {notifOpen && (
-              <div style={{position:'absolute',bottom:32,left:50,width:320,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:1000,overflow:'hidden'}}>
+              <div style={{position:'fixed',bottom:80,left:88,width:320,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:1000,overflow:'hidden'}}>
                 <div style={{padding:'12px 16px',borderBottom:`1px solid ${T.b}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                   <span style={{fontWeight:700,color:T.t,fontSize:14}}>Notifications</span>
                   {unreadCount > 0 && <span onClick={async(e)=>{e.stopPropagation();await supabase.from('notifications').update({read:true}).eq('user_id',authUser?.id).eq('read',false);loadNotifications();}} style={{fontSize:11,color:T.a,cursor:'pointer'}}>Mark all read</span>}
