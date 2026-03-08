@@ -2968,7 +2968,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="agents"&&<ProGate feature="Agent Directory" userId={authUser?.id} userProfile={profile}><AgentDirectory userId={authUser?.id} userProfile={profile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
         {view==="calculator"&&<ProGate feature="Commission Calculator" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Calculator coming soon</div></ProGate>}
         {view==="revenue"&&<ProGate feature="Revenue Share Projections" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Revenue share projections coming soon</div></ProGate>}
-        {view==="community"&&<RKRTCommunity userId={authUser?.id} profile={profile}/>}
+        {view==="community"&&<RKRTCommunity userId={authUser?.id} profile={profile} supabase={supabase}/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="beta"&&isBeta&&<BetaHubView/>}
         {view==="profile"&&<ProfileView/>}
