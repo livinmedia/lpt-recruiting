@@ -1,3 +1,5 @@
+import BetaHub from "./components/BetaHub"
+import BugReporter from "./components/BugReporter"
 import { useState, useEffect, useCallback } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
 const rechartsReady = import("recharts").then(m => {
@@ -2857,6 +2859,8 @@ export default function App(){
       {showUpgradeSuccess&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:T.a,color:"#000",padding:"14px 32px",borderRadius:10,fontSize:15,fontWeight:800,boxShadow:"0 4px 24px rgba(0,229,160,0.4)",display:"flex",alignItems:"center",gap:10}}>🎉 Welcome to RKRT.in Pro! All features unlocked.</div>}
       <style>{`
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.ftb-item:hover .ftb-label{max-width:120px!important;opacity:1!important;margin-left:10px!important}
+.ftb-item:hover{background:rgba(255,255,255,0.06)!important;padding-right:16px!important}
 textarea::placeholder,input::placeholder{color:${T.m}}
 html,body{overflow-x:hidden}
 *{box-sizing:border-box}
@@ -2911,10 +2915,11 @@ select option{background:${T.card};color:${T.t}}
 }`}</style>
 
       {sidebarOpen&&<div onClick={()=>{setSidebarOpen(false);setProfileMenuOpen(false);}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:999}}/>}
+      {notifOpen&&<div onClick={()=>setNotifOpen(false)} style={{position:"fixed",inset:0,zIndex:1099}}/>}
       {profileMenuOpen&&<div onClick={()=>setProfileMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:1099}}/>}
 
       {profileMenuOpen&&(
-        <div style={{position:"fixed",bottom:80,left:8,width:210,background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"6px 0",zIndex:1100,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+        <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",width:210,background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"6px 0",zIndex:1100,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
           {profile?.role==="owner"&&<>
             <div onClick={()=>{setViewWithHistory("admin");setSidebarOpen(false);setProfileMenuOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.r,borderRadius:6}} onMouseOver={ev=>ev.currentTarget.style.background=T.r+"15"} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
               <span>🛡️</span><span>Admin Dashboard</span>
@@ -2940,42 +2945,10 @@ select option{background:${T.card};color:${T.t}}
           {isBeta&&<div onClick={()=>{setViewWithHistory("beta");setSidebarOpen(false);setProfileMenuOpen(false);}} title="Beta Hub" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:view==="beta"?T.am:"transparent",color:view==="beta"?T.a:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>🧪</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Beta</span></div>}
           {(profile?.role==="owner"||profile?.role==="admin")&&<div onClick={()=>setPreviewUrl("https://www.rkrt.in/admin/blog")} title="Blog Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"transparent",color:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>📰</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Blog</span></div>}
         </div>
-        <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14,paddingBottom:4}}>
-          <div onClick={load} style={{width:44,height:44,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:17,color:loading?T.a:T.m}}>{loading?"⟳":"↻"}</div>
-          <div style={{position:'relative',cursor:'pointer',zIndex:1101}} onClick={(e)=>{e.stopPropagation();setNotifOpen(o=>!o);}}>
-            <span style={{fontSize:20}}>🔔</span>
-            {unreadCount > 0 && (
-              <div style={{position:'absolute',top:-4,right:-4,background:'#EF4444',color:'#fff',borderRadius:'50%',width:16,height:16,fontSize:9,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </div>
-            )}
-            {notifOpen && (
-              <div style={{position:'fixed',bottom:80,left:88,width:320,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:1000,overflow:'hidden'}}>
-                <div style={{padding:'12px 16px',borderBottom:`1px solid ${T.b}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span style={{fontWeight:700,color:T.t,fontSize:14}}>Notifications</span>
-                  {unreadCount > 0 && <span onClick={async(e)=>{e.stopPropagation();await supabase.from('notifications').update({read:true}).eq('user_id',authUser?.id).eq('read',false);loadNotifications();}} style={{fontSize:11,color:T.a,cursor:'pointer'}}>Mark all read</span>}
-                </div>
-                {notifications.length === 0
-                  ? <div style={{padding:24,textAlign:'center',color:T.s,fontSize:13}}>No notifications yet</div>
-                  : notifications.map(n=>(
-                    <div key={n.id} onClick={()=>{supabase.from('notifications').update({read:true}).eq('id',n.id);setNotifOpen(false);}} style={{padding:'12px 16px',borderBottom:`1px solid ${T.b}20`,background:n.read?'transparent':T.a+'10',cursor:'pointer'}}>
-                      <div style={{fontSize:13,fontWeight:n.read?400:700,color:T.t,marginBottom:2}}>{n.title}</div>
-                      <div style={{fontSize:11,color:T.s,lineHeight:1.4}}>{n.body}</div>
-                      <div style={{fontSize:10,color:T.m,marginTop:4}}>{new Date(n.created_at).toLocaleDateString()}</div>
-                    </div>
-                  ))
-                }
-              </div>
-            )}
-          </div>
-          <div onClick={()=>setProfileMenuOpen(v=>!v)} title="Account" style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",padding:"8px 4px",borderRadius:8,background:profileMenuOpen?T.bh:"transparent",transition:"background 0.12s",width:64}}>
-            <div style={{width:36,height:36,borderRadius:"50%",background:T.a,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:800,color:"#000"}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
-            <div style={{fontSize:9,color:T.m,maxWidth:56,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center",letterSpacing:0.3}}>{profile?.full_name?.split(" ")[0]||"Account"}</div>
-          </div>
-        </div>
+        <div style={{flexShrink:0,height:20}}/>
       </div>
 
-      <div className="main-scroll" style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0":"24px 32px"}}>
+      <div className="main-scroll" style={{flex:1,overflow:"auto",padding:(view==="lead"||view==="addlead")?"0 0 80px 0":"24px 32px 80px 32px"}}>
         {view!=="lead"&&view!=="addlead"&&<div className="page-header" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div className="hamburger-btn" onClick={()=>setSidebarOpen(v=>!v)} style={{display:"none",width:44,height:44,borderRadius:8,alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",background:T.card,border:`1px solid ${T.b}`,color:T.t,flexShrink:0}}>☰</div>
@@ -3025,7 +2998,44 @@ select option{background:${T.card};color:${T.t}}
           </div>
         )}
       </div>
-      {previewUrl&&<div style={{position:"fixed",top:0,right:0,width:"60%",height:"100vh",zIndex:1000,background:T.card,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column",boxShadow:"-4px 0 30px rgba(0,0,0,0.5)"}}>
+{/* ━━━ FLOATING BOTTOM TOOLBAR ━━━ */}
+<div className="floating-toolbar" style={{position:"fixed",bottom:20,left:20,zIndex:1100,display:"flex",flexDirection:"column",gap:4,background:"rgba(7,10,16,0.92)",border:`1px solid ${T.b}`,borderRadius:14,padding:"8px",boxShadow:"0 8px 32px rgba(0,0,0,0.6)",backdropFilter:"blur(12px)"}}>
+  {[
+    {icon:loading?"⟳":"↻",label:"Refresh",color:loading?T.a:T.s,bg:loading?T.am:"transparent",action:()=>load()},
+    {icon:"🔔",label:"Notifications",color:notifOpen?T.a:T.s,bg:notifOpen?T.am:"transparent",action:(e)=>{e.stopPropagation();setNotifOpen(o=>!o);},badge:unreadCount>0?unreadCount:null},
+    {icon:null,label:"Profile",color:profileMenuOpen?T.a:T.s,bg:profileMenuOpen?T.am:"transparent",action:()=>setProfileMenuOpen(v=>!v),avatar:true},
+    {icon:"🤖",label:"Talk to Rue",color:T.s,bg:"transparent",action:()=>{setViewWithHistory("home");askRueInline("What should I focus on today?");}},
+    ...(isBeta?[{icon:"🧪",label:"Beta Hub",color:view==="beta"?T.a:T.s,bg:view==="beta"?T.am:"transparent",action:()=>setViewWithHistory("beta")}]:[]),
+    {icon:"🚪",label:"Logout",color:T.r,bg:"transparent",action:()=>supabase.auth.signOut().then(()=>{window.location.href="/login";})},
+  ].map((item,i)=>(
+    <div key={i} onClick={item.action} className="ftb-item" style={{display:"flex",alignItems:"center",gap:0,height:42,borderRadius:10,cursor:"pointer",background:item.bg,transition:"all 0.2s",overflow:"hidden",position:"relative",whiteSpace:"nowrap",padding:"0 10px"}}>
+      <div style={{width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,position:"relative"}}>
+        {item.avatar?<div style={{width:24,height:24,borderRadius:"50%",background:T.a,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#000"}}>{profile?.full_name?.charAt(0).toUpperCase()||"?"}</div>:<span>{item.icon}</span>}
+        {item.badge&&<div style={{position:'absolute',top:-4,right:-6,background:'#EF4444',color:'#fff',borderRadius:'50%',width:14,height:14,fontSize:8,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>{item.badge>9?'9+':item.badge}</div>}
+      </div>
+      <span className="ftb-label" style={{fontSize:13,fontWeight:600,color:item.color,marginLeft:0,maxWidth:0,opacity:0,transition:"all 0.25s ease",overflow:"hidden"}}>{item.label}</span>
+    </div>
+  ))}
+  {notifOpen && <div style={{position:'absolute',bottom:0,left:60,width:320,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:1200,overflow:'hidden'}}>
+    <div style={{padding:'12px 16px',borderBottom:`1px solid ${T.b}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <span style={{fontWeight:700,color:T.t,fontSize:14}}>Notifications</span>
+      {unreadCount > 0 && <span onClick={async(e)=>{e.stopPropagation();await supabase.from('notifications').update({read:true}).eq('user_id',authUser?.id).eq('read',false);loadNotifications();}} style={{fontSize:11,color:T.a,cursor:'pointer'}}>Mark all read</span>}
+    </div>
+    {notifications.length === 0
+      ? <div style={{padding:24,textAlign:'center',color:T.s,fontSize:13}}>No notifications yet</div>
+      : notifications.slice(0,8).map(n=>(
+        <div key={n.id} onClick={()=>{supabase.from('notifications').update({read:true}).eq('id',n.id);setNotifOpen(false);}} style={{padding:'12px 16px',borderBottom:`1px solid ${T.b}20`,background:n.read?'transparent':T.a+'10',cursor:'pointer'}}>
+          <div style={{fontSize:13,fontWeight:n.read?400:700,color:T.t,marginBottom:2}}>{n.title}</div>
+          <div style={{fontSize:11,color:T.s,lineHeight:1.4}}>{n.body}</div>
+          <div style={{fontSize:10,color:T.m,marginTop:4}}>{new Date(n.created_at).toLocaleDateString()}</div>
+        </div>
+      ))
+    }
+  </div>}
+  </div>
+        {previewUrl&&<div style={{position:"fixed",top:0,right:0,width:"60%",height:"100vh",zIndex:1000,background:T.card,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column",boxShadow:"-4px 0 30px rgba(0,0,0,0.5)"}}>
+
+
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderBottom:`1px solid ${T.b}`,flexShrink:0}}>
           <div style={{fontSize:14,fontWeight:700,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,marginRight:12}}>{previewUrl}</div>
           <div style={{display:"flex",gap:8}}>
