@@ -1,5 +1,4 @@
-import BetaHub from "./components/BetaHub"
-import BugReporter from "./components/BugReporter"
+
 import { useState, useEffect, useCallback } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
 const rechartsReady = import("recharts").then(m => {
