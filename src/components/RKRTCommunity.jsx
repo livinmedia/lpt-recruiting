@@ -46,7 +46,7 @@ function Avatar({ profile, size=36 }) {
   );
 }
 
-function MentionTextarea({ value, onChange, placeholder, rows=3, allMembers=[], style={} }) {
+function MentionTextarea({ value, onChange, placeholder, rows=3, allMembers=[], style={}, onSubmit }) {
   const [suggestions, setSuggestions] = useState([]);
   const [mentionStart, setMentionStart] = useState(-1);
   const ref = useRef(null);
@@ -74,7 +74,7 @@ function MentionTextarea({ value, onChange, placeholder, rows=3, allMembers=[], 
   }
   return (
     <div style={{ flex:1, position:"relative" }}>
-      <textarea ref={ref} value={value} onChange={handleChange}
+      <textarea ref={ref} value={value} onChange={handleChange} onKeyDown={e => { if (e.key==="Enter" && !e.shiftKey && onSubmit) { e.preventDefault(); onSubmit(); } }} onKeyDown={e => { if (e.key==="Enter" && !e.shiftKey && onSubmit) { e.preventDefault(); onSubmit(); } }}
         placeholder={placeholder} rows={rows}
         style={{ width:"100%", background:T.dim, border:`1px solid ${T.b}`,
           borderRadius:10, padding:"12px 16px", color:T.t, fontSize:14,
@@ -209,7 +209,7 @@ function Compose({ currentUser, allMembers, supabase, onPost }) {
     <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:14,padding:20}}>
       <div style={{display:"flex",gap:12,marginBottom:14}}>
         <Avatar profile={currentUser} size={40}/>
-        <MentionTextarea value={text} onChange={setText} allMembers={allMembers} placeholder="Share a win, drop a tip, ask the group... (type @ to mention someone)" rows={3}/>
+        <MentionTextarea value={text} onChange={setText} allMembers={allMembers} placeholder="Share a win, drop a tip, ask the group... (type @ to mention someone)" rows={3} onSubmit={submit}/>
       </div>
       {error && <div style={{fontSize:12,color:T.r,marginBottom:10}}>⚠ {error}</div>}
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
@@ -228,7 +228,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
-  const loadPosts = useCallback(async () => {
+  const loadPosts = async () => {
     setLoading(true);
     let q = supabase.from("community_posts").select("*, profiles(id,full_name,email,brokerage,role)").order("pinned",{ascending:false}).order("created_at",{ascending:false}).limit(50);
     if (filter !== "all") q = q.eq("type", filter);
@@ -240,7 +240,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
       setPosts(data.map(p=>({...p,liked:liked.has(p.id)})));
     } else { setPosts(data.map(p=>({...p,liked:false}))); }
     setLoading(false);
-  }, [filter, currentUser?.id, supabase]);
+  };
   useEffect(() => { loadPosts(); }, [loadPosts]);
   async function handleLike(post) {
     if (!currentUser?.id) return;
