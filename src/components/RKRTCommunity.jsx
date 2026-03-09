@@ -241,7 +241,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
     } else { setPosts(data.map(p=>({...p,liked:false}))); }
     setLoading(false);
   };
-  useEffect(() => { loadPosts(); }, [filter]);
+  useEffect(() => { if (supabase) loadPosts(); }, [filter, supabase]);
   async function handleLike(post) {
     if (!currentUser?.id) return;
     const nowLiked = !post.liked;
