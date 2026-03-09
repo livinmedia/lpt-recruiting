@@ -1332,11 +1332,14 @@ export default function App(){
       const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
       setProfile(prof||null);
       // Check if onboarding needed
-      if(prof && prof.is_beta_tester && !prof.onboarded) {
-        setShowBetaIntake(true);
-      } else if(prof && !prof.onboarded) {
-        setShowOnboarding(true);
-      }
+      if(prof && prof.is_beta_tester) {
+  const {data:intake} = await supabase.from('beta_intake').select('completed').eq('user_id',prof.id).single();
+  if(!intake || !intake.completed) {
+    setShowBetaIntake(true);
+  }
+} else if(prof && !prof.onboarded) {
+  setShowOnboarding(true);
+}
       const initialView = window.location.hash.replace("#","");
       if (initialView && initialView !== "home") setView(initialView);
       setAuthLoading(false);
