@@ -5,31 +5,107 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Robots-Tag", "value": "all" },
-        { "key": "Content-Security-Policy", "value": "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://openrouter.ai https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://*.vercel.app;" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "all"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://openrouter.ai https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://*.vercel.app;"
+        }
       ]
     }
   ],
   "routes": [
-    { "src": "/api/zillow-proxy", "dest": "/api/zillow-proxy.js" },
-    { "src": "^/og/(.*)", "dest": "/og/$1" },
-    { "src": "^/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "^/(.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp|mp4|pdf))$", "dest": "/$1" },
-    { "src": "^/login$", "dest": "/login.html" },
-    { "src": "^/signup$", "dest": "/signup.html" },
-    { "src": "^/admin/blog$", "dest": "/admin-blog.html" },
-    { "src": "^/(.*)", "has": [{ "type": "host", "value": "app.rkrt.in" }], "dest": "/index.html" },
-    { "src": "^/$", "dest": "/home.html" },
-    { "src": "^/home$", "dest": "/home.html" },
-    { "src": "^/join$", "dest": "/join.html" },
-    { "src": "^/calculator$", "dest": "/calculator.html" },
-    { "src": "^/new-agent$", "dest": "/new-agent.html" },
-    { "src": "^/revenue-share$", "dest": "/revenue-share.html" },
-    { "src": "^/why-switch$", "dest": "/why-switch.html" },
-    { "src": "^/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america)/(.+)$", "dest": "/blog-post.html" },
-    { "src": "^/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america)$", "dest": "/brokerage-blog.html" },
-    { "src": "^/robots\\.txt$", "dest": "/robots.txt" },
-    { "src": "^/app(/.*)?$", "dest": "/index.html" },
-    { "src": "^/(.*)$", "dest": "/home.html" }
+    {
+      "src": "/api/zillow-proxy",
+      "dest": "/api/zillow-proxy.js"
+    },
+    {
+      "src": "^/og/(.*)",
+      "dest": "/og/$1"
+    },
+    {
+      "src": "^/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "^/(.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp|mp4|pdf))$",
+      "dest": "/$1"
+    },
+    {
+      "src": "^/login$",
+      "dest": "/login.html"
+    },
+    {
+      "src": "^/signup$",
+      "dest": "/signup.html"
+    },
+    {
+      "src": "^/admin/blog$",
+      "dest": "/admin-blog.html"
+    },
+    {
+      "src": "^/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.rkrt.in"
+        }
+      ],
+      "dest": "/index.html"
+    },
+    {
+      "src": "^/$",
+      "dest": "/home.html"
+    },
+    {
+      "src": "^/home$",
+      "dest": "/home.html"
+    },
+    {
+      "src": "^/join$",
+      "dest": "/join.html"
+    },
+    {
+      "src": "^/calculator$",
+      "dest": "/calculator.html"
+    },
+    {
+      "src": "^/new-agent$",
+      "dest": "/new-agent.html"
+    },
+    {
+      "src": "^/revenue-share$",
+      "dest": "/revenue-share.html"
+    },
+    {
+      "src": "^/why-switch$",
+      "dest": "/why-switch.html"
+    },
+    {
+      "src": "^/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america)/(.+)$",
+      "dest": "/blog-post.html"
+    },
+    {
+      "src": "^/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america)$",
+      "dest": "/brokerage-blog.html"
+    },
+    {
+      "src": "^/robots\\.txt$",
+      "dest": "/robots.txt"
+    },
+    {
+      "src": "^/app(/.*)?$",
+      "dest": "/index.html"
+    },
+    {
+      "src": "^/beta$",
+      "dest": "/beta-signup.html"
+    },
+    {
+      "src": "^/(.*)$",
+      "dest": "/home.html"
+    }
   ]
 }
