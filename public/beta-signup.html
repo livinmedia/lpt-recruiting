@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Beta Access — rkrt.in</title>
+<meta name="robots" content="noindex"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04060A;--card:#0C1017;--border:#1A2233;--border-h:#2A3A52;
+  --teal:#00E5A0;--teal-dim:#00E5A015;--teal-mid:#00E5A030;
+  --text:#F0F4F8;--sub:#8899AA;--muted:#4A5568;--red:#F56565;
+  --purple:#8B5CF6;--purple-dim:#8B5CF615;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column;min-height:100vh}
+.page-bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(139,92,246,0.08) 0%,transparent 70%)}
+
+nav{padding:0 24px;border-bottom:1px solid var(--border);background:rgba(4,6,10,0.9);backdrop-filter:blur(16px)}
+.nav-inner{max-width:1200px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:17px;font-weight:800;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-logo .brand-teal{color:var(--teal)}
+.beta-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--purple-dim);border:1px solid var(--purple);color:var(--purple);letter-spacing:0.5px}
+
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.auth-card{width:100%;max-width:460px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px 36px}
+
+/* Invite gate (shown first) */
+#invite-gate .gate-icon{font-size:48px;text-align:center;margin-bottom:16px}
+#invite-gate h1{font-size:24px;font-weight:800;text-align:center;margin-bottom:8px}
+#invite-gate p{font-size:15px;color:var(--sub);text-align:center;margin-bottom:28px;line-height:1.5}
+.invite-input-wrap{position:relative;margin-bottom:16px}
+.invite-input-wrap input{width:100%;padding:14px 16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-family:'SF Mono',monospace;outline:none;transition:border-color 0.15s;letter-spacing:1px;text-transform:uppercase;text-align:center}
+.invite-input-wrap input:focus{border-color:var(--purple)}
+.invite-input-wrap input::placeholder{letter-spacing:0;text-transform:none;font-family:inherit;font-size:14px;color:var(--muted)}
+
+/* Signup form (shown after valid code) */
+#signup-form-wrap{display:none}
+.valid-code-banner{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--teal-dim);border:1px solid var(--teal-mid);border-radius:10px;margin-bottom:24px;font-size:14px;color:var(--teal);font-weight:600}
+.auth-icon{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--purple),#3B82F6);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px}
+.auth-title{font-size:26px;font-weight:800;margin-bottom:6px}
+.auth-sub{font-size:15px;color:var(--sub);margin-bottom:28px;line-height:1.5}
+.form-group{margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+input[type="text"],input[type="email"],input[type="password"]{width:100%;padding:13px 16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border-color 0.15s}
+input[type="text"]:focus,input[type="email"]:focus,input[type="password"]:focus{border-color:var(--teal)}
+input::placeholder{color:var(--muted)}
+
+.btn-submit{width:100%;padding:15px;border-radius:10px;background:var(--teal);color:#000;font-size:16px;font-weight:700;border:none;cursor:pointer;transition:all 0.2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.btn-submit:hover{filter:brightness(1.1)}
+.btn-submit:disabled{opacity:0.5;cursor:not-allowed}
+.btn-secondary{width:100%;padding:13px;border-radius:10px;background:transparent;color:var(--purple);font-size:15px;font-weight:700;border:1.5px solid var(--purple);cursor:pointer;transition:all 0.2s;font-family:inherit}
+.btn-secondary:hover{background:var(--purple-dim)}
+
+.msg-box{padding:12px 16px;border-radius:8px;font-size:14px;margin-bottom:16px;display:none}
+.msg-box.error{background:#F5656510;border:1px solid #F5656530;color:var(--red)}
+.msg-box.success{background:var(--teal-dim);border:1px solid var(--teal-mid);color:var(--teal)}
+.msg-box.show{display:block}
+
+/* Success state */
+#success-state{display:none;text-align:center}
+#success-state .success-icon{font-size:56px;margin-bottom:16px}
+#success-state h2{font-size:24px;font-weight:800;color:var(--teal);margin-bottom:10px}
+#success-state p{font-size:15px;color:var(--sub);line-height:1.6;margin-bottom:8px}
+
+.terms-note{font-size:12px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
+.auth-switch{text-align:center;font-size:14px;color:var(--sub);margin-top:16px}
+.auth-switch a{color:var(--teal);text-decoration:none;font-weight:600}
+
+@media(max-width:480px){
+  .auth-card{padding:28px 22px}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/home" class="nav-logo">rkrt<span class="brand-teal">.in</span></a>
+    <span class="beta-badge">BETA</span>
+  </div>
+</nav>
+
+<main>
+  <div class="auth-card">
+
+    <!-- Step 1: Invite code gate -->
+    <div id="invite-gate">
+      <div class="gate-icon">🔐</div>
+      <h1>You're invited to beta</h1>
+      <p>RKRT is in private beta. Enter your invite code to create your account.</p>
+      <div class="msg-box error" id="gate-error"></div>
+      <div class="invite-input-wrap">
+        <input type="text" id="invite-code" placeholder="RKRT-BETA-XXXXXX" maxlength="16" autocomplete="off" autocapitalize="characters"/>
+      </div>
+      <button class="btn-submit" id="validate-btn" onclick="validateCode()">
+        Validate Invite Code →
+      </button>
+      <div class="auth-switch" style="margin-top:20px">Already have an account? <a href="/login">Sign in</a></div>
+    </div>
+
+    <!-- Step 2: Signup form (shown after valid code) -->
+    <div id="signup-form-wrap">
+      <div class="auth-icon">🚀</div>
+      <h1 class="auth-title">Create your beta account</h1>
+      <p class="auth-sub">You're in. Set up your account to get started.</p>
+
+      <div class="valid-code-banner">
+        ✓ Invite code <span id="code-display" style="font-family:'SF Mono',monospace;margin:0 4px"></span> validated
+      </div>
+
+      <div class="msg-box error" id="signup-error"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="firstName" placeholder="Anthony" required autocomplete="given-name"/>
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="lastName" placeholder="Dazet" autocomplete="family-name"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="you@email.com" required autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="At least 8 characters" required autocomplete="new-password" minlength="8"/>
+      </div>
+
+      <button class="btn-submit" id="signup-btn" onclick="handleSignup()">
+        🚀 Join Beta
+      </button>
+      <p class="terms-note">By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</p>
+      <div class="auth-switch">Already have an account? <a href="/login">Sign in</a></div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="success-state">
+      <div class="success-icon">🎉</div>
+      <h2>Welcome to the beta!</h2>
+      <p>Check your email to confirm your account.</p>
+      <p style="margin-top:8px">Once confirmed, Rue will walk you through a quick setup to personalize your experience.</p>
+      <a href="/login" style="display:block;margin-top:24px;padding:14px;border-radius:10px;background:var(--teal);color:#000;font-weight:700;text-decoration:none;font-size:15px">Go to Login →</a>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://usknntguurefeyzusbdh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let validatedCode = null;
+
+// Auto-read invite code from URL param
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('invite');
+  if (code) {
+    document.getElementById('invite-code').value = code.toUpperCase();
+    validateCode();
+  }
+});
+
+// Auto-format invite code input
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('invite-code');
+  if (input) {
+    input.addEventListener('input', () => {
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') validateCode();
+    });
+  }
+});
+
+async function validateCode() {
+  const code = document.getElementById('invite-code').value.trim().toUpperCase();
+  const btn = document.getElementById('validate-btn');
+  const errEl = document.getElementById('gate-error');
+  errEl.classList.remove('show');
+
+  if (!code) {
+    errEl.textContent = 'Please enter your invite code.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Validating…';
+
+  const { data, error } = await client
+    .from('beta_invites')
+    .select('id, code, used_by, expires_at')
+    .eq('code', code)
+    .single();
+
+  btn.disabled = false;
+  btn.textContent = 'Validate Invite Code →';
+
+  if (error || !data) {
+    errEl.textContent = 'Invalid invite code. Check with Anthony for your code.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  if (data.used_by) {
+    errEl.textContent = 'This invite code has already been used.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  if (new Date(data.expires_at) < new Date()) {
+    errEl.textContent = 'This invite code has expired. Contact Anthony for a new one.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  // Valid — show signup form
+  validatedCode = code;
+  document.getElementById('invite-gate').style.display = 'none';
+  document.getElementById('signup-form-wrap').style.display = 'block';
+  document.getElementById('code-display').textContent = code;
+}
+
+async function handleSignup() {
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('signup-btn');
+  const errEl = document.getElementById('signup-error');
+  errEl.classList.remove('show');
+
+  if (!firstName || !email || !password) {
+    errEl.textContent = 'Please fill in all required fields.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+
+  // 1. Sign up with Supabase Auth
+  const { data: authData, error: authError } = await client.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: firstName + ' ' + (lastName || ''),
+        is_beta_tester: true,
+        beta_invite_code: validatedCode
+      }
+    }
+  });
+
+  if (authError) {
+    errEl.textContent = authError.message;
+    errEl.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = '🚀 Join Beta';
+    return;
+  }
+
+  const userId = authData.user?.id;
+
+  if (userId) {
+    // 2. Update profile: beta tester + recruiter plan
+    await client.from('profiles').upsert({
+      id: userId,
+      full_name: firstName + ' ' + (lastName || ''),
+      email: email,
+      is_beta_tester: true,
+      beta_joined_at: new Date().toISOString(),
+      plan: 'recruiter',
+      role: 'user'
+    }, { onConflict: 'id' });
+
+    // 3. Mark invite code as used
+    await client.from('beta_invites')
+      .update({ used_by: userId, used_at: new Date().toISOString() })
+      .eq('code', validatedCode);
+
+    // 4. Create blank intake record (Rue will fill this on first login)
+    await client.from('beta_intake').insert({
+      user_id: userId,
+      invite_code: validatedCode,
+      completed: false
+    });
+  }
+
+  // Show success
+  document.getElementById('signup-form-wrap').style.display = 'none';
+  document.getElementById('success-state').style.display = 'block';
+}
+</script>
+</body>
+</html>
