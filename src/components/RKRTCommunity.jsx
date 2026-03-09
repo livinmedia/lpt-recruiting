@@ -228,17 +228,23 @@ function FeedTab({ currentUser, allMembers, supabase }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
-  const loadPosts = async () => { console.log("loadPosts called, supabase:", !!supabase, "filter:", filter);
+  const loadPosts = async () => {
+    if (!supabase) return;
     setLoading(true);
-    let q = supabase.from("community_posts").select("*, profiles(id,full_name,email,brokerage,role)").order("pinned",{ascending:false}).order("created_at",{ascending:false}).limit(50);
-    if (filter !== "all") q = q.eq("type", filter);
-    const { data, error } = await q; console.log("posts result:", data?.length, error?.message, JSON.stringify(data?.slice(0,1))); console.log("query result:", data?.length, "error:", error?.message);
-    if (!data) { setLoading(false); return; }
-    if (currentUser?.id && data.length > 0) {
-      const { data:likes } = await supabase.from("community_likes").select("post_id").eq("user_id",currentUser.id).in("post_id",data.map(p=>p.id));
+    let q = supabase.from('community_posts').select('*').order('pinned',{ascending:false}).order('created_at',{ascending:false}).limit(50);
+    if (filter !== 'all') q = q.eq('type', filter);
+    const { data: postsData, error: postsError } = await q;
+    if (postsError) { console.error('loadPosts error:', postsError.message); setLoading(false); return; }
+    if (!postsData || postsData.length === 0) { setPosts([]); setLoading(false); return; }
+    const userIds = [...new Set(postsData.map(p => p.user_id).filter(Boolean))];
+    const { data: profilesData } = await supabase.from('profiles').select('id,full_name,email,brokerage,role').in('id', userIds);
+    const pm = {}; (profilesData||[]).forEach(p => { pm[p.id] = p; });
+    const merged = postsData.map(p => ({...p, profiles: pm[p.user_id]||null, liked:false}));
+    if (currentUser?.id && merged.length > 0) {
+      const { data:likes } = await supabase.from('community_likes').select('post_id').eq('user_id',currentUser.id).in('post_id',merged.map(p=>p.id));
       const liked = new Set((likes||[]).map(l=>l.post_id));
-      setPosts(data.map(p=>({...p,liked:liked.has(p.id)})));
-    } else { setPosts(data.map(p=>({...p,liked:false}))); }
+      setPosts(merged.map(p=>({...p,liked:liked.has(p.id)})));
+    } else { setPosts(merged); }
     setLoading(false);
   };
   useEffect(() => { if (supabase) loadPosts(); }, [filter, supabase]);
