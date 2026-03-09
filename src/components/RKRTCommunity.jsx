@@ -232,7 +232,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
     setLoading(true);
     let q = supabase.from("community_posts").select("*, profiles(id,full_name,email,brokerage,role)").order("pinned",{ascending:false}).order("created_at",{ascending:false}).limit(50);
     if (filter !== "all") q = q.eq("type", filter);
-    const { data } = await q;
+    const { data, error } = await q; console.log("query result:", data?.length, "error:", error?.message);
     if (!data) { setLoading(false); return; }
     if (currentUser?.id && data.length > 0) {
       const { data:likes } = await supabase.from("community_likes").select("post_id").eq("user_id",currentUser.id).in("post_id",data.map(p=>p.id));
