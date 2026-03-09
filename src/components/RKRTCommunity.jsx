@@ -228,7 +228,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
-  const loadPosts = async () => {
+  const loadPosts = async () => { console.log("loadPosts called, supabase:", !!supabase, "filter:", filter);
     setLoading(true);
     let q = supabase.from("community_posts").select("*, profiles(id,full_name,email,brokerage,role)").order("pinned",{ascending:false}).order("created_at",{ascending:false}).limit(50);
     if (filter !== "all") q = q.eq("type", filter);
