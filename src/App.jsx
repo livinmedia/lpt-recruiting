@@ -1257,7 +1257,7 @@ function ContentTab({userId,userProfile}){
 
 // ━━━ MAIN APP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function App(){
-  const [view,setView]=useState("home");
+  const [view,setView]=useState(window.location.hash.replace("#","") || "home");
   const [leads,setLeads]=useState([]);
   const [activity,setActivity]=useState([]);
   const [selLead,setSelLead]=useState(null);
