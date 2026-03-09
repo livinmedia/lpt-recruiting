@@ -1,3 +1,5 @@
+import { initBetaTracker } from './utils/betaTracker'
+import { BugReporterTrigger } from './components/BugReporter'
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const T = {

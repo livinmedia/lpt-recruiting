@@ -1,5 +1,6 @@
 import RKRTCommunity from './components/RKRTCommunity';
 import BetaIntakeFlow from './components/BetaIntakeFlow';
+import BugReporter, { BugReporterTrigger } from './components/BugReporter';
 import RueDrawer from "./components/RueDrawer";
 import { useState, useEffect, useCallback } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
@@ -1485,7 +1486,7 @@ export default function App(){
       steps_to_reproduce:bugForm.steps.trim()||null,
       screenshots:bugForm.screenshots.length?bugForm.screenshots:null,
       page_url:window.location.href,browser:navigator.userAgent,
-      screen_size:`${window.innerWidth}x${window.innerHeight}`,
+      screen_size:`${window.innerWidth}x${window.innerHeight}`,os:navigator.platform,current_view:window.location.hash.replace("#",""),session_duration_seconds:Math.round((Date.now()-window._sessionStart||0)/1000),
       user_plan:profile?.plan||"free",status:"new"
     });
     setBugForm({title:"",type:"bug",severity:"medium",category:"Dashboard",description:"",steps:"",screenshots:[]});
