@@ -1257,7 +1257,7 @@ function ContentTab({userId,userProfile}){
 
 // ━━━ MAIN APP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function App(){
-  const [view,setView]=useState(window.location.hash.replace("#","") || "home");
+  const [view,setView]=useState("home");
   const [leads,setLeads]=useState([]);
   const [activity,setActivity]=useState([]);
   const [selLead,setSelLead]=useState(null);
@@ -1332,6 +1332,8 @@ export default function App(){
       if(prof && !prof.onboarded) {
         setShowOnboarding(true);
       }
+      const initialView = window.location.hash.replace("#","");
+      if (initialView && initialView !== "home") setView(initialView);
       setAuthLoading(false);
       // Check for Stripe upgrade success
       if(window.location.search.includes('upgraded=true')){
