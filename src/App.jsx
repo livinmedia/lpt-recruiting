@@ -1,4 +1,5 @@
 import RKRTCommunity from './components/RKRTCommunity';
+import BetaIntakeFlow from './components/BetaIntakeFlow';
 import RueDrawer from "./components/RueDrawer";
 import { useState, useEffect, useCallback } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
@@ -1267,6 +1268,7 @@ export default function App(){
   const [profile,setProfile]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
   const [showOnboarding,setShowOnboarding]=useState(false);
+  const [showBetaIntake,setShowBetaIntake]=useState(false);
   const [showUpgradeSuccess,setShowUpgradeSuccess]=useState(false);
   const [previewUrl,setPreviewUrl]=useState(null);
   const [recentLeads,setRecentLeads]=useState([]);
@@ -1329,7 +1331,9 @@ export default function App(){
       const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
       setProfile(prof||null);
       // Check if onboarding needed
-      if(prof && !prof.onboarded) {
+      if(prof && prof.is_beta_tester && !prof.onboarded) {
+        setShowBetaIntake(true);
+      } else if(prof && !prof.onboarded) {
         setShowOnboarding(true);
       }
       const initialView = window.location.hash.replace("#","");
@@ -2851,6 +2855,15 @@ export default function App(){
 
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.s,fontSize:18,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>Authenticating…</div>;
+
+  // Show beta intake for beta testers
+  if(showBetaIntake && authUser) {
+    return <BetaIntakeFlow userId={authUser.id} profile={profile} supabase={supabase} onComplete={(data) => {
+      setProfile(p => ({ ...p, ...data }));
+      setShowBetaIntake(false);
+      logActivity(authUser.id, 'onboarding_complete');
+    }}/>;
+  }
 
   // Show onboarding gate for new users
   if(showOnboarding && authUser) {
