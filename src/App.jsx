@@ -1653,7 +1653,7 @@ export default function App(){
   useEffect(()=>{
     const onPop=(ev)=>{
       if(ev.state?.view){setView(ev.state.view);if(ev.state.view!=="lead")setSelLead(null);}
-      else{setView("home");setSelLead(null);}
+      else{const h=window.location.hash.replace("#","");setView(h||"home");setSelLead(null);}
     };
     window.addEventListener("popstate",onPop);
     return()=>window.removeEventListener("popstate",onPop);
