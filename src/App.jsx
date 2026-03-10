@@ -106,33 +106,43 @@ export default function App(){
 
   useEffect(()=>{
     supabase.auth.getSession().then(async({data:{session}})=>{
-      if(!session){window.location.href="/login";return;}
-      setAuthUser(session.user);
-      logActivity(session.user.id,'login');
-      const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
-      setProfile(prof||null);
-      // Check if onboarding needed
-      if(prof && prof.is_beta_tester) {
-  const {data:intake} = await supabase.from('beta_intake').select('completed').eq('user_id',prof.id).single();
-  if(!intake || !intake.completed) {
-    setShowBetaIntake(true);
-  }
-} else if(prof && !prof.onboarded) {
-  setShowOnboarding(true);
-}
-      const initialView = window.location.hash.replace("#","");
-      if (initialView && initialView !== "home") setView(initialView);
-      setAuthLoading(false);
-      // Check for Stripe upgrade success
-      if(window.location.search.includes('upgraded=true')){
-        const freshProf=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
-        if(freshProf.data) setProfile(freshProf.data);
-        setShowUpgradeSuccess(true);
-        setTimeout(()=>{setShowUpgradeSuccess(false);window.history.replaceState({},'',window.location.pathname);},5000);
+      try {
+        if(!session){setAuthLoading(false);return;}
+        setAuthUser(prev => (!prev || prev.id !== session.user.id) ? session.user : prev);
+        logActivity(session.user.id,'login');
+        const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+        setProfile(prof||null);
+        // Check if onboarding needed
+        if(prof && prof.is_beta_tester) {
+          const {data:intake} = await supabase.from('beta_intake').select('completed').eq('user_id',prof.id).single();
+          if(!intake || !intake.completed) {
+            setShowBetaIntake(true);
+          }
+        } else if(prof && !prof.onboarded) {
+          setShowOnboarding(true);
+        }
+        const initialView = window.location.hash.replace("#","");
+        if (initialView && initialView !== "home") setView(initialView);
+        // Check for Stripe upgrade success
+        if(window.location.search.includes('upgraded=true')){
+          const freshProf=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+          if(freshProf.data) setProfile(freshProf.data);
+          setShowUpgradeSuccess(true);
+          setTimeout(()=>{setShowUpgradeSuccess(false);window.history.replaceState({},'',window.location.pathname);},5000);
+        }
+      } catch(err) {
+        console.error('Auth setup error:', err);
+      } finally {
+        setAuthLoading(false);
       }
+    }).catch((err)=>{
+      console.error('Auth session error:', err);
+      setAuthLoading(false);
     });
     const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
-      if(!session) window.location.href="/login";
+      if(_event === 'SIGNED_OUT') { setAuthUser(null); setProfile(null); setAuthLoading(false); return; }
+      if(!session) return;
+      setAuthUser(prev => (!prev || prev.id !== session.user.id) ? session.user : prev);
     });
     return()=>subscription.unsubscribe();
   },[]);
