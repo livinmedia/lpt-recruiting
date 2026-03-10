@@ -4,7 +4,10 @@
 import T from '../../lib/theme';
 import { CopyButton } from '../ui';
 
-export function AskRueBar({ prompts, onAskRue, inlineResponse, inlineLoading }) {
+export function AskRueBar({ prompts = [], onAskRue, inlineResponse, inlineLoading }) {
+  // If no onAskRue provided, component is display-only
+  if (!prompts || !prompts.length) return null;
+  
   return (
     <>
       <div
@@ -19,7 +22,7 @@ export function AskRueBar({ prompts, onAskRue, inlineResponse, inlineLoading }) 
         {prompts.map(([icon, label, q, c], i) => (
           <div
             key={i}
-            onClick={() => onAskRue(q)}
+            onClick={() => onAskRue && onAskRue(q)}
             style={{
               background: (c || T.bl) + "10",
               border: `1px solid ${(c || T.bl)}20`,
@@ -46,73 +49,21 @@ export function AskRueBar({ prompts, onAskRue, inlineResponse, inlineLoading }) 
       </div>
 
       {inlineLoading && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: "16px 20px",
-            borderRadius: 10,
-            background: T.card,
-            border: `1px solid ${T.b}`,
-          }}
-        >
+        <div style={{ marginBottom: 20, padding: "16px 20px", borderRadius: 10, background: T.card, border: `1px solid ${T.b}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: T.a,
-                animation: "pulse 1s infinite",
-              }}
-            />
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.a, animation: "pulse 1s infinite" }} />
             <span style={{ fontSize: 14, color: T.s }}>RUE is thinking...</span>
           </div>
         </div>
       )}
 
       {inlineResponse && !inlineLoading && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: "20px 24px",
-            borderRadius: 10,
-            background: T.as,
-            border: `1px solid ${T.a}20`,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 12,
-                color: T.a,
-                fontWeight: 700,
-                letterSpacing: 1.5,
-              }}
-            >
-              🤖 RUE RESPONSE
-            </span>
+        <div style={{ marginBottom: 20, padding: "20px 24px", borderRadius: 10, background: T.as, border: `1px solid ${T.a}20` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: T.a, fontWeight: 700, letterSpacing: 1.5 }}>🤖 RUE RESPONSE</span>
             <CopyButton text={inlineResponse} label="Copy" />
           </div>
-          <pre
-            style={{
-              fontSize: 14,
-              color: T.t,
-              lineHeight: 1.7,
-              whiteSpace: "pre-wrap",
-              fontFamily: "inherit",
-              margin: 0,
-              maxHeight: 400,
-              overflow: "auto",
-            }}
-          >
-            {inlineResponse}
-          </pre>
+          <pre style={{ fontSize: 14, color: T.t, lineHeight: 1.7, whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0, maxHeight: 400, overflow: "auto" }}>{inlineResponse}</pre>
         </div>
       )}
     </>
