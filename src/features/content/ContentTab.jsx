@@ -61,21 +61,20 @@ export default function ContentTab({ userId, userProfile }) {
 
   // Landing page URLs
   const landingPages = [
-    { name: "Main Join Page", path: "join", desc: "Primary recruiting landing page" },
-    { name: "Commission Calculator", path: "calculator", desc: "Interactive commission comparison tool" },
-    { name: "New Agent Program", path: "new-agent", desc: "For newly licensed agents" },
-    { name: "Revenue Share", path: "revenue-share", desc: "Passive income opportunity" },
-    { name: "Why Switch", path: "why-switch", desc: "For agents considering a move" },
+    { name: "Main Join Page", path: "join", desc: "Primary recruiting landing page", icon: "🤝", label: "Join", gradient: "linear-gradient(135deg, #059669, #10B981)" },
+    { name: "Commission Calculator", path: "calculator", desc: "Interactive commission comparison tool", icon: "🧮", label: "Calculator", gradient: "linear-gradient(135deg, #2563EB, #3B82F6)" },
+    { name: "New Agent Program", path: "new-agent", desc: "For newly licensed agents", icon: "🚀", label: "New Agent", gradient: "linear-gradient(135deg, #7C3AED, #8B5CF6)" },
+    { name: "Revenue Share", path: "revenue-share", desc: "Passive income opportunity", icon: "💰", label: "Revenue", gradient: "linear-gradient(135deg, #D97706, #F59E0B)" },
+    { name: "Why Switch", path: "why-switch", desc: "For agents considering a move", icon: "🔄", label: "Switch", gradient: "linear-gradient(135deg, #DC2626, #F97316)" },
   ];
 
-  const getBaseUrl = () => {
-    const brokSlug = selectedBrokerage.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-    return `https://rkrt.in`;
-  };
+  const refParam = userId ? `?ref=${userId}` : '';
+
+  const getPageUrl = (path) => `https://rkrt.in/${path}${refParam}`;
 
   const getBlogUrl = () => {
     const brokSlug = selectedBrokerage.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-    return `https://rkrt.in/blog/${brokSlug}`;
+    return `https://rkrt.in/blog/${brokSlug}${refParam}`;
   };
 
   return (
@@ -121,14 +120,26 @@ export default function ContentTab({ userId, userProfile }) {
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 14, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>LANDING PAGES</div>
             {landingPages.map((lp, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: T.d, borderRadius: 8, marginBottom: 8 }}>
-                <div>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", background: T.d, borderRadius: 8, marginBottom: 8 }}>
+                {/* Thumbnail preview */}
+                <div style={{ width: 120, height: 80, borderRadius: 6, overflow: "hidden", flexShrink: 0, background: "#0a0e1a", display: "flex", flexDirection: "column" }}>
+                  <div style={{ flex: 1, background: lp.gradient, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                    <span style={{ fontSize: 22 }}>{lp.icon}</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.9)", letterSpacing: 0.5, textTransform: "uppercase" }}>{lp.label}</span>
+                  </div>
+                  <div style={{ height: 16, background: "#0a0e1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 7, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>rkrt.in/{lp.path}</span>
+                  </div>
+                </div>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{lp.name}</div>
                   <div style={{ fontSize: 13, color: T.s }}>{lp.desc}</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{getBaseUrl()}/{lp.path}</span>
-                  <CopyButton text={`${getBaseUrl()}/${lp.path}`} label="Copy" />
+                {/* URL + Copy */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                  <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{getPageUrl(lp.path)}</span>
+                  <CopyButton text={getPageUrl(lp.path)} label="Copy" />
                 </div>
               </div>
             ))}
@@ -325,7 +336,7 @@ export default function ContentTab({ userId, userProfile }) {
                     <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{post.title}</div>
                     <div style={{ fontSize: 13, color: T.s, marginTop: 4 }}>{post.brokerage} • {new Date(post.created_at).toLocaleDateString()}</div>
                   </div>
-                  <a href={`https://rkrt.in/blog/${post.brokerage?.toLowerCase().replace(/[^a-z0-9]/g, '-')}/${post.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                  <a href={`https://rkrt.in/blog/${post.brokerage?.toLowerCase().replace(/[^a-z0-9]/g, '-')}/${post.slug}${refParam}`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
                     View →
                   </a>
                 </div>
