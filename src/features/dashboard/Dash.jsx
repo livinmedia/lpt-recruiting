@@ -1,7 +1,6 @@
 // RKRT.in Dashboard Feature
 // Extracted from App.jsx for scalable architecture
 
-import { useState, useEffect } from 'react';
 import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
@@ -13,16 +12,12 @@ export default function Dash({
   profile = {},
   activity = [],
   recentLeads = [],
-  leads = [],
-  profile,
-  activity = [],
-  recentLeads = [],
-  onNavigate,
-  onSelectLead,
-  askRueInline,
-  inlineResponse,
-  inlineLoading,
-  chartsReady,
+  onNavigate = () => {},
+  onSelectLead = () => {},
+  askRueInline = () => {},
+  inlineResponse = "",
+  inlineLoading = false,
+  chartsReady = false,
   BarChart,
   Bar,
   XAxis,
@@ -31,7 +26,7 @@ export default function Dash({
   Cell,
 }) {
   // Computed values
-  const total = (leads || []).length;
+  const total = leads.length;
   const targets = leads.filter(l => l.brokerage && !l.brokerage.toLowerCase().includes("lpt")).length;
   const urgent = leads.filter(l => l.urgency === "HIGH").length;
   const today = leads.filter(l => l.created_at && new Date(l.created_at).toDateString() === new Date().toDateString()).length;
