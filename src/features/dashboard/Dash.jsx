@@ -9,10 +9,14 @@ import { Pill, UPill, TPill, Dot } from '../../components/ui/Pill';
 import { Gauge } from '../../components/ui/Gauge';
 
 export default function Dash({
-  leads,
+  leads = [],
+  profile = {},
+  activity = [],
+  recentLeads = [],
+  leads = [],
   profile,
-  activity,
-  recentLeads,
+  activity = [],
+  recentLeads = [],
   onNavigate,
   onSelectLead,
   askRueInline,
@@ -27,7 +31,7 @@ export default function Dash({
   Cell,
 }) {
   // Computed values
-  const total = leads.length;
+  const total = (leads || []).length;
   const targets = leads.filter(l => l.brokerage && !l.brokerage.toLowerCase().includes("lpt")).length;
   const urgent = leads.filter(l => l.urgency === "HIGH").length;
   const today = leads.filter(l => l.created_at && new Date(l.created_at).toDateString() === new Date().toDateString()).length;
