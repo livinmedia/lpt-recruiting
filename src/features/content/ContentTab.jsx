@@ -20,13 +20,31 @@ export default function ContentTab({ userId, userProfile }) {
 
   const loadContent = async () => {
     setLoading(true);
+    const today = new Date().toISOString().split('T')[0];
     const [contentRes, blogRes] = await Promise.all([
-      supabase.from('daily_content').select('*').order('created_at', { ascending: false }).limit(20),
+      supabase.from('daily_content').select('*').eq('content_date', today).order('created_at', { ascending: false }),
       supabase.from('brokerage_posts').select('*').eq('status', 'approved').order('created_at', { ascending: false }).limit(20),
     ]);
-    setDailyContent(contentRes.data || []);
+    let dailyData = contentRes.data || [];
+    if (dailyData.length === 0) {
+      const recentRes = await supabase.from('daily_content').select('*').order('content_date', { ascending: false }).limit(6);
+      dailyData = recentRes.data || [];
+    }
+    setDailyContent(dailyData);
     setBlogPosts(blogRes.data || []);
     setLoading(false);
+  };
+
+  const buildContent = (item) => {
+    let text = '';
+    if (item.headline) text += item.headline + '\n\n';
+    if (item.body) text += item.body;
+    return text.trim();
+  };
+
+  const formatHashtags = (tags) => {
+    if (!tags || !Array.isArray(tags) || tags.length === 0) return null;
+    return tags.map(t => t.startsWith('#') ? t : `#${t}`).join(' ');
   };
 
   // Landing page URLs
@@ -136,13 +154,18 @@ export default function ContentTab({ userId, userProfile }) {
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 18 }}>{item.platform === "facebook" ? "📘" : item.platform === "instagram" ? "📸" : "📱"}</span>
                       <span style={{ fontSize: 14, fontWeight: 600, color: T.t, textTransform: "capitalize" }}>{item.platform}</span>
-                      <span style={{ fontSize: 12, color: T.m }}>• {new Date(item.created_at).toLocaleDateString()}</span>
+                      <span style={{ fontSize: 12, color: T.m }}>• {item.theme && `[${item.theme}]`} • {new Date(item.content_date).toLocaleDateString()}</span>
                     </div>
-                    <CopyButton text={item.content} label="Copy" />
+                    <CopyButton text={buildContent(item)} label="Copy" />
                   </div>
-                  <div style={{ fontSize: 14, color: T.t, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{item.content}</div>
-                  {item.hashtags && (
-                    <div style={{ marginTop: 12, fontSize: 13, color: T.bl }}>{item.hashtags}</div>
+                  <div style={{ fontSize: 14, color: T.t, lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: 12 }}>{buildContent(item)}</div>
+                  {formatHashtags(item.hashtags) && (
+                    <div style={{ marginTop: 8, fontSize: 13, color: T.bl }}>{formatHashtags(item.hashtags)}</div>
+                  )}
+                  {item.image_url && (
+                    <div style={{ marginTop: 12 }}>
+                      <img src={item.image_url} alt={item.theme} style={{ maxWidth: "100%", height: "auto", borderRadius: 8, maxHeight: 300 }} />
+                    </div>
                   )}
                 </div>
               ))}
