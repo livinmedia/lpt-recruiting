@@ -68,13 +68,20 @@ export default function ContentTab({ userId, userProfile }) {
     { name: "Why Switch", path: "why-switch", desc: "For agents considering a move", icon: "🔄", label: "Switch", gradient: "linear-gradient(135deg, #DC2626, #F97316)" },
   ];
 
-  const refParam = userId ? `?ref=${userId}` : '';
+  const personalizeLinks = (text) => {
+    if (!userId) return text;
+    return text.replace(/https:\/\/rkrt\.in\/[^\s)]+/g, (url) => {
+      const u = new URL(url);
+      u.searchParams.set('ref', userId);
+      return u.toString();
+    });
+  };
 
-  const getPageUrl = (path) => `https://rkrt.in/${path}${refParam}`;
+  const getPageUrl = (path) => `https://rkrt.in/${path}?ref=${userId || ''}&target=${encodeURIComponent(selectedBrokerage)}`;
 
   const getBlogUrl = () => {
     const brokSlug = selectedBrokerage.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-    return `https://rkrt.in/blog/${brokSlug}${refParam}`;
+    return `https://rkrt.in/blog/${brokSlug}?ref=${userId || ''}&target=${encodeURIComponent(selectedBrokerage)}`;
   };
 
   return (
@@ -226,7 +233,7 @@ export default function ContentTab({ userId, userProfile }) {
 
                         {/* Copy button */}
                         <div style={{ marginTop: "auto" }}>
-                          <CopyButton text={content + (hashtags ? '\n\n' + hashtags : '') + (item.image_url ? '\n\n📸 Image: ' + item.image_url : '')} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, width: "100%", textAlign: "center" }} />
+                          <CopyButton text={personalizeLinks(content + (hashtags ? '\n\n' + hashtags : '') + (item.image_url ? '\n\n📸 Image: ' + item.image_url : ''))} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, width: "100%", textAlign: "center" }} />
                         </div>
                       </div>
                     </div>
