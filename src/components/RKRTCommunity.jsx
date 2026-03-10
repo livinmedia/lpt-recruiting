@@ -1,5 +1,4 @@
-import { initBetaTracker } from './utils/betaTracker'
-import { BugReporterTrigger } from './components/BugReporter'
+
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const T = {
@@ -76,7 +75,7 @@ function MentionTextarea({ value, onChange, placeholder, rows=3, allMembers=[], 
   }
   return (
     <div style={{ flex:1, position:"relative" }}>
-      <textarea ref={ref} value={value} onChange={handleChange} onKeyDown={e => { if (e.key==="Enter" && !e.shiftKey && onSubmit) { e.preventDefault(); onSubmit(); } }} onKeyDown={e => { if (e.key==="Enter" && !e.shiftKey && onSubmit) { e.preventDefault(); onSubmit(); } }}
+      <textarea ref={ref} value={value} onChange={handleChange} onKeyDown={e => { if (e.key==="Enter" && !e.shiftKey && onSubmit) { e.preventDefault(); onSubmit(); } }}
         placeholder={placeholder} rows={rows}
         style={{ width:"100%", background:T.dim, border:`1px solid ${T.b}`,
           borderRadius:10, padding:"12px 16px", color:T.t, fontSize:14,

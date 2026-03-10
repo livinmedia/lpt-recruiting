@@ -13,11 +13,8 @@ import { Modal, DeleteModal } from './components/ui';
 // Shared Components  
 import { AskRueBar } from './components/shared';
 import { ProGate } from './components/shared';
-import ProfileView from './components/ProfileView';
-import AdminView from './components/AdminView';
 import RKRTCommunity from './components/RKRTCommunity';
 import BetaIntakeFlow from './components/BetaIntakeFlow';
-import BugReporter, { BugReporterTrigger } from './components/BugReporter';
 import RueDrawer from "./components/RueDrawer";
 import { useState, useEffect, useCallback } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
@@ -26,206 +23,9 @@ const rechartsReady = import("recharts").then(m => {
   Tooltip = m.Tooltip; ResponsiveContainer = m.ResponsiveContainer;
   PieChart = m.PieChart; Pie = m.Pie; Cell = m.Cell;
 });
-import { createClient } from "@supabase/supabase-js";
 
 // rkrt.in Platform — RUE AI Recruiting Intelligence
-const RUE_SUPA = "https://usknntguurefeyzusbdh.supabase.co/rest/v1";
-const RUE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
-const supabase = createClient('https://usknntguurefeyzusbdh.supabase.co', RUE_KEY);
 
-// Brokerage list for dropdown
-const BROKERAGES = [
-  "Keller Williams","RE/MAX","eXp Realty","Coldwell Banker","Century 21",
-  "Berkshire Hathaway HomeServices","Compass","Sotheby's International Realty",
-  "Better Homes & Gardens Real Estate","ERA Real Estate","Engel & Völkers",
-  "HomeSmart","Redfin","Side","LPT Realty","Independent","Other"
-];
-
-async function logActivity(userId, action, metadata = {}) {
-  if (!userId) return;
-  try {
-    await supabase.from('user_activity').insert({ user_id: userId, action, metadata, created_at: new Date().toISOString() });
-  } catch (e) { /* silent fail */ }
-}
-
-const startCheckout = async (userId, email) => {
-  try {
-    const r = await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/create-checkout', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        user_id: userId,
-        email: email,
-        success_url: `${window.location.origin}?upgraded=true`,
-        cancel_url: `${window.location.origin}?cancelled=true`
-      })
-    });
-    const data = await r.json();
-    if (data.url) window.location.href = data.url;
-    else alert('Could not start checkout. Please try again.');
-  } catch(e) { alert('Checkout error. Please try again.'); }
-};
-
-async function agentSearch({state,brokerage,name,city,newDays,limit=50,offset=0}={}) {
-  let params = [];
-  if(state) params.push(`state=eq.${state}`);
-  if(brokerage) params.push(`brokerage_name=ilike.%25${encodeURIComponent(brokerage)}%25`);
-  if(name) params.push(`full_name=ilike.*${encodeURIComponent(name)}*`);
-  if(city) params.push(`city=ilike.*${encodeURIComponent(city)}*`);
-  if(newDays) {
-    const d = new Date(); d.setDate(d.getDate() - newDays);
-    params.push(`original_license_date=gte.${d.toISOString().split("T")[0]}`);
-    params.push(`order=original_license_date.desc`);
-  } else {
-    params.push(`order=full_name.asc`);
-  }
-  params.push(`limit=${limit}`);
-  params.push(`offset=${offset}`);
-  params.push(`select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration,original_license_date,personal_email,work_email,mobile_phone,linkedin_url,enriched_at`);
-  try {
-    const url = `${RUE_SUPA}/agent_directory?${params.join("&")}`;
-    console.log('Agent search URL:', url);
-    const r = await fetch(url,{
-      headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`,"Prefer":"count=exact"}
-    });
-    if(!r.ok) { console.error("Agent search HTTP error:", r.status, await r.text()); return { data: [], total: 0 }; }
-    const total = parseInt(r.headers.get("content-range")?.split("/")?.[1] || "0");
-    const data = await r.json();
-    return { data: Array.isArray(data) ? data : [], total };
-  } catch(e) { console.error("Agent search error:", e); return { data: [], total: 0 }; }
-}
-
-const T = {
-  bg:"#04060A",side:"#070A10",card:"#0B0F17",hover:"#101520",
-  b:"rgba(255,255,255,0.04)",bh:"rgba(255,255,255,0.08)",
-  a:"#00E5A0",am:"rgba(0,229,160,0.14)",as:"rgba(0,229,160,0.06)",
-  r:"#F43F5E",y:"#F59E0B",bl:"#3B82F6",p:"#8B5CF6",c:"#06B6D4",
-  t:"#E4E8F1",s:"#7B8BA3",m:"#2A3345",d:"#161C28",
-};
-
-const CopyButton=({text,label="Copy Link"})=>{
-  const[copied,setCopied]=useState(false);
-  const handleCopy=()=>{navigator.clipboard?.writeText(text).catch(()=>{const t=document.createElement("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t);});setCopied(true);setTimeout(()=>setCopied(false),2000);};
-  return(<button onClick={handleCopy} style={{background:copied?"#052e16":"#0a0a0a",border:"1px solid #22c55e",color:"#22c55e",padding:"6px 14px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer",transition:"transform 0.15s",transform:copied?"scale(0.95)":"scale(1)",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap",fontFamily:"inherit"}}>{copied?"✓ Copied!":`📋 ${label}`}</button>);
-};
-
-const SYSTEM = `You are RUE, an elite AI recruiting assistant for real estate team leaders and brokers, powered by RKRT.
-
-You help them recruit real estate agents to their brokerage or team. You seamlessly handle all aspects of the recruiting process:
-
-LEAD INTELLIGENCE: Research target agents — their production volume, brokerage history, social presence, reviews, license status. Identify who's likely to switch and why.
-
-OUTREACH & FOLLOW-UP: Draft personalized recruiting messages (text, email, DM, LinkedIn, video scripts). Create multi-touch nurture sequences. Track who needs follow-up.
-
-OBJECTION HANDLING: Handle common objections like "I'm happy where I am," "what's your split," "I don't want to pay fees." Provide scripts and role-play.
-
-CONTENT & MARKETING: Create recruiting-focused social media content, video scripts for attracting agents, market reports, and value propositions. Make them look like the obvious choice.
-
-PIPELINE MANAGEMENT: Track recruiting pipeline stages (new → researched → outreach → meeting → talking → recruited). Prioritize who to contact based on urgency and fit.
-
-COMPETITIVE INTEL: Analyze competitor brokerages — their splits, fees, culture, weaknesses. Position our offer against theirs.
-
-ACCOUNTABILITY: Daily recruiting activity check-ins. Track calls made, messages sent, meetings booked. Hold them to their recruiting goals.
-
-PERSONALITY:
-- Direct and actionable — no fluff
-- Proactive — suggest who to call and what to say without being asked
-- Confident like a top recruiter — you know how to close
-- Short paragraphs, not walls of text
-- 3-5 items max in any list
-- Always end with a clear next action
-- Reference their pipeline data when available
-- When drafting messages, make them personal and specific — never generic
-
-You are their unfair advantage in recruiting. Act like it.`;
-
-const getPlanLimits = (profile) => {
-  const isPro = profile?.plan === 'pro' || profile?.plan === 'enterprise' || profile?.role === 'owner';
-  return {
-    isPro,
-    canGenerateContent: isPro,
-    canAccessAgents: isPro,
-    canEnrichContacts: isPro,
-    canAccessCalculator: isPro,
-    canAccessRevenueShare: isPro,
-    leadLimit: isPro ? Infinity : 10,
-    landingPageCount: isPro ? 5 : 1,
-    hasUTMTracking: isPro,
-  };
-};
-
-const ProGate = ({feature, userId, userProfile, children}) => {
-  const limits = getPlanLimits(userProfile);
-  if (limits.isPro) return children;
-  const tiers = [
-    {
-      name:'Free', price:'$0', period:'forever', color:T.card, textColor:T.t, badge:null,
-      features:['Agent search (limited)','5 pipeline leads','Basic dashboard'],
-      cta:'Current Plan', ctaAction:null, ctaStyle:{background:T.b,color:T.s,cursor:'default'}
-    },
-    {
-      name:'Recruiter', price:'$97', period:'/mo', color:T.card, textColor:T.t, badge:'MOST POPULAR',
-      features:['1.2M+ agent directory','Unlimited leads','AI daily content','All 5 landing pages','Commission calculator','Revenue share projections','Rue AI recruiting agent'],
-      cta:'Upgrade to Recruiter →', ctaAction:()=>startCheckout(userId,userProfile?.email),
-      ctaStyle:{background:T.a,color:'#000',cursor:'pointer',fontWeight:800}
-    },
-    {
-      name:'Team Leader', price:'$297', period:'/mo', color:'#0f1a2e', textColor:T.t, badge:'5 SEATS',
-      features:['Everything in Recruiter','5 team member seats','Shared pipeline view','Team admin dashboard','Blog CMS','HeyGen video content'],
-      cta:'Coming Soon', ctaAction:null, ctaStyle:{background:T.b,color:T.s,cursor:'default'}
-    },
-    {
-      name:'Enterprise', price:'$4,797', period:'/mo', color:'#070d1a', textColor:'#fff', badge:'WHITE LABEL',
-      features:['Everything in Team Leader','10 seats','Custom domain + branding','Priority support','API access','Dedicated onboarding'],
-      cta:'Contact Us', ctaAction:()=>window.open('mailto:anthony@rkrt.in'),
-      ctaStyle:{background:'#1B4FFF',color:'#fff',cursor:'pointer',fontWeight:800}
-    },
-  ];
-  return (
-    <div style={{padding:'40px 20px',textAlign:'center'}}>
-      <div style={{fontSize:36,marginBottom:8}}>🔒</div>
-      <div style={{fontSize:22,fontWeight:800,color:T.t,marginBottom:8}}>{feature} requires an upgrade</div>
-      <div style={{fontSize:14,color:T.s,marginBottom:36,maxWidth:480,margin:'0 auto 36px'}}>
-        Choose the plan that fits your recruiting goals. Cancel anytime.
-      </div>
-      <div style={{display:'flex',gap:16,justifyContent:'center',flexWrap:'wrap',maxWidth:1000,margin:'0 auto 24px'}}>
-        {tiers.map(tier=>(
-          <div key={tier.name} style={{background:tier.color,border:`1px solid ${tier.name==='Recruiter'?T.a:T.b}`,borderRadius:16,padding:'24px 20px',width:210,textAlign:'left',position:'relative',boxShadow:tier.name==='Recruiter'?`0 0 24px ${T.a}30`:'none'}}>
-            {tier.badge&&<div style={{position:'absolute',top:-10,left:'50%',transform:'translateX(-50%)',background:tier.name==='Recruiter'?T.a:'#1B4FFF',color:tier.name==='Recruiter'?'#000':'#fff',fontSize:9,fontWeight:800,letterSpacing:1.5,padding:'3px 10px',borderRadius:20,whiteSpace:'nowrap'}}>{tier.badge}</div>}
-            <div style={{fontSize:13,fontWeight:700,color:tier.name==='Enterprise'?'#818cf8':T.a,marginBottom:4}}>{tier.name.toUpperCase()}</div>
-            <div style={{fontSize:34,fontWeight:900,color:tier.textColor,lineHeight:1}}>{tier.price}<span style={{fontSize:13,fontWeight:400,color:T.s}}>{tier.period}</span></div>
-            <div style={{height:1,background:T.b,margin:'14px 0'}}/>
-            {tier.features.map(f=>(
-              <div key={f} style={{display:'flex',gap:6,marginBottom:6,alignItems:'flex-start'}}>
-                <span style={{color:T.a,fontSize:11,marginTop:2}}>✓</span>
-                <span style={{fontSize:12,color:tier.name==='Enterprise'?'#c7d2fe':T.s,lineHeight:1.4}}>{f}</span>
-              </div>
-            ))}
-            <div onClick={tier.ctaAction||undefined} style={{...tier.ctaStyle,marginTop:16,padding:'10px 0',borderRadius:8,fontSize:12,textAlign:'center'}}>
-              {tier.cta}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{fontSize:11,color:T.m}}>Powered by Stripe · Secure checkout · Cancel anytime</div>
-    </div>
-  );
-};
-
-const STAGES = [{id:"new",l:"New",c:T.s},{id:"researched",l:"Researched",c:T.bl},{id:"outreach_sent",l:"Outreach",c:T.y},{id:"meeting_booked",l:"Meeting",c:T.p},{id:"in_conversation",l:"Talking",c:T.c},{id:"recruited",l:"Recruited",c:T.a}];
-const PC = [T.a,T.bl,T.y,T.p,T.r,T.c];
-
-function ago(d){if(!d)return"";const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return"now";if(s<3600)return Math.floor(s/60)+"m";if(s<86400)return Math.floor(s/3600)+"h";return Math.floor(s/86400)+"d";}
-
-function Pill({text,color}){return <span style={{fontSize:14,fontWeight:700,padding:"4px 10px",borderRadius:4,background:color+"18",color,letterSpacing:0.4}}>{text}</span>;}
-function UPill({u}){return <Pill text={u||"—"} color={{HIGH:T.r,MEDIUM:T.y,LOW:T.a}[u]||T.s}/>;}
-function TPill({t}){return <span style={{fontSize:15,fontWeight:600,color:{Elite:T.p,Strong:T.a,Mid:T.bl,Building:T.y,New:T.s}[t]||T.s}}>{t||"—"}</span>;}
-function Dot({c}){return <span style={{width:8,height:8,borderRadius:"50%",background:c,boxShadow:`0 0 5px ${c}`,display:"inline-block",flexShrink:0}}/>;}
-
-function Gauge({score}){
-  const r=44,c=Math.PI*r,o=c-(score/100)*c,col=score>=70?T.a:score>=40?T.y:T.r;
-  return <div style={{textAlign:"center"}}><svg width="160" height="96" viewBox="0 0 100 60"><path d="M 6 56 A 44 44 0 0 1 94 56" fill="none" stroke={T.m} strokeWidth="5" strokeLinecap="round"/><path d="M 6 56 A 44 44 0 0 1 94 56" fill="none" stroke={col} strokeWidth="5" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={o} style={{transition:"all 0.8s"}}/><text x="50" y="44" textAnchor="middle" fill={T.t} fontSize="20" fontWeight="800">{score}</text><text x="50" y="56" textAnchor="middle" fill={col} fontSize="7" fontWeight="700">{score>=70?"STRONG":score>=40?"BUILDING":"WEAK"}</text></svg></div>;
-}
 
 // ━━━ ONBOARDING FLOW ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function OnboardingFlow({ userId, email, onComplete }) {
@@ -409,25 +209,7 @@ function OnboardingFlow({ userId, email, onComplete }) {
 }
 
 // ━━━ DELETE CONFIRM MODAL ━━━━━━━━━━━━━━━━━━━━━━━━
-function DeleteModal({ lead, onConfirm, onCancel, deleting }) {
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{background:T.card,border:`1px solid ${T.r}30`,borderRadius:16,padding:"32px 28px",maxWidth:400,width:"100%"}}>
-        <div style={{fontSize:24,marginBottom:12,textAlign:"center"}}>🗑️</div>
-        <div style={{fontSize:20,fontWeight:800,color:T.t,textAlign:"center",marginBottom:8}}>Delete Lead?</div>
-        <div style={{fontSize:15,color:T.s,textAlign:"center",marginBottom:24,lineHeight:1.6}}>
-          This will permanently delete <strong style={{color:T.t}}>{lead.first_name} {lead.last_name}</strong> and all their data. This cannot be undone.
-        </div>
-        <div style={{display:"flex",gap:12}}>
-          <div onClick={onCancel} style={{flex:1,padding:"13px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:15,fontWeight:700,cursor:"pointer",textAlign:"center"}}>Cancel</div>
-          <div onClick={!deleting?onConfirm:null} style={{flex:1,padding:"13px",borderRadius:8,background:T.r,color:"#fff",fontSize:15,fontWeight:700,cursor:deleting?"wait":"pointer",textAlign:"center",opacity:deleting?0.6:1}}>
-            {deleting?"Deleting…":"Delete Forever"}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+
 
 // ━━━ LEAD DETAIL PAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function LeadPage({lead,onBack,onAskInline,inlineResponse,inlineLoading,userId,onDelete,userProfile}){
@@ -956,8 +738,6 @@ function AgentDirectory({userId,userProfile,onAddLead}){
   );
 }
 
-const TARGET_BROKERAGES=["Keller Williams","eXp Realty","RE/MAX","Compass","Coldwell Banker","Century 21","Berkshire Hathaway HomeServices","HomeSmart","Sotheby's International Realty","Better Homes & Gardens Real Estate","ERA Real Estate","Engel & Völkers","Redfin","Side","Independent","Other"];
-const DAILY_LIMIT=3;
 
 // ━━━ CONTENT TAB ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ContentTab({userId,userProfile}){

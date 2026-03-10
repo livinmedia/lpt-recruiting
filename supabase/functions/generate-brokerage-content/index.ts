@@ -11,7 +11,7 @@ const CORS = {
 
 const BROKERAGE_PROFILES: Record<string, { strengths: string; culture: string; ideal_for: string }> = {
   "lpt-realty": {
-    strengths: "90/10 commission splits with a $12k annual cap, $0 desk fees, $0 monthly fees, cutting-edge LIVI AI tools for lead gen and marketing, 5-tier revenue share program, cloud-based model available in all 50 states, stock incentive program, full broker support",
+    strengths: "90/10 commission splits with a $10k annual cap, $0 desk fees, $0 monthly fees, cutting-edge LIVI AI tools for lead gen and marketing, 5-tier revenue share program, cloud-based model available in all 50 states, stock incentive program, full broker support",
     culture: "Tech-forward, agent-centric cloud brokerage that prioritizes agent profitability and innovation. Founded by agents who were frustrated with traditional brokerage models.",
     ideal_for: "Tech-savvy agents who want maximum take-home pay, AI-powered tools, and a modern cloud brokerage with strong revenue share"
   },
