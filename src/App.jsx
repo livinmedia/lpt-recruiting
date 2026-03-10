@@ -1,3 +1,5 @@
+import ProfileView from './components/ProfileView';
+import AdminView from './components/AdminView';
 import RKRTCommunity from './components/RKRTCommunity';
 import BetaIntakeFlow from './components/BetaIntakeFlow';
 import BugReporter, { BugReporterTrigger } from './components/BugReporter';
@@ -2757,105 +2759,6 @@ export default function App(){
     );
   };
 
-  // ━━━ PROFILE VIEW ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  const ProfileView=()=>{
-    if(!profileEdit)return null;
-    const inSt={width:"100%",padding:"13px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"};
-    const roSt={width:"100%",padding:"13px 16px",borderRadius:8,background:T.bg,border:`1px solid ${T.b}`,color:T.m,fontSize:15};
-
-    // Determine if brokerage is in the known list
-    const knownBrokerage = BROKERAGES.includes(profileEdit.brokerage);
-    const displayBrokerage = knownBrokerage ? profileEdit.brokerage : (profileEdit.brokerage ? "Other" : "");
-
-    return(
-      <div style={{maxWidth:640,margin:"0 auto"}}>
-        <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:28}}>
-          <div style={{width:64,height:64,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:800,flexShrink:0}}>{profile?.full_name?.charAt(0).toUpperCase()||authUser?.email?.charAt(0).toUpperCase()||"?"}</div>
-          <div>
-            <div style={{fontSize:22,fontWeight:800,color:T.t}}>{profile?.full_name||"Your Name"}</div>
-            <div style={{fontSize:14,color:T.s,marginTop:2}}>{authUser?.email}</div>
-            {profile?.brokerage&&<div style={{fontSize:13,color:T.a,marginTop:3,fontWeight:600}}>{profile.brokerage}</div>}
-          </div>
-        </div>
-
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"28px 30px",marginBottom:20}}>
-          <div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:20}}>Account Info</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}} className="form-grid">
-            <div>
-              <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>FULL NAME</div>
-              <input value={profileEdit.full_name||""} onChange={ev=>setProfileEdit(p=>({...p,full_name:ev.target.value}))} placeholder="Your Name" style={inSt}/>
-            </div>
-            <div>
-              <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>PHONE</div>
-              <input value={profileEdit.phone||""} onChange={ev=>setProfileEdit(p=>({...p,phone:ev.target.value}))} placeholder="(555) 123-4567" style={inSt}/>
-            </div>
-            <div style={{gridColumn:"1/3"}}>
-              <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>BROKERAGE</div>
-              <select
-                value={BROKERAGES.includes(profileEdit.brokerage)?profileEdit.brokerage:(profileEdit.brokerage?"Other":"")}
-                onChange={ev=>{
-                  if(ev.target.value!=="Other"){
-                    setProfileEdit(p=>({...p,brokerage:ev.target.value,brokerage_other:""}));
-                  } else {
-                    setProfileEdit(p=>({...p,brokerage:"Other",brokerage_other:p.brokerage_other||""}));
-                  }
-                }}
-                style={{...inSt,marginBottom:BROKERAGES.includes(profileEdit.brokerage)||!profileEdit.brokerage?0:8}}
-              >
-                <option value="" style={{background:T.card}}>Select your brokerage...</option>
-                {BROKERAGES.map(b=><option key={b} value={b} style={{background:T.card}}>{b}</option>)}
-              </select>
-              {profileEdit.brokerage==="Other"&&(
-                <input
-                  value={profileEdit.brokerage_other||""}
-                  onChange={ev=>setProfileEdit(p=>({...p,brokerage_other:ev.target.value}))}
-                  placeholder="Enter your brokerage name"
-                  style={{...inSt,marginTop:8}}
-                />
-              )}
-              {/* If it was a custom value not in list, show it pre-filled in Other input */}
-              {profileEdit.brokerage&&!BROKERAGES.includes(profileEdit.brokerage)&&profileEdit.brokerage!=="Other"&&(
-                <input
-                  value={profileEdit.brokerage}
-                  onChange={ev=>setProfileEdit(p=>({...p,brokerage:ev.target.value}))}
-                  placeholder="Enter your brokerage name"
-                  style={{...inSt,marginTop:8}}
-                />
-              )}
-            </div>
-            <div>
-              <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>LICENSE NUMBER</div>
-              <input value={profileEdit.license_number||""} onChange={ev=>setProfileEdit(p=>({...p,license_number:ev.target.value}))} placeholder="RE123456" style={inSt}/>
-            </div>
-            <div>
-              <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>LICENSE STATE</div>
-              <input value={profileEdit.license_state||""} onChange={ev=>setProfileEdit(p=>({...p,license_state:ev.target.value.toUpperCase()}))} placeholder="TX" maxLength={2} style={inSt}/>
-            </div>
-            <div style={{gridColumn:"1/3"}}>
-              <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>PRIMARY MARKET</div>
-              <input value={profileEdit.market||""} onChange={ev=>setProfileEdit(p=>({...p,market:ev.target.value}))} placeholder="Austin, TX" style={inSt}/>
-            </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:24,opacity:0.6}} className="form-grid">
-            {[["EMAIL (read-only)",authUser?.email],["ROLE",profile?.role],["PLAN",profile?.plan]].map(([label,value])=>(
-              <div key={label}>
-                <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>{label}</div>
-                <div style={roSt}>{value||"—"}</div>
-              </div>
-            ))}
-          </div>
-          <div onClick={saveProfile} style={{padding:"13px 28px",borderRadius:8,background:profileSaving?"#333":T.a,color:profileSaving?T.m:"#000",fontSize:15,fontWeight:700,cursor:profileSaving?"default":"pointer",display:"inline-flex",alignItems:"center",gap:8}}>
-            {profileSaving?"Saving…":"✓ Save Changes"}
-          </div>
-        </div>
-
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
-          <div style={{fontSize:17,fontWeight:700,color:T.t,marginBottom:16}}>Session</div>
-          <div onClick={()=>{supabase.auth.signOut().then(()=>{window.location.href="/login";});}} style={{padding:"12px 24px",borderRadius:8,background:T.r+"15",border:`1px solid ${T.r}30`,color:T.r,fontSize:15,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}>⏻ Logout</div>
-        </div>
-      </div>
-    );
-  };
 
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.s,fontSize:18,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>Authenticating…</div>;
