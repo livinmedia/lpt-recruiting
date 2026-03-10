@@ -233,7 +233,7 @@ export default function ContentTab({ userId, userProfile }) {
 
                         {/* Copy button */}
                         <div style={{ marginTop: "auto" }}>
-                          <CopyButton text={personalizeLinks(content + (hashtags ? '\n\n' + hashtags : '') + (item.image_url ? '\n\n📸 Image: ' + item.image_url : ''))} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, width: "100%", textAlign: "center" }} />
+                          <CopyButton text={personalizeLinks(content + (hashtags ? '\n\n' + hashtags : ''))} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, width: "100%", textAlign: "center" }} />
                         </div>
                       </div>
                     </div>
