@@ -1274,7 +1274,7 @@ select option{background:${T.card};color:${T.t}}
         {view!=="lead"&&view!=="addlead"&&<div className="page-header" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div className="hamburger-btn" onClick={()=>setSidebarOpen(v=>!v)} style={{display:"none",width:44,height:44,borderRadius:8,alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",background:T.card,border:`1px solid ${T.b}`,color:T.t,flexShrink:0}}>☰</div>
-            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Today's Content":view==="calculator"?"Commission Calculator":view==="revenue"?"Revenue Share":view==="admin"?"Admin":view==="beta"?"Beta Hub":view==="community"?"Community":view==="profile"?"My Profile":"rkrt.in"}</h1>
+            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Content Hub":view==="calculator"?"Commission Calculator":view==="revenue"?"Revenue Share":view==="admin"?"Admin":view==="beta"?"Beta Hub":view==="community"?"Community":view==="profile"?"My Profile":"rkrt.in"}</h1>
           </div>
           {/* Brokerage chip in header */}
           {profile?.brokerage&&view==="home"&&(
