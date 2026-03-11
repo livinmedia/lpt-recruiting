@@ -21,11 +21,19 @@ export default function ContentTab({ userId, userProfile }) {
   const [contentTab, setContentTab] = useState("links");
   const [dailyContent, setDailyContent] = useState([]);
   const [blogPosts, setBlogPosts] = useState([]);
+  const [teamPosts, setTeamPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedBrokerage, setSelectedBrokerage] = useState(userProfile?.brokerage || "LPT Realty");
+  const [showWritePost, setShowWritePost] = useState(false);
+  const [newPost, setNewPost] = useState({ title: "", excerpt: "", content: "" });
+  const [postSaving, setPostSaving] = useState(false);
+  const isTeamLeader = userProfile?.plan === "team_leader" && userProfile?.team_id;
+
+  const [teamSlug, setTeamSlug] = useState("");
 
   useEffect(() => {
     loadContent();
+    if (isTeamLeader) loadTeamPosts();
   }, []);
 
   const loadContent = async () => {
@@ -43,6 +51,35 @@ export default function ContentTab({ userId, userProfile }) {
     setDailyContent(dailyData);
     setBlogPosts(blogRes.data || []);
     setLoading(false);
+  };
+
+  const loadTeamPosts = async () => {
+    if (!userProfile?.team_id) return;
+    const { data: team } = await supabase.from('teams').select('slug').eq('id', userProfile.team_id).single();
+    if (team?.slug) setTeamSlug(team.slug);
+    const { data } = await supabase.from('team_posts').select('*').eq('team_id', userProfile.team_id).order('created_at', { ascending: false });
+    setTeamPosts(data || []);
+  };
+
+  const publishTeamPost = async (status) => {
+    if (!newPost.title.trim() || !userProfile?.team_id) return;
+    setPostSaving(true);
+    const slug = newPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) + '-' + crypto.randomUUID().split('-')[0];
+    await supabase.from('team_posts').insert({
+      team_id: userProfile.team_id,
+      author_id: userId,
+      title: newPost.title,
+      slug,
+      excerpt: newPost.excerpt,
+      content: newPost.content,
+      status,
+      ...(status === 'published' ? { published_at: new Date().toISOString() } : {}),
+      content_source: 'manual',
+    });
+    setNewPost({ title: "", excerpt: "", content: "" });
+    setShowWritePost(false);
+    setPostSaving(false);
+    loadTeamPosts();
   };
 
   const buildContent = (item) => {
@@ -94,7 +131,7 @@ export default function ContentTab({ userId, userProfile }) {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-        {[["links", "🔗 Recruiting Links"], ["daily", "📅 Daily Content"], ["blog", "📝 Blog Posts"]].map(([id, label]) => (
+        {[["links", "🔗 Recruiting Links"], ["daily", "📅 Daily Content"], ["blog", "📝 Blog Posts"], ...(isTeamLeader ? [["team_blog", "👥 Team Blog"]] : [])].map(([id, label]) => (
           <div
             key={id}
             onClick={() => setContentTab(id)}
@@ -343,7 +380,7 @@ export default function ContentTab({ userId, userProfile }) {
                     <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{post.title}</div>
                     <div style={{ fontSize: 13, color: T.s, marginTop: 4 }}>{post.brokerage} • {new Date(post.created_at).toLocaleDateString()}</div>
                   </div>
-                  <a href={`https://rkrt.in/blog/${post.brokerage?.toLowerCase().replace(/[^a-z0-9]/g, '-')}/${post.slug}${refParam}`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                  <a href={`https://rkrt.in/blog/${post.brokerage?.toLowerCase().replace(/[^a-z0-9]/g, '-')}/${post.slug}?ref=${userId || ''}`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
                     View →
                   </a>
                 </div>
@@ -353,6 +390,77 @@ export default function ContentTab({ userId, userProfile }) {
             <div style={{ textAlign: "center", padding: "60px 20px", color: T.m }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>📝</div>
               <div>No published blog posts yet.</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Team Blog Tab */}
+      {contentTab === "team_blog" && isTeamLeader && (
+        <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "28px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>👥 Team Blog</div>
+              {teamSlug && <div style={{ fontSize: 13, color: T.s, marginTop: 4 }}>Published at <a href={`https://rkrt.in/${teamSlug}`} target="_blank" rel="noopener noreferrer" style={{ color: T.bl, textDecoration: "none", fontFamily: "monospace" }}>rkrt.in/{teamSlug}</a></div>}
+            </div>
+            <div onClick={() => setShowWritePost(true)} style={{ padding: "10px 20px", borderRadius: 8, background: T.a, color: "#000", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Write Post</div>
+          </div>
+
+          {teamPosts.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {teamPosts.map((post, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 20px", background: T.d, borderRadius: 10, border: `1px solid ${T.b}` }}>
+                  {post.image_url && <img src={post.image_url} alt="" style={{ width: 80, height: 56, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{post.title}</div>
+                    {post.excerpt && <div style={{ fontSize: 13, color: T.s, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{post.excerpt}</div>}
+                    <div style={{ fontSize: 12, color: T.m, marginTop: 4 }}>{new Date(post.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                    <span style={{ padding: "4px 10px", borderRadius: 6, background: post.status === "published" ? T.a + "18" : T.y + "18", color: post.status === "published" ? T.a : T.y, fontSize: 11, fontWeight: 700, textTransform: "capitalize" }}>{post.status}</span>
+                    {post.status === "published" && teamSlug && (
+                      <a href={`https://rkrt.in/${teamSlug}/${post.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>View →</a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "60px 20px", color: T.m }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>📝</div>
+              <div>No team posts yet. Write your first post!</div>
+            </div>
+          )}
+
+          {/* Write Post Modal */}
+          {showWritePost && (
+            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+              <div style={{ width: "100%", maxWidth: 640, maxHeight: "85vh", background: T.card, border: `1px solid ${T.b}`, borderRadius: 16, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.b}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>Write Post</div>
+                  <div onClick={() => { setShowWritePost(false); setNewPost({ title: "", excerpt: "", content: "" }); }} style={{ cursor: "pointer", color: T.m, fontSize: 18 }}>✕</div>
+                </div>
+                <div style={{ padding: 24, overflow: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 6 }}>TITLE *</div>
+                    <input value={newPost.title} onChange={e => setNewPost(p => ({ ...p, title: e.target.value }))} placeholder="Post title" style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${newPost.title.trim() ? T.a + "30" : T.b}`, color: T.t, fontSize: 15, fontWeight: 600, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 6 }}>EXCERPT</div>
+                    <textarea value={newPost.excerpt} onChange={e => setNewPost(p => ({ ...p, excerpt: e.target.value }))} rows={2} placeholder="Brief summary for previews..." style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box" }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 6 }}>CONTENT (Markdown)</div>
+                    <textarea value={newPost.content} onChange={e => setNewPost(p => ({ ...p, content: e.target.value }))} rows={12} placeholder="Write your post content here..." style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "'SF Mono', monospace", resize: "vertical", outline: "none", boxSizing: "border-box", lineHeight: 1.6 }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                    <div onClick={() => !postSaving && publishTeamPost("draft")} style={{ padding: "12px 24px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 14, fontWeight: 700, cursor: postSaving ? "default" : "pointer" }}>Save Draft</div>
+                    <div onClick={() => !postSaving && newPost.title.trim() && publishTeamPost("published")} style={{ padding: "12px 24px", borderRadius: 8, background: newPost.title.trim() && !postSaving ? T.a : "#333", color: newPost.title.trim() && !postSaving ? "#000" : T.m, fontSize: 14, fontWeight: 700, cursor: newPost.title.trim() && !postSaving ? "pointer" : "default" }}>
+                      {postSaving ? "Publishing..." : "Publish"}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

@@ -625,6 +625,116 @@ export default function App(){
     if(!error){setNewContent({title:"",body:"",type:"announcement"});loadAdmin();}
   };
 
+  const TeamView=({userId:uid,profile:prof})=>{
+    const [teamData,setTeamData]=useState(null);
+    const [teamLoading,setTeamLoading]=useState(true);
+    const [teamDesc,setTeamDesc]=useState("");
+    const [teamValueProp,setTeamValueProp]=useState("");
+    const [teamGrowthGoal,setTeamGrowthGoal]=useState("");
+    const [contentPrefs,setContentPrefs]=useState({success_stories:false,culture:false,training:false,commission_info:false,recruiting_tips:false});
+    const [teamSaving,setTeamSaving]=useState(false);
+    const [teamSaved,setTeamSaved]=useState(false);
+    useEffect(()=>{
+      if(!prof?.team_id) return;
+      (async()=>{
+        setTeamLoading(true);
+        const {data}=await supabase.from('teams').select('*, team_members(*, profiles(full_name, email))').eq('id',prof.team_id).single();
+        if(data){
+          setTeamData(data);
+          setTeamDesc(data.description||"");
+          setTeamValueProp(data.team_info?.value_prop||"");
+          setTeamGrowthGoal(data.team_info?.growth_goal||"");
+          if(data.team_info?.content_preferences){
+            setContentPrefs(prev=>({...prev,...data.team_info.content_preferences}));
+          }
+        }
+        setTeamLoading(false);
+      })();
+    },[prof?.team_id]);
+    const saveTeamInfo=async()=>{
+      if(!teamData) return;
+      setTeamSaving(true);
+      await supabase.from('teams').update({description:teamDesc,team_info:{...teamData.team_info,value_prop:teamValueProp,content_preferences:contentPrefs,growth_goal:teamGrowthGoal}}).eq('id',teamData.id);
+      setTeamSaving(false);setTeamSaved(true);setTimeout(()=>setTeamSaved(false),3000);
+    };
+    if(teamLoading) return <div style={{textAlign:"center",padding:60,color:T.m}}>Loading team...</div>;
+    if(!teamData) return <div style={{textAlign:"center",padding:60,color:T.m}}>No team found. Contact support to set up your team.</div>;
+    const members=teamData.team_members||[];
+    return (
+      <div style={{maxWidth:800,margin:"0 auto"}}>
+        {/* Team Header */}
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:24,marginBottom:20}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div>
+              <div style={{fontSize:22,fontWeight:800,color:T.t}}>{teamData.name}</div>
+              <div style={{fontSize:13,color:T.s,marginTop:4}}>{teamData.brokerage||""} {teamData.market?"· "+teamData.market:""}</div>
+            </div>
+            <div style={{padding:"6px 14px",borderRadius:8,background:T.a+"15",color:T.a,fontSize:13,fontWeight:700}}>{members.length}/5 seats</div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:T.d,borderRadius:8}}>
+            <span style={{fontSize:13,color:T.s}}>Team Blog:</span>
+            <a href={`https://rkrt.in/${teamData.slug}`} target="_blank" rel="noopener noreferrer" style={{fontSize:13,color:T.bl,fontWeight:600,textDecoration:"none",fontFamily:"monospace"}}>rkrt.in/{teamData.slug}</a>
+            <CopyButton text={`https://rkrt.in/${teamData.slug}`} label="Copy"/>
+          </div>
+        </div>
+
+        {/* Team Info */}
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:24,marginBottom:20}}>
+          <div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:16}}>Team Info</div>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div>
+              <div style={{fontSize:12,color:T.m,letterSpacing:1.2,fontWeight:700,marginBottom:6}}>DESCRIPTION</div>
+              <textarea value={teamDesc} onChange={e=>setTeamDesc(e.target.value)} rows={3} placeholder="Describe your team..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,fontFamily:"inherit",resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:12,color:T.m,letterSpacing:1.2,fontWeight:700,marginBottom:6}}>WHAT MAKES YOUR TEAM SPECIAL</div>
+              <textarea value={teamValueProp} onChange={e=>setTeamValueProp(e.target.value)} rows={3} placeholder="Your team's value proposition..." style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,fontFamily:"inherit",resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:12,color:T.m,letterSpacing:1.2,fontWeight:700,marginBottom:6}}>CONTENT PREFERENCES</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {[["success_stories","Success Stories"],["culture","Team Culture"],["training","Training"],["commission_info","Commission Info"],["recruiting_tips","Recruiting Tips"]].map(([k,label])=>(
+                  <div key={k} onClick={()=>setContentPrefs(p=>({...p,[k]:!p[k]}))} style={{padding:"8px 14px",borderRadius:8,background:contentPrefs[k]?T.a+"18":T.d,border:`1px solid ${contentPrefs[k]?T.a+"40":T.b}`,color:contentPrefs[k]?T.a:T.m,fontSize:13,fontWeight:600,cursor:"pointer"}}>{label}</div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div style={{fontSize:12,color:T.m,letterSpacing:1.2,fontWeight:700,marginBottom:6}}>GROWTH GOAL</div>
+              <input value={teamGrowthGoal} onChange={e=>setTeamGrowthGoal(e.target.value)} placeholder="e.g., Recruit 10 agents this quarter" style={{width:"100%",padding:"12px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div onClick={saveTeamInfo} style={{padding:"12px 24px",borderRadius:8,background:teamSaving?T.m:T.a,color:"#000",fontSize:14,fontWeight:700,cursor:teamSaving?"default":"pointer"}}>{teamSaving?"Saving...":"Save Team Info"}</div>
+              {teamSaved&&<span style={{fontSize:13,color:T.a,fontWeight:600}}>Saved!</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Members */}
+        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:24}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontSize:16,fontWeight:700,color:T.t}}>Members</div>
+            <div style={{padding:"8px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.m,fontSize:13,fontWeight:600,cursor:"not-allowed",opacity:0.5}}>Invite Member</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {members.map((m,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:T.d,borderRadius:8}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:600,color:T.t}}>{m.profiles?.full_name||"Unknown"}</div>
+                  <div style={{fontSize:12,color:T.s}}>{m.profiles?.email||""}</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <span style={{padding:"4px 10px",borderRadius:6,background:m.role==="leader"?T.a+"18":T.d,color:m.role==="leader"?T.a:T.m,fontSize:11,fontWeight:700,textTransform:"capitalize"}}>{m.role||"member"}</span>
+                  <span style={{fontSize:11,color:T.m}}>{m.joined_at?new Date(m.joined_at).toLocaleDateString():""}</span>
+                </div>
+              </div>
+            ))}
+            {members.length===0&&<div style={{textAlign:"center",padding:20,color:T.m,fontSize:13}}>No members yet</div>}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const AdminView=()=>(
     <>
       <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
@@ -1319,7 +1429,7 @@ select option{background:${T.card};color:${T.t}}
       <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflow:"hidden"}}>
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:14,width:"100%",overflow:"auto"}}>
           <div style={{width:44,height:44,borderRadius:9,marginBottom:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,letterSpacing:"-0.5px",lineHeight:1,flexShrink:0}}><span style={{color:"#fff"}}>rkrt</span><span style={{color:"#000"}}>.in</span></div>
-          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["community","👥"],["calculator","🧮"],["revenue","💰"]].map(([id,ic])=>
+          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["community","💬"],["calculator","🧮"],["revenue","💰"],...(profile?.plan==="team_leader"?[["team","👥"]]:[])].map(([id,ic])=>
             <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s",flexShrink:0}}>{ic}</div>
           )}
           {isBeta&&<div onClick={()=>{setViewWithHistory("beta");setSidebarOpen(false);setProfileMenuOpen(false);}} title="Beta Hub" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:view==="beta"?T.am:"transparent",color:view==="beta"?T.a:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>🧪</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Beta</span></div>}
@@ -1332,7 +1442,7 @@ select option{background:${T.card};color:${T.t}}
         {view!=="lead"&&view!=="addlead"&&<div className="page-header" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div className="hamburger-btn" onClick={()=>setSidebarOpen(v=>!v)} style={{display:"none",width:44,height:44,borderRadius:8,alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",background:T.card,border:`1px solid ${T.b}`,color:T.t,flexShrink:0}}>☰</div>
-            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Content Hub":view==="calculator"?"Commission Calculator":view==="revenue"?"Revenue Share":view==="admin"?"Admin":view==="beta"?"Beta Hub":view==="community"?"Community":view==="profile"?"My Profile":"rkrt.in"}</h1>
+            <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Content Hub":view==="calculator"?"Commission Calculator":view==="revenue"?"Revenue Share":view==="team"?"Team":view==="admin"?"Admin":view==="beta"?"Beta Hub":view==="community"?"Community":view==="profile"?"My Profile":"rkrt.in"}</h1>
           </div>
           {/* Brokerage chip in header */}
           {profile?.brokerage&&view==="home"&&(
@@ -1370,6 +1480,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="calculator"&&<ProGate feature="Commission Calculator" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Calculator coming soon</div></ProGate>}
         {view==="revenue"&&<ProGate feature="Revenue Share Projections" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Revenue share projections coming soon</div></ProGate>}
         {view==="community"&&<RKRTCommunity userId={authUser?.id} profile={profile} supabase={supabase}/>}
+        {view==="team"&&profile?.plan==="team_leader"&&<TeamView userId={authUser?.id} profile={profile}/>}
         {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
         {view==="beta"&&isBeta&&<BetaHubView/>}
         {view==="profile"&&<ProfileView/>}
