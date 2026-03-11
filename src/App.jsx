@@ -142,10 +142,14 @@ export default function App(){
         const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
         setProfile(prof||null);
         // Check if onboarding needed
+        // Check intake status — rue_intake (new) takes priority over beta_intake (legacy)
         if(prof && prof.is_beta_tester) {
-          const {data:intake} = await supabase.from('beta_intake').select('completed').eq('user_id',prof.id).single();
-          if(!intake || !intake.completed) {
-            setShowBetaIntake(true);
+          const {data:rueCheck} = await supabase.from('rue_intake').select('completed').eq('user_id',prof.id).single();
+          if(!rueCheck || !rueCheck.completed) {
+            const {data:intake} = await supabase.from('beta_intake').select('completed').eq('user_id',prof.id).single();
+            if(!intake || !intake.completed) {
+              setShowBetaIntake(true);
+            }
           }
         } else if(prof && !prof.onboarded) {
           setShowOnboarding(true);
@@ -153,7 +157,7 @@ export default function App(){
         // Check Rue intake
         if(prof && prof.onboarded && !sessionStorage.getItem('rue_intake_skipped')){
           const {data:rueIntake}=await supabase.from('rue_intake').select('completed').eq('user_id',prof.id).single();
-          if(!rueIntake || !rueIntake.completed) setShowRueIntake(true);
+          if(rueIntake && rueIntake.completed) { /* already done */ } else if(!rueIntake) { setShowRueIntake(true); }
         }
         const initialView = window.location.hash.replace("#","");
         if (initialView && initialView !== "home") setView(initialView);
@@ -1332,7 +1336,7 @@ export default function App(){
       {showRueIntake&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.8)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}}>
         <div style={{width:"100%",maxWidth:520,maxHeight:"80vh",background:T.card,border:`1px solid ${T.b}`,borderRadius:20,display:"flex",flexDirection:"column",boxShadow:"0 16px 60px rgba(0,0,0,0.7)",overflow:"hidden"}}>
           <div style={{padding:"20px 24px",borderBottom:`1px solid ${T.b}`,flexShrink:0}}>
-            <div style={{fontSize:22,fontWeight:800,color:T.t}}>Meet Rue</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:22,fontWeight:800,color:T.t}}>Meet Rue</div><span onClick={()=>{sessionStorage.setItem('rue_intake_skipped','1');setShowRueIntake(false);}} style={{fontSize:20,color:T.m,cursor:"pointer",padding:"4px 8px",borderRadius:6,lineHeight:1}}>✕</span></div>
             <div style={{fontSize:13,color:T.s,marginTop:2}}>Your AI recruiting coach</div>
           </div>
           <div ref={el=>{rueIntakeScrollRef.current=el;}} style={{flex:1,overflow:"auto",padding:"20px 24px",display:"flex",flexDirection:"column",gap:12}}>
