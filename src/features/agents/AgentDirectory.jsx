@@ -44,7 +44,6 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
     logActivity(userId, 'search_agents', { filters, results: result.total });
   }, [filters, page, userId]);
 
-  // Auto-search on mount
   useEffect(() => {
     if (didInit.current) return;
     didInit.current = true;
@@ -102,12 +101,12 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
     }
   };
 
-  const inp = { padding: "12px 16px", borderRadius: 8, background: T.card, border: `1px solid ${T.b}`, color: T.t, fontSize: 15, outline: "none", fontFamily: "inherit" };
+  const inp = { padding: "12px 16px", borderRadius: 8, background: T.card, border: `1px solid ${T.b}`, color: T.t, fontSize: 15, outline: "none", fontFamily: "inherit", width: "100%" };
 
   return (
     <div>
       {/* Stats Bar */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         {[["TOTAL AGENTS", TOTAL_AGENTS, T.a], ["FLORIDA", STATE_DATA.FL, T.bl], ["TEXAS", STATE_DATA.TX, "#FBBF24"], ["NEW YORK", STATE_DATA.NY, T.p], ["CONNECTICUT", STATE_DATA.CT, T.s]].map(([label, val, color]) => (
           <div key={label} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 18px", flex: 1, minWidth: 120 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color }}>{val.toLocaleString()}</div>
@@ -116,26 +115,26 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
         ))}
       </div>
 
-      {/* Filters */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "flex-end" }}>
+      {/* Full-width Filter Bar */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr 1.5fr 1fr 1fr auto", gap: 12, marginBottom: 20, alignItems: "end", background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "16px 20px" }}>
         <div>
           <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 6 }}>STATE</div>
-          <select value={filters.state} onChange={e => setFilters(f => ({ ...f, state: e.target.value }))} style={{ ...inp, minWidth: 100 }}>
+          <select value={filters.state} onChange={e => setFilters(f => ({ ...f, state: e.target.value }))} style={inp}>
             <option value="">All States</option>
             {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
           <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 6 }}>BROKERAGE</div>
-          <input value={filters.brokerage} onChange={e => setFilters(f => ({ ...f, brokerage: e.target.value }))} placeholder="e.g. Keller Williams" style={{ ...inp, width: 180 }} />
+          <input value={filters.brokerage} onChange={e => setFilters(f => ({ ...f, brokerage: e.target.value }))} placeholder="e.g. Keller Williams" style={inp} onKeyDown={e => e.key === 'Enter' && search(true)} />
         </div>
         <div>
           <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 6 }}>NAME</div>
-          <input value={filters.name} onChange={e => setFilters(f => ({ ...f, name: e.target.value }))} placeholder="Agent name" style={{ ...inp, width: 160 }} />
+          <input value={filters.name} onChange={e => setFilters(f => ({ ...f, name: e.target.value }))} placeholder="Agent name" style={inp} onKeyDown={e => e.key === 'Enter' && search(true)} />
         </div>
         <div>
           <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 6 }}>CITY</div>
-          <input value={filters.city} onChange={e => setFilters(f => ({ ...f, city: e.target.value }))} placeholder="City" style={{ ...inp, width: 140 }} />
+          <input value={filters.city} onChange={e => setFilters(f => ({ ...f, city: e.target.value }))} placeholder="City" style={inp} onKeyDown={e => e.key === 'Enter' && search(true)} />
         </div>
         <div>
           <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 6 }}>NEW AGENTS</div>
@@ -147,7 +146,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
             <option value="365">Last year</option>
           </select>
         </div>
-        <div onClick={() => search(true)} style={{ padding: "12px 24px", borderRadius: 8, background: T.a, color: "#000", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+        <div onClick={() => search(true)} style={{ padding: "12px 28px", borderRadius: 8, background: T.a, color: "#000", fontSize: 15, fontWeight: 700, cursor: "pointer", textAlign: "center", whiteSpace: "nowrap", height: 46, display: "flex", alignItems: "center", justifyContent: "center" }}>
           🔍 Search
         </div>
       </div>
@@ -228,7 +227,6 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
               {selectedAgent.email && <div><div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>EMAIL</div><div style={{ fontSize: 15, color: T.bl }}>{selectedAgent.email}</div></div>}
             </div>
 
-            {/* Enriched Data */}
             {enrichedData && (
               <div style={{ background: T.d, borderRadius: 10, padding: "16px 20px", marginBottom: 20 }}>
                 <div style={{ fontSize: 13, color: T.a, fontWeight: 700, marginBottom: 12 }}>🔍 ENRICHED DATA</div>
