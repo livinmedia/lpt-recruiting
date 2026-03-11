@@ -139,9 +139,7 @@ export default function App(){
       try {
         if(!session){setAuthLoading(false);return;}
         setAuthUser(prev => (!prev || prev.id !== session.user.id) ? session.user : prev);
-        logActivity(session.user.id,'login');
         const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
-        console.log('PROFILE LOADED:', prof?.role, prof?.plan, prof?.email, prof?.id);
         setProfile(prof||null);
         // Check if onboarding needed
         if(prof && prof.is_beta_tester) {
@@ -503,7 +501,6 @@ export default function App(){
   const cpl=total>0?(20/total).toFixed(2):"—";
   const limits=getPlanLimits(effectiveProfile);
   const isPro=limits.isPro;
-  console.log('PLAN_DEBUG:', 'profile:', profile?.role, profile?.plan, '| effective:', effectiveProfile?.role, effectiveProfile?.plan, '| isPro:', isPro, '| impersonating:', impersonating, '| profileIsNull:', profile===null);
   const pScore=Math.min(100,Math.round((total>0?25:0)+(targets>0?25:0)+(leads.some(l=>l.pipeline_stage==="outreach_sent")?25:0)+(leads.some(l=>l.pipeline_stage==="meeting_booked")?25:0)));
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
@@ -1308,6 +1305,9 @@ export default function App(){
 
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.s,fontSize:18,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>Authenticating…</div>;
+  if(!authUser){window.location.href="/login";return null;}
+  if(!authUser){window.location.href="/login";return null;}
+  if(!authUser){window.location.href="/login";return null;}
 
   // Show beta intake for beta testers
   if(showBetaIntake && authUser) {
