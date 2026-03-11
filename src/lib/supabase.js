@@ -90,6 +90,8 @@ export async function agentSearch({
     params.push(`order=original_license_date.desc`);
   } else {
     params.push(`order=full_name.asc`);
+  params.push(`full_name=not.eq.`);
+  params.push(`full_name=not.eq.`);
   }
 
   params.push(`limit=${limit}`);

@@ -7,6 +7,8 @@ import { supabase, agentSearch, logActivity } from '../../lib/supabase';
 import { ago, truncate } from '../../lib/utils';
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
+const STATE_DATA = { FL: 939832, TX: 189036, NY: 143738, CT: 19568 };
+const TOTAL_AGENTS = 1292174;
 
 export default function AgentDirectory({ userId, userProfile, onAddLead }) {
   const [agents, setAgents] = useState([]);
@@ -17,7 +19,6 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [enriching, setEnriching] = useState(false);
   const [enrichedData, setEnrichedData] = useState(null);
-  const [stats, setStats] = useState({ total: 0, states: 0, fl: 0, tx: 0, ny: 0, ct: 0 });
   const didInit = useRef(false);
 
   const LIMIT = 50;
@@ -43,32 +44,21 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
     logActivity(userId, 'search_agents', { filters, results: result.total });
   }, [filters, page, userId]);
 
-  // Load stats on mount
-  useEffect(() => {
-    async function loadStats() {
-      const { count } = await supabase.from("agent_directory").select("*", { count: "exact", head: true });
-      const { data: stateCounts } = await supabase.rpc('get_agent_state_counts').catch(() => ({ data: null }));
-      if (stateCounts) {
-        const lookup = {};
-        stateCounts.forEach(r => { lookup[r.state] = r.count; });
-        setStats({ total: count || 0, states: Object.keys(lookup).length, fl: lookup.FL || 0, tx: lookup.TX || 0, ny: lookup.NY || 0, ct: lookup.CT || 0 });
-      } else {
-        setStats(s => ({ ...s, total: count || 0 }));
-      }
-    }
-    loadStats();
-  }, []);
-
-  // Auto-search on mount after profile loads
+  // Auto-search on mount
   useEffect(() => {
     if (didInit.current) return;
+    didInit.current = true;
     if (userProfile?.license_state) {
       setFilters(f => ({ ...f, state: userProfile.license_state }));
     }
-    didInit.current = true;
-    // Small delay to let filters settle, then search
     setTimeout(() => search(true), 100);
   }, [userProfile]);
+
+  const agentName = (a) => {
+    if (a.full_name && a.full_name.trim()) return a.full_name;
+    if (a.first_name || a.last_name) return `${a.first_name || ''} ${a.last_name || ''}`.trim();
+    return '—';
+  };
 
   const enrichAgent = async (agent) => {
     setEnriching(true);
@@ -77,7 +67,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
       const res = await fetch(`https://usknntguurefeyzusbdh.supabase.co/functions/v1/enrich-agent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: agent.full_name, brokerage: agent.brokerage_name, city: agent.city, state: agent.state }),
+        body: JSON.stringify({ name: agentName(agent), brokerage: agent.brokerage_name, city: agent.city, state: agent.state }),
       });
       const data = await res.json();
       setEnrichedData(data);
@@ -91,10 +81,10 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
   const addToLeads = async (agent) => {
     const leadData = {
       user_id: userId,
-      first_name: agent.first_name || agent.full_name?.split(' ')[0] || '',
-      last_name: agent.last_name || agent.full_name?.split(' ').slice(1).join(' ') || '',
-      email: agent.personal_email || agent.work_email || '',
-      phone: agent.mobile_phone || '',
+      first_name: agent.first_name || agentName(agent).split(' ')[0] || '',
+      last_name: agent.last_name || agentName(agent).split(' ').slice(1).join(' ') || '',
+      email: agent.email || '',
+      phone: agent.phone || '',
       market: agent.city ? `${agent.city}, ${agent.state}` : agent.state,
       brokerage: agent.brokerage_name,
       license_number: agent.license_number,
@@ -114,22 +104,16 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
 
   const inp = { padding: "12px 16px", borderRadius: 8, background: T.card, border: `1px solid ${T.b}`, color: T.t, fontSize: 15, outline: "none", fontFamily: "inherit" };
 
-  const statBox = (label, value, color) => (
-    <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 18px", flex: 1, minWidth: 120 }}>
-      <div style={{ fontSize: 22, fontWeight: 800, color: color || T.t }}>{typeof value === 'number' ? value.toLocaleString() : value}</div>
-      <div style={{ fontSize: 11, color: T.m, letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>{label}</div>
-    </div>
-  );
-
   return (
     <div>
       {/* Stats Bar */}
       <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
-        {statBox("TOTAL AGENTS", stats.total, T.a)}
-        {statBox("FLORIDA", stats.fl, T.bl)}
-        {statBox("TEXAS", stats.tx, "#FBBF24")}
-        {statBox("NEW YORK", stats.ny, T.p)}
-        {statBox("CONNECTICUT", stats.ct, T.s)}
+        {[["TOTAL AGENTS", TOTAL_AGENTS, T.a], ["FLORIDA", STATE_DATA.FL, T.bl], ["TEXAS", STATE_DATA.TX, "#FBBF24"], ["NEW YORK", STATE_DATA.NY, T.p], ["CONNECTICUT", STATE_DATA.CT, T.s]].map(([label, val, color]) => (
+          <div key={label} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 18px", flex: 1, minWidth: 120 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color }}>{val.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: T.m, letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>{label}</div>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -187,7 +171,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
             <tbody>
               {agents.length > 0 ? agents.map((a, i) => (
                 <tr key={i} style={{ borderBottom: `1px solid ${T.b}` }} onMouseOver={e => e.currentTarget.style.background = T.d} onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-                  <td style={{ padding: "14px 16px", fontSize: 15, fontWeight: 600, color: T.t }}>{truncate(a.full_name, 28)}</td>
+                  <td style={{ padding: "14px 16px", fontSize: 15, fontWeight: 600, color: T.t }}>{truncate(agentName(a), 28)}</td>
                   <td style={{ padding: "14px 16px", fontSize: 14, color: T.s }}>{truncate(a.brokerage_name, 24) || "—"}</td>
                   <td style={{ padding: "14px 16px", fontSize: 14, color: T.s }}>{a.city || "—"}</td>
                   <td style={{ padding: "14px 16px", fontSize: 14, color: T.t, fontWeight: 600 }}>{a.state}</td>
@@ -227,8 +211,8 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
           <div style={{ background: T.card, borderRadius: 16, padding: "32px", maxWidth: 600, width: "100%", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: T.t }}>{selectedAgent.full_name}</div>
-                <div style={{ fontSize: 14, color: T.s, marginTop: 4 }}>{selectedAgent.brokerage_name}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: T.t }}>{agentName(selectedAgent)}</div>
+                <div style={{ fontSize: 14, color: T.s, marginTop: 4 }}>{selectedAgent.brokerage_name || '—'}</div>
               </div>
               <div onClick={() => { setSelectedAgent(null); setEnrichedData(null); }} style={{ fontSize: 20, color: T.m, cursor: "pointer" }}>✕</div>
             </div>
@@ -240,6 +224,8 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
               <div><div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>STATUS</div><div style={{ fontSize: 15, color: selectedAgent.license_status === "Active" ? T.a : T.r }}>{selectedAgent.license_status}</div></div>
               <div><div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>LICENSE TYPE</div><div style={{ fontSize: 15, color: T.t }}>{selectedAgent.license_type || "—"}</div></div>
               <div><div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>LICENSED SINCE</div><div style={{ fontSize: 15, color: T.t }}>{selectedAgent.original_license_date || "—"}</div></div>
+              {selectedAgent.phone && <div><div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>PHONE</div><div style={{ fontSize: 15, color: T.t }}>{selectedAgent.phone}</div></div>}
+              {selectedAgent.email && <div><div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>EMAIL</div><div style={{ fontSize: 15, color: T.bl }}>{selectedAgent.email}</div></div>}
             </div>
 
             {/* Enriched Data */}
