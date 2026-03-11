@@ -543,6 +543,8 @@ export default function App(){
   // ━━━ ADMIN ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const [adminStats,setAdminStats]=useState({users:0,leads:0,contentToday:0,agents:0});
   const [adminUsers,setAdminUsers]=useState([]);
+  const [impersonateModal,setImpersonateModal]=useState(null);
+  const [impersonateLoading,setImpersonateLoading]=useState(false);
   const [adminActivity,setAdminActivity]=useState([]);
   const [adminContent,setAdminContent]=useState([]);
   const [newContent,setNewContent]=useState({title:"",body:"",type:"announcement"});
@@ -789,7 +791,7 @@ export default function App(){
         <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>👥 Users ({adminUsers.length})</div>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
-            <thead><tr>{["Name","Email","Brokerage","Role","Plan","Leads","Recruited","Meetings","Joined","Onboarded"].map(h=>
+            <thead><tr>{["Name","Email","Brokerage","Role","Plan","Leads","Recruited","Meetings","Joined","Onboarded",""].map(h=>
               <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
             )}</tr></thead>
             <tbody>{adminUsers.length>0?adminUsers.map((u,i)=>
@@ -804,8 +806,9 @@ export default function App(){
                 <td style={{padding:"13px 14px",fontSize:13,fontWeight:700,color:adminUserLeadStats[u.id]?.meeting>0?T.p:T.m}}>{adminUserLeadStats[u.id]?.meeting||0}</td>
                 <td style={{padding:"13px 14px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</td>
                 <td style={{padding:"13px 14px"}}><span style={{fontSize:12,fontWeight:700,color:u.onboarded?T.a:T.y}}>{u.onboarded?"✓ Yes":"— No"}</span></td>
+                <td style={{padding:"13px 14px"}}>{u.role!=="owner"&&<span onClick={async()=>{setImpersonateLoading(true);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();setImpersonateModal({name:u.full_name||u.email,email:u.email,plan:u.plan||'free',login_url:data.login_url});}catch(e){console.error('Impersonate error:',e);}setImpersonateLoading(false);}} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${T.bl}30`,background:"transparent",color:T.bl,fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{impersonateLoading?"...":"👁 Log In As"}</span>}</td>
               </tr>
-            ):<tr><td colSpan={10} style={{textAlign:"center",padding:"40px",color:T.m,fontSize:15}}>No users found</td></tr>}</tbody>
+            ):<tr><td colSpan={11} style={{textAlign:"center",padding:"40px",color:T.m,fontSize:15}}>No users found</td></tr>}</tbody>
           </table>
         </div>
       </div>
@@ -1317,6 +1320,28 @@ export default function App(){
     <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex",position:"relative"}}>
       {showUpgradeSuccess&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:T.a,color:"#000",padding:"14px 32px",borderRadius:10,fontSize:15,fontWeight:800,boxShadow:"0 4px 24px rgba(0,229,160,0.4)",display:"flex",alignItems:"center",gap:10}}>🎉 Welcome to RKRT.in Pro! All features unlocked.</div>}
       {rueIntakeToast&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:T.a,color:"#000",padding:"14px 32px",borderRadius:10,fontSize:15,fontWeight:800,boxShadow:"0 4px 24px rgba(0,229,160,0.4)",display:"flex",alignItems:"center",gap:10}}>🤖 Rue is ready to coach you!</div>}
+      {impersonateModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.8)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}} onClick={()=>setImpersonateModal(null)}>
+        <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:28,boxShadow:"0 16px 60px rgba(0,0,0,0.7)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <div style={{fontSize:18,fontWeight:700,color:T.t}}>👁 Log In As User</div>
+            <div onClick={()=>setImpersonateModal(null)} style={{cursor:"pointer",color:T.m,fontSize:18}}>✕</div>
+          </div>
+          <div style={{padding:"16px 18px",background:T.d,borderRadius:10,marginBottom:16}}>
+            <div style={{fontSize:16,fontWeight:600,color:T.t}}>{impersonateModal.name}</div>
+            <div style={{fontSize:13,color:T.s,marginTop:4}}>{impersonateModal.email}</div>
+            <div style={{fontSize:12,color:T.m,marginTop:4}}>Plan: <span style={{color:T.a,fontWeight:600}}>{impersonateModal.plan}</span></div>
+          </div>
+          {impersonateModal.login_url?(
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <div onClick={()=>{navigator.clipboard.writeText(impersonateModal.login_url);}} style={{padding:"14px 20px",borderRadius:10,background:T.bl,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",textAlign:"center"}}>Copy Login URL (Incognito)</div>
+              <div style={{fontSize:12,color:T.m,textAlign:"center",lineHeight:1.5}}>Open this URL in an incognito/private window.<br/>Your current session won't be affected.</div>
+              <div onClick={()=>window.open(impersonateModal.login_url,'_blank')} style={{padding:"10px 20px",borderRadius:8,background:"transparent",border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"center"}}>Open Now (will affect current session) →</div>
+            </div>
+          ):(
+            <div style={{textAlign:"center",padding:20,color:T.r,fontSize:13}}>Failed to generate login URL. Check edge function.</div>
+          )}
+        </div>
+      </div>}
       {showRueIntake&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.8)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}}>
         <div style={{width:"100%",maxWidth:520,maxHeight:"80vh",background:T.card,border:`1px solid ${T.b}`,borderRadius:20,display:"flex",flexDirection:"column",boxShadow:"0 16px 60px rgba(0,0,0,0.7)",overflow:"hidden"}}>
           <div style={{padding:"20px 24px",borderBottom:`1px solid ${T.b}`,flexShrink:0}}>
