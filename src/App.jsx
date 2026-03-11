@@ -77,12 +77,13 @@ export default function App(){
   },[authUser,profile,rueLoading]);
 
   const load=useCallback(async()=>{
-    if(!authUser) return;
+    const uid = impersonating ? impersonating.id : authUser?.id;
+    if(!uid) return;
     setLoading(true);
     try {
       const [leadsRes, actRes] = await Promise.all([
-        fetch(`${RUE_SUPA}/leads?user_id=eq.${authUser.id}&order=created_at.desc&limit=100`,{headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}}),
-        fetch(`${RUE_SUPA}/user_activity?user_id=eq.${authUser.id}&order=created_at.desc&limit=50`,{headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}})
+        fetch(`${RUE_SUPA}/leads?user_id=eq.${uid}&order=created_at.desc&limit=100`,{headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}}),
+        fetch(`${RUE_SUPA}/user_activity?user_id=eq.${uid}&order=created_at.desc&limit=50`,{headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}})
       ]);
       const leadsData = leadsRes.ok ? await leadsRes.json() : [];
       const actData = actRes.ok ? await actRes.json() : [];
@@ -91,7 +92,7 @@ export default function App(){
       setActivity(Array.isArray(actData)?actData:[]);
     } catch(e) { console.error("Load error:", e); }
     setLoading(false);
-  },[authUser]);
+  },[authUser,impersonating]);
 
   useEffect(()=>{
     load();
@@ -101,7 +102,7 @@ export default function App(){
         event: '*',
         schema: 'public',
         table: 'leads',
-        filter: `user_id=eq.${authUser?.id}`
+        filter: `user_id=eq.${impersonating ? impersonating.id : authUser?.id}`
       }, (payload) => {
         if(payload.eventType === 'INSERT') {
           setLeads(p => [payload.new, ...p]);
@@ -457,7 +458,7 @@ export default function App(){
     setInlineLoading(true);setInlineResponse(null);
     try{
       let sys=SYSTEM;
-      if(profile?.brokerage) sys+=`\n\nUser's brokerage: ${profile.brokerage}. Market: ${profile.market||"not set"}.`;
+      if(effectiveProfile?.brokerage) sys+=`\n\nUser's brokerage: ${effectiveProfile.brokerage}. Market: ${effectiveProfile.market||"not set"}.`;
       if(leads.length>0){
         sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
         sys+=`\n\nAd spend: $20/day Facebook/Instagram for recruiting.`;
@@ -492,7 +493,7 @@ export default function App(){
   const today=leads.filter(l=>l.created_at&&new Date(l.created_at).toDateString()===new Date().toDateString()).length;
   const apiCost=activity.reduce((s,a)=>s+parseFloat(a.cost||0),0);
   const cpl=total>0?(20/total).toFixed(2):"—";
-  const limits=getPlanLimits(profile);
+  const limits=getPlanLimits(effectiveProfile);
   const isPro=limits.isPro;
   const pScore=Math.min(100,Math.round((total>0?25:0)+(targets>0?25:0)+(leads.some(l=>l.pipeline_stage==="outreach_sent")?25:0)+(leads.some(l=>l.pipeline_stage==="meeting_booked")?25:0)));
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
@@ -539,12 +540,16 @@ export default function App(){
   const hasMeeting=leads.filter(l=>l.pipeline_stage==="meeting_booked");
   const inOutreach=leads.filter(l=>l.pipeline_stage==="outreach_sent");
 
-
   // ━━━ ADMIN ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const [adminStats,setAdminStats]=useState({users:0,leads:0,contentToday:0,agents:0});
   const [adminUsers,setAdminUsers]=useState([]);
-  const [impersonateModal,setImpersonateModal]=useState(null);
+  const [impersonating,setImpersonating]=useState(null);
+  const [realUser,setRealUser]=useState(null);
   const [impersonateLoading,setImpersonateLoading]=useState(false);
+
+  // ━━━ IMPERSONATION DERIVED VALUES ━━━━━━━━━━━━━━━━━
+  const effectiveUserId = impersonating ? impersonating.id : authUser?.id;
+  const effectiveProfile = impersonating ? impersonating : profile;
   const [adminActivity,setAdminActivity]=useState([]);
   const [adminContent,setAdminContent]=useState([]);
   const [newContent,setNewContent]=useState({title:"",body:"",type:"announcement"});
@@ -806,7 +811,7 @@ export default function App(){
                 <td style={{padding:"13px 14px",fontSize:13,fontWeight:700,color:adminUserLeadStats[u.id]?.meeting>0?T.p:T.m}}>{adminUserLeadStats[u.id]?.meeting||0}</td>
                 <td style={{padding:"13px 14px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</td>
                 <td style={{padding:"13px 14px"}}><span style={{fontSize:12,fontWeight:700,color:u.onboarded?T.a:T.y}}>{u.onboarded?"✓ Yes":"— No"}</span></td>
-                <td style={{padding:"13px 14px"}}>{u.role!=="owner"&&<span onClick={async()=>{setImpersonateLoading(u.id);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();if(data.error){alert(data.error);setImpersonateLoading(false);return;}setImpersonateModal({name:u.full_name||u.email,email:u.email,plan:u.plan||'free',login_url:data.login_url,copied:false});}catch(e){console.error('Impersonate error:',e);alert('Failed to connect to impersonate service');}setImpersonateLoading(false);}} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${T.bl}30`,background:"transparent",color:T.bl,fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{impersonateLoading===u.id?"Loading...":"👁 View As"}</span>}</td>
+                <td style={{padding:"13px 14px"}}>{u.role!=="owner"&&<span onClick={async()=>{setImpersonateLoading(u.id);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();if(data.error){alert(data.error);setImpersonateLoading(false);return;}setRealUser({authUser,profile});setImpersonating(data.impersonate||{id:u.id,full_name:u.full_name||u.email,email:u.email,plan:u.plan||'free',role:u.role||'user'});setViewWithHistory('home');}catch(e){console.error('Impersonate error:',e);alert('Failed to connect to impersonate service');}setImpersonateLoading(false);}} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${T.bl}30`,background:"transparent",color:T.bl,fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{impersonateLoading===u.id?"Loading...":"👁 View As"}</span>}</td>
               </tr>
             ):<tr><td colSpan={11} style={{textAlign:"center",padding:"40px",color:T.m,fontSize:15}}>No users found</td></tr>}</tbody>
           </table>
@@ -1317,28 +1322,12 @@ export default function App(){
   }
 
   return(
-    <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex",position:"relative"}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.t,fontFamily:"'SF Pro Display',-apple-system,sans-serif",display:"flex",position:"relative",paddingTop:impersonating?42:0}}>
       {showUpgradeSuccess&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:T.a,color:"#000",padding:"14px 32px",borderRadius:10,fontSize:15,fontWeight:800,boxShadow:"0 4px 24px rgba(0,229,160,0.4)",display:"flex",alignItems:"center",gap:10}}>🎉 Welcome to RKRT.in Pro! All features unlocked.</div>}
       {rueIntakeToast&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:T.a,color:"#000",padding:"14px 32px",borderRadius:10,fontSize:15,fontWeight:800,boxShadow:"0 4px 24px rgba(0,229,160,0.4)",display:"flex",alignItems:"center",gap:10}}>🤖 Rue is ready to coach you!</div>}
-      {impersonateModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.8)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}} onClick={()=>setImpersonateModal(null)}>
-        <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:28,boxShadow:"0 16px 60px rgba(0,0,0,0.7)"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <div style={{fontSize:18,fontWeight:700,color:T.t}}>Log in as {impersonateModal.name}</div>
-            <div onClick={()=>setImpersonateModal(null)} style={{cursor:"pointer",color:T.m,fontSize:18}}>✕</div>
-          </div>
-          <div style={{padding:"16px 18px",background:T.d,borderRadius:10,marginBottom:16}}>
-            <div style={{fontSize:14,color:T.s}}>{impersonateModal.email} · <span style={{color:T.a,fontWeight:600}}>{impersonateModal.plan}</span> plan</div>
-          </div>
-          {impersonateModal.login_url?(
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <div onClick={()=>{navigator.clipboard.writeText(impersonateModal.login_url);setImpersonateModal(p=>({...p,copied:true}));setTimeout(()=>setImpersonateModal(p=>p?{...p,copied:false}:p),2000);}} style={{padding:"14px 20px",borderRadius:10,background:impersonateModal.copied?T.a:T.a,color:"#000",fontSize:15,fontWeight:700,cursor:"pointer",textAlign:"center"}}>{impersonateModal.copied?"Copied!":"Copy Login Link"}</div>
-              <div style={{fontSize:12,color:T.m,textAlign:"center",lineHeight:1.5}}>Open in an incognito/private window to keep your current session.</div>
-              <div onClick={()=>window.open(impersonateModal.login_url,'_blank')} style={{padding:"10px 20px",borderRadius:8,background:"transparent",border:`1px solid ${T.bl}30`,color:T.bl,fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"center"}}>Open in New Tab →</div>
-            </div>
-          ):(
-            <div style={{textAlign:"center",padding:20,color:T.r,fontSize:13}}>Failed to generate login URL. Check edge function.</div>
-          )}
-        </div>
+      {impersonating&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:9999,background:"#F59E0B",color:"#000",padding:"10px 20px",display:"flex",alignItems:"center",justifyContent:"center",gap:12,fontSize:14,fontWeight:700,boxShadow:"0 2px 12px rgba(245,158,11,0.4)"}}>
+        <span>👁 Viewing as {impersonating.full_name} ({impersonating.email}) — {impersonating.plan} plan</span>
+        <span onClick={()=>{setImpersonating(null);setRealUser(null);setViewWithHistory("admin");}} style={{padding:"4px 14px",borderRadius:6,background:"rgba(0,0,0,0.2)",cursor:"pointer",fontSize:13,fontWeight:700}}>✕ Exit</span>
       </div>}
       {showRueIntake&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.8)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}}>
         <div style={{width:"100%",maxWidth:520,maxHeight:"80vh",background:T.card,border:`1px solid ${T.b}`,borderRadius:20,display:"flex",flexDirection:"column",boxShadow:"0 16px 60px rgba(0,0,0,0.7)",overflow:"hidden"}}>
@@ -1433,7 +1422,7 @@ select option{background:${T.card};color:${T.t}}
 
       {profileMenuOpen&&(
         <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",width:210,background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"6px 0",zIndex:1100,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
-          {profile?.role==="owner"&&<>
+          {profile?.role==="owner"&&!impersonating&&<>
             <div onClick={()=>{setViewWithHistory("admin");setSidebarOpen(false);setProfileMenuOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.r,borderRadius:6}} onMouseOver={ev=>ev.currentTarget.style.background=T.r+"15"} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
               <span>🛡️</span><span>Admin Dashboard</span>
             </div>
@@ -1452,7 +1441,7 @@ select option{background:${T.card};color:${T.t}}
       <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflow:"hidden"}}>
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:14,width:"100%",overflow:"auto"}}>
           <div style={{width:44,height:44,borderRadius:9,marginBottom:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,letterSpacing:"-0.5px",lineHeight:1,flexShrink:0}}><span style={{color:"#fff"}}>rkrt</span><span style={{color:"#000"}}>.in</span></div>
-          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["community","💬"],["calculator","🧮"],["revenue","💰"],...(profile?.plan==="team_leader"?[["team","👥"]]:[])].map(([id,ic])=>
+          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["community","💬"],["calculator","🧮"],["revenue","💰"],...(effectiveProfile?.plan==="team_leader"?[["team","👥"]]:[])].map(([id,ic])=>
             <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s",flexShrink:0}}>{ic}</div>
           )}
           {isBeta&&<div onClick={()=>{setViewWithHistory("beta");setSidebarOpen(false);setProfileMenuOpen(false);}} title="Beta Hub" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:view==="beta"?T.am:"transparent",color:view==="beta"?T.a:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>🧪</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Beta</span></div>}
@@ -1468,13 +1457,13 @@ select option{background:${T.card};color:${T.t}}
             <h1 className="page-title" style={{fontSize:32,fontWeight:800,margin:0}}>{view==="home"?"Command Center":view==="pipeline"?"Lead Pipeline":view==="crm"?"Leads CRM":view==="agents"?"Agent Directory":view==="content"?"Content Hub":view==="calculator"?"Commission Calculator":view==="revenue"?"Revenue Share":view==="team"?"Team":view==="admin"?"Admin":view==="beta"?"Beta Hub":view==="community"?"Community":view==="profile"?"My Profile":"rkrt.in"}</h1>
           </div>
           {/* Brokerage chip in header */}
-          {profile?.brokerage&&view==="home"&&(
+          {effectiveProfile?.brokerage&&view==="home"&&(
             <div style={{fontSize:13,color:T.s,padding:"6px 12px",borderRadius:6,background:T.card,border:`1px solid ${T.b}`}}>
-              🏢 <span style={{color:T.t,fontWeight:600}}>{profile.brokerage}</span> · {profile.market||"No market set"}
+              🏢 <span style={{color:T.t,fontWeight:600}}>{effectiveProfile.brokerage}</span> · {effectiveProfile.market||"No market set"}
             </div>
           )}
         </div>}
-        {view==="home"&&<><AskRueBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.${profile?.brokerage?" I recruit for "+profile.brokerage:""}`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.${profile?.brokerage?" Context: I'm at "+profile.brokerage:""}`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents${profile?.market?" in "+profile.market:""} who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.${profile?.brokerage?" I'm at "+profile.brokerage:""}`,T.y]]}/>
+        {view==="home"&&<><AskRueBar prompts={[["🎯","Who to Call",`Who should I call first today? Look at my pipeline and tell me the highest priority lead.${effectiveProfile?.brokerage?" I recruit for "+effectiveProfile.brokerage:""}`,T.a],["📱","Draft Outreach",`Draft a recruiting DM for my hottest lead in the pipeline.${effectiveProfile?.brokerage?" Context: I'm at "+effectiveProfile.brokerage:""}`,T.bl],["🔍","Find Agents",`Find me 5 real estate agents${effectiveProfile?.market?" in "+effectiveProfile.market:""} who might be looking to switch brokerages.`,T.p],["📋","Game Plan",`Create my recruiting game plan for this week based on my current pipeline.${effectiveProfile?.brokerage?" I'm at "+effectiveProfile.brokerage:""}`,T.y]]}/>
 {recentLeads.length>0&&(
 <div style={{marginBottom:24}}>
   <div style={{fontSize:18,fontWeight:800,color:T.t,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
@@ -1495,19 +1484,19 @@ select option{background:${T.card};color:${T.t}}
   </div>
 </div>
 )}
-<Dash leads={leads} profile={profile} activity={activity} recentLeads={leads.slice(0,5)} onNavigate={setViewWithHistory} onSelectLead={setSelLead} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
+<Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0,5)} onNavigate={setViewWithHistory} onSelectLead={setSelLead} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
         {view==="pipeline"&&<><AskRueBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={setSelLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} search={search} setSearch={setSearch}/></>}
         {view==="crm"&&<><AskRueBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={setSelLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/></>}
-        {view==="agents"&&<ProGate feature="Agent Directory" userId={authUser?.id} userProfile={profile}><AgentDirectory userId={authUser?.id} userProfile={profile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
-        {view==="content"&&<ContentTab userId={authUser?.id} userProfile={profile}/>}
-        {view==="calculator"&&<ProGate feature="Commission Calculator" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Calculator coming soon</div></ProGate>}
-        {view==="revenue"&&<ProGate feature="Revenue Share Projections" userId={authUser?.id} userProfile={profile}><div style={{textAlign:"center",padding:60,color:T.s}}>Revenue share projections coming soon</div></ProGate>}
-        {view==="community"&&<RKRTCommunity userId={authUser?.id} profile={profile} supabase={supabase}/>}
-        {view==="team"&&profile?.plan==="team_leader"&&<TeamView userId={authUser?.id} profile={profile}/>}
-        {view==="admin"&&profile?.role==="owner"&&<AdminView/>}
+        {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
+        {view==="content"&&<ContentTab userId={effectiveUserId} userProfile={effectiveProfile}/>}
+        {view==="calculator"&&<ProGate feature="Commission Calculator" userId={effectiveUserId} userProfile={effectiveProfile}><div style={{textAlign:"center",padding:60,color:T.s}}>Calculator coming soon</div></ProGate>}
+        {view==="revenue"&&<ProGate feature="Revenue Share Projections" userId={effectiveUserId} userProfile={effectiveProfile}><div style={{textAlign:"center",padding:60,color:T.s}}>Revenue share projections coming soon</div></ProGate>}
+        {view==="community"&&<RKRTCommunity userId={effectiveUserId} profile={effectiveProfile} supabase={supabase}/>}
+        {view==="team"&&effectiveProfile?.plan==="team_leader"&&<TeamView userId={effectiveUserId} profile={effectiveProfile}/>}
+        {view==="admin"&&!impersonating&&profile?.role==="owner"&&<AdminView/>}
         {view==="beta"&&isBeta&&<BetaHubView/>}
         {view==="profile"&&<ProfileView/>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={authUser?.id} onDelete={handleDeleteLead} userProfile={profile}/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onDelete={handleDeleteLead} userProfile={effectiveProfile}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
@@ -1545,7 +1534,7 @@ select option{background:${T.card};color:${T.t}}
   ].map((item,i)=>(
     <div key={i} onClick={item.action} className="ftb-item" style={{display:"flex",alignItems:"center",gap:0,height:42,borderRadius:10,cursor:"pointer",background:item.bg,transition:"all 0.2s",overflow:"hidden",position:"relative",whiteSpace:"nowrap",padding:"0 10px"}}>
       <div style={{width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,position:"relative"}}>
-        {item.avatar?<div style={{width:24,height:24,borderRadius:"50%",background:T.a,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#000"}}>{profile?.full_name?.charAt(0).toUpperCase()||"?"}</div>:<span>{item.icon}</span>}
+        {item.avatar?<div style={{width:24,height:24,borderRadius:"50%",background:impersonating?"#F59E0B":T.a,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#000"}}>{effectiveProfile?.full_name?.charAt(0).toUpperCase()||"?"}</div>:<span>{item.icon}</span>}
         {item.badge&&<div style={{position:'absolute',top:-4,right:-6,background:'#EF4444',color:'#fff',borderRadius:'50%',width:14,height:14,fontSize:8,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>{item.badge>9?'9+':item.badge}</div>}
       </div>
       <span className="ftb-label" style={{fontSize:13,fontWeight:600,color:item.color,marginLeft:0,maxWidth:0,opacity:0,transition:"all 0.25s ease",overflow:"hidden"}}>{item.label}</span>
@@ -1568,7 +1557,7 @@ select option{background:${T.card};color:${T.t}}
     }
   </div>}
   </div>
-  <RueDrawer open={rueDrawerOpen} onClose={()=>setRueDrawerOpen(false)} profile={profile} leads={leads} userId={authUser?.id}/>
+  <RueDrawer open={rueDrawerOpen} onClose={()=>setRueDrawerOpen(false)} profile={effectiveProfile} leads={leads} userId={effectiveUserId}/>
         {previewUrl&&<div style={{position:"fixed",top:0,right:0,width:"60%",height:"100vh",zIndex:1000,background:T.card,borderLeft:`1px solid ${T.b}`,display:"flex",flexDirection:"column",boxShadow:"-4px 0 30px rgba(0,0,0,0.5)"}}>
 
 
