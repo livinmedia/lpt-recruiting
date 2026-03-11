@@ -1,3 +1,4 @@
+import { RUE_SYSTEM_PROMPT } from "./lib/rue";
 import OnboardingFlow from './features/onboarding';
 import LeadPage from './features/leads';
 import AgentDirectory from './features/agents';
@@ -476,7 +477,7 @@ export default function App(){
   };
 
   const buildRueSys=()=>{
-    let sys=SYSTEM;
+    let sys=RUE_SYSTEM_PROMPT;
     if(effectiveProfile?.brokerage) sys+=`\n\nUser's brokerage: ${effectiveProfile.brokerage}. Market: ${effectiveProfile.market||"not set"}.`;
     if(leads.length>0){
       sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
