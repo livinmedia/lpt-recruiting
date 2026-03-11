@@ -105,13 +105,11 @@
     },
     {
       "src": "^/([a-z0-9-]+)/([a-z0-9-]+)$",
-      "dest": "/api/team-blog?team=$1&post=$2",
-      "check": true
+      "dest": "/api/team-blog?team=$1&post=$2"
     },
     {
       "src": "^/([a-z0-9-]+)$",
-      "dest": "/api/team-blog?team=$1",
-      "check": true
+      "dest": "/api/team-blog?team=$1"
     },
     {
       "src": "^/(.*)$",
