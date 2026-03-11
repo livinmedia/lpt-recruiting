@@ -1547,6 +1547,7 @@ export default function App(){
       </div>}
       <style>{`
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes rueGlow{0%,100%{filter:drop-shadow(0 0 4px #00E5A0) drop-shadow(0 0 8px #00E5A060)}50%{filter:drop-shadow(0 0 8px #00E5A0) drop-shadow(0 0 16px #00E5A080)}}
 .ftb-item:hover .ftb-label{max-width:120px!important;opacity:1!important;margin-left:10px!important}
 .ftb-item:hover{background:rgba(255,255,255,0.06)!important;padding-right:16px!important}
 textarea::placeholder,input::placeholder{color:${T.m}}
@@ -1711,12 +1712,12 @@ select option{background:${T.card};color:${T.t}}
     {icon:loading?"⟳":"↻",label:"Refresh",color:loading?T.a:T.s,bg:loading?T.am:"transparent",action:()=>load()},
     {icon:"🔔",label:"Notifications",color:notifOpen?T.a:T.s,bg:notifOpen?T.am:"transparent",action:(e)=>{e.stopPropagation();setNotifOpen(o=>!o);},badge:unreadCount>0?unreadCount:null},
     {icon:null,label:"Profile",color:profileMenuOpen?T.a:T.s,bg:profileMenuOpen?T.am:"transparent",action:()=>setProfileMenuOpen(v=>!v),avatar:true},
-    {icon:"🤖",label:"Talk to Rue",color:T.s,bg:"transparent",action:()=>setRueDrawerOpen(true)},
+    {icon:"🤖",label:"Ask Rue",color:T.a,bg:rueDrawerOpen?T.am:T.as,action:()=>setRueDrawerOpen(true),rueBtn:true},
     {icon:"🚪",label:"Logout",color:T.r,bg:"transparent",action:()=>supabase.auth.signOut().then(()=>{window.location.href="/login";})},
   ].map((item,i)=>(
-    <div key={i} onClick={item.action} className="ftb-item" style={{display:"flex",alignItems:"center",gap:0,height:42,borderRadius:10,cursor:"pointer",background:item.bg,transition:"all 0.2s",overflow:"hidden",position:"relative",whiteSpace:"nowrap",padding:"0 10px"}}>
+    <div key={i} onClick={item.action} className="ftb-item" style={{display:"flex",alignItems:"center",gap:0,height:42,borderRadius:10,cursor:"pointer",background:item.bg,transition:"all 0.2s",overflow:"hidden",position:"relative",whiteSpace:"nowrap",padding:"0 10px",boxShadow:item.rueBtn&&!rueDrawerOpen?`0 0 10px ${T.a}40,0 0 20px ${T.a}20`:undefined}}>
       <div style={{width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,position:"relative"}}>
-        {item.avatar?<div style={{width:24,height:24,borderRadius:"50%",background:impersonating?"#F59E0B":T.a,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#000"}}>{effectiveProfile?.full_name?.charAt(0).toUpperCase()||"?"}</div>:<span>{item.icon}</span>}
+        {item.avatar?<div style={{width:24,height:24,borderRadius:"50%",background:impersonating?"#F59E0B":T.a,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#000"}}>{effectiveProfile?.full_name?.charAt(0).toUpperCase()||"?"}</div>:<span style={{animation:item.rueBtn&&!rueDrawerOpen?"rueGlow 2s ease-in-out infinite":undefined}}>{item.icon}</span>}
         {item.badge&&<div style={{position:'absolute',top:-4,right:-6,background:'#EF4444',color:'#fff',borderRadius:'50%',width:14,height:14,fontSize:8,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>{item.badge>9?'9+':item.badge}</div>}
       </div>
       <span className="ftb-label" style={{fontSize:13,fontWeight:600,color:item.color,marginLeft:0,maxWidth:0,opacity:0,transition:"all 0.25s ease",overflow:"hidden"}}>{item.label}</span>
