@@ -380,7 +380,7 @@ export default function ContentTab({ userId, userProfile }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {teamPosts.map((post, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 20px", background: T.d, borderRadius: 10, border: `1px solid ${T.b}` }}>
-                  {post.image_url && <img src={post.image_url} alt="" style={{ width: 80, height: 56, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />}
+                  {post.image_url ? <img src={post.image_url} alt="" style={{ width: 80, height: 56, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} /> : <div style={{ width: 80, height: 56, borderRadius: 6, flexShrink: 0, background: "linear-gradient(135deg, #0d2847, #1a1040)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📝</div>}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{post.title}</div>
                     {post.excerpt && <div style={{ fontSize: 13, color: T.s, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{post.excerpt}</div>}
