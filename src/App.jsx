@@ -251,8 +251,16 @@ export default function App(){
 
   const loadBetaFeedback=useCallback(async()=>{
     if(!authUser)return;
-    const{data}=await supabase.from("beta_feedback").select("*,profiles(full_name,email)").order("created_at",{ascending:false});
-    setBetaFeedback(data||[]);
+    const{data}=await supabase.from("beta_feedback").select("*").order("created_at",{ascending:false});
+    const rows=data||[];
+    // Batch-fetch submitter profiles
+    const userIds=[...new Set(rows.map(r=>r.user_id).filter(Boolean))];
+    let profileMap={};
+    if(userIds.length){
+      const{data:profs}=await supabase.from("profiles").select("id,full_name,email").in("id",userIds);
+      (profs||[]).forEach(p=>{profileMap[p.id]=p;});
+    }
+    setBetaFeedback(rows.map(r=>({...r,profiles:profileMap[r.user_id]||null})));
     const{data:ups}=await supabase.from("beta_feedback_upvotes").select("feedback_id").eq("user_id",authUser.id);
     setBetaFbMyUpvotes(new Set((ups||[]).map(u=>u.feedback_id)));
   },[authUser]);
