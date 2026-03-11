@@ -23,7 +23,7 @@ export default function ContentTab({ userId, userProfile }) {
   
   const [teamPosts, setTeamPosts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedBrokerage, setSelectedBrokerage] = useState(userProfile?.brokerage || TARGET_BROKERAGES[0]);
+  const [selectedBrokerage, setSelectedBrokerage] = useState("");
   const [showWritePost, setShowWritePost] = useState(false);
   const [newPost, setNewPost] = useState({ title: "", excerpt: "", content: "" });
   const [postSaving, setPostSaving] = useState(false);
@@ -148,14 +148,22 @@ export default function ContentTab({ userId, userProfile }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>🎯 Recruiting Links</div>
             <select
-              value={selectedBrokerage} style={{ padding: "10px 16px", borderRadius: 8, background: T.d, border: "2px solid " + T.a, color: T.t, fontSize: 14, fontFamily: "inherit", cursor: "pointer", boxShadow: "0 0 12px rgba(0,229,160,0.3)", animation: "glowPulse 2s ease-in-out infinite" }}
+              value={selectedBrokerage}
               onChange={e => setSelectedBrokerage(e.target.value)}
-              style={{ padding: "10px 16px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "inherit" }}
+              style={{ padding: "10px 16px", borderRadius: 8, background: T.d, border: `2px solid ${selectedBrokerage ? T.b : T.a}`, color: selectedBrokerage ? T.t : T.s, fontSize: 14, fontFamily: "inherit", cursor: "pointer", boxShadow: selectedBrokerage ? "none" : "0 0 12px rgba(0,229,160,0.3)", animation: selectedBrokerage ? "none" : "glowPulse 2s ease-in-out infinite", outline: "none" }}
             >
+              <option value="">🎯 Select target brokerage...</option>
               {TARGET_BROKERAGES.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
           </div>
 
+          {!selectedBrokerage ? (
+            <div style={{ background: T.d, border: `1px solid ${T.a}30`, borderRadius: 12, padding: "40px", textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🎯</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.t, marginBottom: 8 }}>Select your target brokerage above to generate personalized recruiting links</div>
+              <div style={{ fontSize: 13, color: T.s }}>Each landing page will be customized for the brokerage you're targeting</div>
+            </div>
+          ) : (<>
           <div style={{ fontSize: 13, color: T.s, marginBottom: 20, padding: "12px 16px", background: T.d, borderRadius: 8 }}>
             Share these links to attract agents from <strong style={{ color: T.t }}>{selectedBrokerage}</strong>. Each link is optimized for different recruiting angles.
           </div>
@@ -204,6 +212,7 @@ export default function ContentTab({ userId, userProfile }) {
               </div>
             </div>
           </div>
+          </>)}
         </div>
       )}
 
