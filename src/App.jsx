@@ -128,6 +128,7 @@ export default function App(){
   useEffect(()=>{rechartsReady.then(()=>setChartsReady(true));},[]);
   const [inlineResponse,setInlineResponse]=useState(null);
   const [inlineLoading,setInlineLoading]=useState(false);
+  const [inlineChatHistory,setInlineChatHistory]=useState([]);
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [profileMenuOpen,setProfileMenuOpen]=useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -474,20 +475,45 @@ export default function App(){
     setProfileSaving(false);
   };
 
+  const buildRueSys=()=>{
+    let sys=SYSTEM;
+    if(effectiveProfile?.brokerage) sys+=`\n\nUser's brokerage: ${effectiveProfile.brokerage}. Market: ${effectiveProfile.market||"not set"}.`;
+    if(leads.length>0){
+      sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
+      sys+=`\n\nAd spend: $20/day Facebook/Instagram for recruiting.`;
+    }
+    return sys;
+  };
+
   const askRueInline=async(q)=>{
     setInlineLoading(true);setInlineResponse(null);
+    const userMsg={role:"user",content:q};
+    const newHistory=[userMsg];
+    setInlineChatHistory(newHistory);
     try{
-      let sys=SYSTEM;
-      if(effectiveProfile?.brokerage) sys+=`\n\nUser's brokerage: ${effectiveProfile.brokerage}. Market: ${effectiveProfile.market||"not set"}.`;
-      if(leads.length>0){
-        sys+=`\n\nPIPELINE (${leads.length} leads):\n`+leads.slice(0,10).map(l=>`- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0,20)||"?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`).join("\n");
-        sys+=`\n\nAd spend: $20/day Facebook/Instagram for recruiting.`;
-      }
-      const r=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(import.meta.env.VITE_OPENROUTER_KEY||"")},body:JSON.stringify({model:"deepseek/deepseek-chat-v3-0324",max_tokens:1500,messages:[{role:"system",content:sys},{role:"user",content:q}]})});
-      if(!r.ok){const err=await r.text();setInlineResponse(`API error ${r.status} — check your OpenRouter key in Vercel env vars.`);setInlineLoading(false);return;}
+      const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:buildRueSys(),messages:newHistory})});
+      if(!r.ok){const err=await r.text();setInlineResponse(`Error ${r.status} — ${err}`);setInlineLoading(false);return;}
       const d=await r.json();
-      setInlineResponse(d.choices?.[0]?.message?.content||"No response.");
-    }catch{setInlineResponse("Connection error.");}
+      const reply=d.content||"No response.";
+      setInlineResponse(reply);
+      setInlineChatHistory([userMsg,{role:"assistant",content:reply}]);
+    }catch(e){setInlineResponse("Connection error: "+e.message);}
+    setInlineLoading(false);
+  };
+
+  const sendRueChatReply=async(text)=>{
+    if(!text.trim()||inlineLoading) return;
+    setInlineLoading(true);
+    const newHistory=[...inlineChatHistory,{role:"user",content:text}];
+    setInlineChatHistory(newHistory);
+    try{
+      const r=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:buildRueSys(),messages:newHistory})});
+      if(!r.ok){const err=await r.text();setInlineResponse(`Error ${r.status} — ${err}`);setInlineLoading(false);return;}
+      const d=await r.json();
+      const reply=d.content||"No response.";
+      setInlineResponse(reply);
+      setInlineChatHistory([...newHistory,{role:"assistant",content:reply}]);
+    }catch(e){setInlineResponse("Connection error: "+e.message);}
     setInlineLoading(false);
   };
 
@@ -495,6 +521,7 @@ export default function App(){
     window.history.pushState({view:v},"",`#${v}`);
     setView(v);
     setInlineResponse(null);
+    setInlineChatHistory([]);
   };
   useEffect(()=>{
     const onPop=(ev)=>{
@@ -1640,7 +1667,7 @@ select option{background:${T.card};color:${T.t}}
   </div>
 </div>
 )}
-<Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0,5)} onNavigate={setViewWithHistory} onSelectLead={setSelLead} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
+<Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0,5)} onNavigate={setViewWithHistory} onSelectLead={setSelLead} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} inlineChatHistory={inlineChatHistory} onRueChatReply={sendRueChatReply} isPro={isPro} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
         {view==="pipeline"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={setSelLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} search={search} setSearch={setSearch}/></>}
         {view==="crm"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={setSelLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/></>}
         {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}

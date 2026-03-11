@@ -1,6 +1,7 @@
 // RKRT.in Dashboard Feature
 // Extracted from App.jsx for scalable architecture
 
+import { useState } from 'react';
 import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
@@ -17,6 +18,9 @@ export default function Dash({
   askRueInline = () => {},
   inlineResponse = "",
   inlineLoading = false,
+  inlineChatHistory = [],
+  onRueChatReply = () => {},
+  isPro = false,
   chartsReady = false,
   BarChart,
   Bar,
@@ -25,6 +29,7 @@ export default function Dash({
   ResponsiveContainer,
   Cell,
 }) {
+  const [chatInput, setChatInput] = useState("");
   // Computed values
   const total = leads.length;
   const targets = leads.filter(l => l.brokerage && !l.brokerage.toLowerCase().includes("lpt")).length;
@@ -40,12 +45,20 @@ export default function Dash({
   const pScore = Math.min(100, Math.round((total > 0 ? 25 : 0) + (targets > 0 ? 25 : 0) + (leads.some(l => l.pipeline_stage === "outreach_sent") ? 25 : 0) + (leads.some(l => l.pipeline_stage === "meeting_booked") ? 25 : 0)));
   const stages = STAGES.map(s => ({ ...s, count: leads.filter(l => l.pipeline_stage === s.id).length }));
 
-  // Rue prompts for dashboard
+  // Rue AI prompts
   const ruePrompts = [
     ["🎯", "Who to Call", `Who should I call first today? Look at my pipeline and tell me the highest priority lead.${profile?.brokerage ? " I recruit for " + profile.brokerage : ""}`, T.a],
-    ["📱", "Draft Outreach", `Draft a recruiting DM for my hottest lead in the pipeline.${profile?.brokerage ? " Context: I'm at " + profile.brokerage : ""}`, T.bl],
-    ["🔍", "Find Agents", `Find me 5 real estate agents${profile?.market ? " in " + profile.market : ""} who might be looking to switch brokerages.`, T.p],
-    ["📋", "Game Plan", `Create my recruiting game plan for this week based on my current pipeline.${profile?.brokerage ? " I'm at " + profile.brokerage : ""}`, T.y],
+    ["📱", "Draft a DM", `Draft a compelling recruiting DM for my hottest pipeline lead right now.${profile?.brokerage ? " Context: I'm at " + profile.brokerage : ""}`, T.bl],
+    ["🔍", "Find Agents", `Find me 5 real estate agents${profile?.market ? " in " + profile.market : ""} who might be looking to switch brokerages. Include their likely objections.`, T.p],
+    ["📋", "Weekly Plan", `Create a detailed recruiting game plan for this week based on my current pipeline stage counts.${profile?.brokerage ? " I'm at " + profile.brokerage : ""}`, T.y],
+  ];
+
+  // Navigation quick actions (distinct from Rue prompts)
+  const navActions = [
+    ["➕", "Add Lead", () => onNavigate("addlead"), T.a],
+    ["📊", "Pipeline", () => onNavigate("pipeline"), T.bl],
+    ["💬", "CRM", () => onNavigate("crm"), T.p],
+    ["✨", "Content", () => onNavigate("content"), T.y],
   ];
 
   return (
@@ -77,24 +90,81 @@ export default function Dash({
         ))}
       </div>
 
-      {/* Inline Response */}
-      {inlineLoading && (
-        <div style={{ marginBottom: 20, padding: "16px 20px", borderRadius: 10, background: T.card, border: `1px solid ${T.b}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.a, animation: "pulse 1s infinite" }} />
-            <span style={{ fontSize: 14, color: T.s }}>RUE is thinking...</span>
+      {/* Rue Conversation Area */}
+      {(inlineLoading || inlineResponse || inlineChatHistory.length > 0) && (
+        <div style={{ marginBottom: 20, borderRadius: 12, background: T.card, border: `1px solid ${T.a}30`, overflow: "hidden" }}>
+          {/* Header */}
+          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${T.b}`, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: inlineLoading ? T.a : "#22c55e", animation: inlineLoading ? "pulse 1s infinite" : "none" }} />
+            <span style={{ fontSize: 12, color: T.a, fontWeight: 700, letterSpacing: 1.5 }}>RUE AI ASSISTANT</span>
           </div>
-        </div>
-      )}
 
-      {inlineResponse && !inlineLoading && (
-        <div style={{ marginBottom: 20, padding: "20px 24px", borderRadius: 10, background: T.as, border: `1px solid ${T.a}20` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: T.a, fontWeight: 700, letterSpacing: 1.5 }}>🤖 RUE RESPONSE</span>
+          {/* Messages */}
+          <div style={{ padding: "16px 20px", maxHeight: 420, overflowY: "auto" }}>
+            {inlineChatHistory.filter(m => m.role !== "system").map((msg, i) => (
+              <div key={i} style={{ marginBottom: 14, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                <div style={{ fontSize: 10, color: T.m, marginBottom: 4, fontWeight: 600 }}>{msg.role === "user" ? "YOU" : "RUE"}</div>
+                <div style={{
+                  maxWidth: "88%",
+                  padding: "12px 16px",
+                  borderRadius: msg.role === "user" ? "12px 12px 2px 12px" : "2px 12px 12px 12px",
+                  background: msg.role === "user" ? T.a + "18" : T.d,
+                  border: `1px solid ${msg.role === "user" ? T.a + "30" : T.b}`,
+                  fontSize: 14,
+                  color: T.t,
+                  lineHeight: 1.7,
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "inherit",
+                }}>
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {inlineLoading && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0" }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: T.a, animation: "pulse 0.8s infinite" }} />
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: T.a, animation: "pulse 0.8s 0.2s infinite" }} />
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: T.a, animation: "pulse 0.8s 0.4s infinite" }} />
+                <span style={{ fontSize: 13, color: T.m, marginLeft: 4 }}>Rue is thinking...</span>
+              </div>
+            )}
           </div>
-          <pre style={{ fontSize: 14, color: T.t, lineHeight: 1.7, whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0, maxHeight: 400, overflow: "auto" }}>
-            {inlineResponse}
-          </pre>
+
+          {/* Chat Input — pro only */}
+          {inlineResponse && !inlineLoading && (
+            isPro ? (
+              <div style={{ padding: "12px 16px", borderTop: `1px solid ${T.b}`, display: "flex", gap: 8 }}>
+                <input
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();onRueChatReply(chatInput);setChatInput("");} }}
+                  placeholder="Ask Rue a follow-up..."
+                  style={{ flex: 1, background: T.d, border: `1px solid ${T.b}`, borderRadius: 8, padding: "10px 14px", fontSize: 14, color: T.t, outline: "none" }}
+                />
+                <div
+                  onClick={() => { if(chatInput.trim()){onRueChatReply(chatInput);setChatInput("");} }}
+                  style={{ padding: "10px 18px", borderRadius: 8, background: T.a, color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center" }}
+                >
+                  Send →
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.b}`, background: "#F59E0B08" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#F59E0B", marginBottom: 2 }}>🔒 Upgrade to chat with Rue</div>
+                    <div style={{ fontSize: 12, color: T.s }}>Pro members can have full conversations with Rue AI</div>
+                  </div>
+                  <div
+                    onClick={() => onNavigate("profile")}
+                    style={{ padding: "8px 16px", borderRadius: 8, background: "#F59E0B", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+                  >
+                    Upgrade →
+                  </div>
+                </div>
+              </div>
+            )
+          )}
         </div>
       )}
 
@@ -130,23 +200,18 @@ export default function Dash({
         ))}
       </div>
 
-      {/* Quick Actions */}
+      {/* Nav Quick Actions */}
       <div className="quick-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
-        {[
-          ["➕", "Add Lead", () => onNavigate("addlead"), T.a],
-          ["📱", "Draft Outreach", () => onNavigate("pipeline"), T.bl],
-          ["🔍", "Find Agents", () => onNavigate("agents"), T.p],
-          ["📊", "Pipeline Review", () => onNavigate("pipeline"), T.y]
-        ].map(([ic, label, action, c], i) => (
+        {navActions.map(([ic, label, action, c], i) => (
           <div
             key={i}
             onClick={action}
-            style={{ background: c + "10", border: `1px solid ${c}20`, borderRadius: 10, padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "all 0.15s" }}
+            style={{ background: c + "10", border: `1px solid ${c}20`, borderRadius: 10, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s" }}
             onMouseOver={ev => ev.currentTarget.style.background = c + "20"}
             onMouseOut={ev => ev.currentTarget.style.background = c + "10"}
           >
-            <span style={{ fontSize: 24 }}>{ic}</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: T.t }}>{label}</span>
+            <span style={{ fontSize: 20 }}>{ic}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: T.t }}>{label}</span>
           </div>
         ))}
       </div>
