@@ -117,7 +117,7 @@ export default function ContentTab({ userId, userProfile }) {
 
   const getBlogUrl = () => {
     const brokSlug = selectedBrokerage.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-    return `https://rkrt.in/blog/${brokSlug}?ref=${userId || ''}&target=${encodeURIComponent(selectedBrokerage)}`;
+    return `https://rkrt.in/${brokSlug}?ref=${userId || ''}&target=${encodeURIComponent(selectedBrokerage)}`;
   };
 
   return (
