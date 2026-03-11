@@ -1,18 +1,23 @@
 // RKRT.in Dashboard Feature
 // Extracted from App.jsx for scalable architecture
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
 import { Pill, UPill, TPill, Dot } from '../../components/ui/Pill';
 import { Gauge } from '../../components/ui/Gauge';
+import { supabase } from '../../lib/supabase';
+
+const HEAT_COLOR = { cold: "#2A3345", warming: "#3B82F6", interested: "#F59E0B", hot: "#f97316", on_fire: "#F43F5E" };
+const HEAT_ICON = { cold: "❄️", warming: "🌡️", interested: "🔥", hot: "🔥🔥", on_fire: "🔥🔥🔥" };
 
 export default function Dash({
   leads = [],
   profile = {},
   activity = [],
   recentLeads = [],
+  userId = null,
   onNavigate = () => {},
   onSelectLead = () => {},
   askRueInline = () => {},
@@ -30,6 +35,18 @@ export default function Dash({
   Cell,
 }) {
   const [chatInput, setChatInput] = useState("");
+  const [scoreAlerts, setScoreAlerts] = useState([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from('lead_score_alerts').select('*').eq('user_id', userId).eq('read', false).order('created_at', { ascending: false }).limit(3)
+      .then(({ data }) => { if (data) setScoreAlerts(data); });
+  }, [userId]);
+
+  const dismissAlert = async (alertId) => {
+    setScoreAlerts(prev => prev.filter(a => a.id !== alertId));
+    await supabase.from('lead_score_alerts').update({ read: true }).eq('id', alertId);
+  };
   // Computed values
   const total = leads.length;
   const targets = leads.filter(l => l.brokerage && !l.brokerage.toLowerCase().includes("lpt")).length;
@@ -61,8 +78,27 @@ export default function Dash({
     ["✨", "Content", () => onNavigate("content"), T.y],
   ];
 
+  // Sorted leads by interest_score
+  const scoredLeads = [...leads].filter(l => (l.interest_score || 0) > 0).sort((a, b) => (b.interest_score || 0) - (a.interest_score || 0));
+
   return (
     <>
+      {/* Lead Score Alert Banners */}
+      {scoreAlerts.map(alert => (
+        <div key={alert.id} style={{ marginBottom: 12, borderRadius: 10, padding: "14px 18px", background: "linear-gradient(90deg, #F43F5E, #f97316)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#fff" }}>{alert.message}</div>
+          {alert.lead_id && (
+            <div
+              onClick={() => { const l = leads.find(x => x.id === alert.lead_id); if(l){onSelectLead(l);onNavigate("lead");} }}
+              style={{ padding: "6px 14px", borderRadius: 7, background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+            >
+              View Lead →
+            </div>
+          )}
+          <div onClick={() => dismissAlert(alert.id)} style={{ fontSize: 18, color: "rgba(255,255,255,0.8)", cursor: "pointer", flexShrink: 0, lineHeight: 1 }}>✕</div>
+        </div>
+      ))}
+
       {/* Rue Quick Actions */}
       <div className="ask-rue-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${ruePrompts.length},1fr)`, gap: 12, marginBottom: 20 }}>
         {ruePrompts.map(([icon, label, q, c], i) => (
@@ -291,29 +327,40 @@ export default function Dash({
           )}
         </div>
 
-        {/* Hot Leads */}
+        {/* Hottest Leads — ranked by interest_score */}
         <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: T.t }}>🔥 Hot Leads</span>
-            <span onClick={() => onNavigate("pipeline")} style={{ fontSize: 14, color: T.s, cursor: "pointer" }}>All →</span>
+            <span style={{ fontSize: 18, fontWeight: 700, color: T.t }}>🔥 Hottest Leads</span>
+            <span onClick={() => onNavigate("pipeline")} style={{ fontSize: 12, color: T.a, cursor: "pointer", fontWeight: 600 }}>View All →</span>
           </div>
-          {leads.filter(l => l.urgency === "HIGH" || l.urgency === "MEDIUM").sort((a, b) => ({ HIGH: 0, MEDIUM: 1 }[a.urgency] || 2) - ({ HIGH: 0, MEDIUM: 1 }[b.urgency] || 2)).slice(0, 5).map((l, i) => (
-            <div
-              key={i}
-              onClick={() => { onSelectLead(l); onNavigate("lead"); }}
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, marginBottom: 8, cursor: "pointer" }}
-              onMouseOver={ev => ev.currentTarget.style.borderColor = T.bh}
-              onMouseOut={ev => ev.currentTarget.style.borderColor = T.b}
-            >
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{l.first_name} {l.last_name}</div>
-                <div style={{ fontSize: 13, color: T.s }}>{l.brokerage?.substring(0, 20) || "Unknown"} · {l.market}</div>
+          {scoredLeads.length > 0 ? scoredLeads.slice(0, 5).map((l, i) => {
+            const heatColor = HEAT_COLOR[l.heat_level] || T.b;
+            const heatIcon = HEAT_ICON[l.heat_level] || "❄️";
+            const isToday = l.last_activity_at && new Date(l.last_activity_at).toDateString() === new Date().toDateString();
+            return (
+              <div
+                key={i}
+                onClick={() => { onSelectLead(l); onNavigate("lead"); }}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 13px", borderRadius: 9, background: T.d, border: `1px solid ${T.b}`, marginBottom: 8, cursor: "pointer", transition: "border-color 0.15s" }}
+                onMouseOver={ev => ev.currentTarget.style.borderColor = heatColor}
+                onMouseOut={ev => ev.currentTarget.style.borderColor = T.b}
+              >
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{heatIcon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.t, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.first_name} {l.last_name}</div>
+                  <div style={{ fontSize: 12, color: T.s, marginTop: 1 }}>{(l.brokerage_name || l.brokerage || "Unknown").substring(0, 24)}</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                  <div style={{ padding: "3px 9px", borderRadius: 20, background: heatColor + "22", border: `1px solid ${heatColor}44`, fontSize: 12, fontWeight: 800, color: heatColor }}>{l.interest_score}</div>
+                  <div style={{ fontSize: 10, color: T.m }}>{isToday ? "Active today" : l.last_activity_at ? `Last: ${ago(l.last_activity_at)}` : l.heat_level || "cold"}</div>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><TPill t={l.tier} /><UPill u={l.urgency} /></div>
+            );
+          }) : (
+            <div style={{ textAlign: "center", padding: "24px 16px", color: T.m }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>🎯</div>
+              <div style={{ fontSize: 13, lineHeight: 1.5 }}>No scored leads yet. Add leads and share your recruiting links to start tracking engagement.</div>
             </div>
-          ))}
-          {leads.filter(l => l.urgency === "HIGH" || l.urgency === "MEDIUM").length === 0 && (
-            <div style={{ textAlign: "center", padding: "24px", color: T.m }}><div style={{ fontSize: 24, marginBottom: 8 }}>🎯</div><div style={{ fontSize: 15 }}>No hot leads yet.</div></div>
           )}
         </div>
       </div>
