@@ -27,7 +27,7 @@ export default function ContentTab({ userId, userProfile }) {
   const [showWritePost, setShowWritePost] = useState(false);
   const [newPost, setNewPost] = useState({ title: "", excerpt: "", content: "" });
   const [postSaving, setPostSaving] = useState(false);
-  const isTeamLeader = userProfile?.plan === "team_leader" && userProfile?.team_id;
+  const isTeamLeader = (userProfile?.plan === "team_leader" || userProfile?.plan === "regional_operator" || userProfile?.plan === "enterprise" || userProfile?.role === "owner") && userProfile?.team_id;
 
   const [teamSlug, setTeamSlug] = useState("");
 
