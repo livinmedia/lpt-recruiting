@@ -59,6 +59,13 @@ export default function App(){
   const [rueIntakeInput,setRueIntakeInput]=useState("");
   const [rueIntakeToast,setRueIntakeToast]=useState(false);
   const rueIntakeScrollRef=useRef(null);
+  const [impersonating,setImpersonating]=useState(null);
+  const [realUser,setRealUser]=useState(null);
+  const [impersonateLoading,setImpersonateLoading]=useState(false);
+
+  // ━━━ IMPERSONATION DERIVED VALUES ━━━━━━━━━━━━━━━━━
+  const effectiveUserId = impersonating ? impersonating.id : authUser?.id;
+  const effectiveProfile = impersonating ? impersonating : profile;
 
   const sendRueIntake=useCallback(async(msg)=>{
     if(rueLoading) return;
@@ -543,13 +550,6 @@ export default function App(){
   // ━━━ ADMIN ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const [adminStats,setAdminStats]=useState({users:0,leads:0,contentToday:0,agents:0});
   const [adminUsers,setAdminUsers]=useState([]);
-  const [impersonating,setImpersonating]=useState(null);
-  const [realUser,setRealUser]=useState(null);
-  const [impersonateLoading,setImpersonateLoading]=useState(false);
-
-  // ━━━ IMPERSONATION DERIVED VALUES ━━━━━━━━━━━━━━━━━
-  const effectiveUserId = impersonating ? impersonating.id : authUser?.id;
-  const effectiveProfile = impersonating ? impersonating : profile;
   const [adminActivity,setAdminActivity]=useState([]);
   const [adminContent,setAdminContent]=useState([]);
   const [newContent,setNewContent]=useState({title:"",body:"",type:"announcement"});
