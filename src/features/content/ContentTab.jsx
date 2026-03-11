@@ -20,7 +20,7 @@ const THEME_COLORS = {
 export default function ContentTab({ userId, userProfile }) {
   const [contentTab, setContentTab] = useState("links");
   const [dailyContent, setDailyContent] = useState([]);
-  const [blogPosts, setBlogPosts] = useState([]);
+  
   const [teamPosts, setTeamPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedBrokerage, setSelectedBrokerage] = useState(userProfile?.brokerage || "LPT Realty");
@@ -39,9 +39,8 @@ export default function ContentTab({ userId, userProfile }) {
   const loadContent = async () => {
     setLoading(true);
     const today = new Date().toISOString().split('T')[0];
-    const [contentRes, blogRes] = await Promise.all([
+    const [contentRes] = await Promise.all([
       supabase.from('daily_content').select('*').eq('content_date', today).order('created_at', { ascending: false }),
-      supabase.from('brokerage_posts').select('*').eq('status', 'approved').order('created_at', { ascending: false }).limit(20),
     ]);
     let dailyData = contentRes.data || [];
     if (dailyData.length === 0) {
@@ -49,7 +48,7 @@ export default function ContentTab({ userId, userProfile }) {
       dailyData = recentRes.data || [];
     }
     setDailyContent(dailyData);
-    setBlogPosts(blogRes.data || []);
+    
     setLoading(false);
   };
 
@@ -131,7 +130,7 @@ export default function ContentTab({ userId, userProfile }) {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-        {[["links", "🔗 Recruiting Links"], ["daily", "📅 Daily Content"], ["blog", "📝 Blog Posts"], ...(isTeamLeader ? [["team_blog", "👥 Team Blog"]] : [])].map(([id, label]) => (
+        {[["links", "🔗 Recruiting Links"], ["daily", "📅 Daily Content"], ...(isTeamLeader ? [["team_blog", "👥 Team Blog"]] : [])].map(([id, label]) => (
           <div
             key={id}
             onClick={() => setContentTab(id)}
@@ -363,35 +362,6 @@ export default function ContentTab({ userId, userProfile }) {
 
           {/* Responsive: stack on mobile */}
           <style>{`@media (max-width: 768px) { .video-row { grid-template-columns: 1fr !important; } }`}</style>
-        </div>
-      )}
-
-      {/* Blog Posts Tab */}
-      {contentTab === "blog" && (
-        <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "28px" }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginBottom: 20 }}>📝 Published Blog Posts</div>
-          {loading ? (
-            <div style={{ textAlign: "center", padding: "40px", color: T.m }}>Loading...</div>
-          ) : blogPosts.length > 0 ? (
-            <div style={{ display: "grid", gap: 12 }}>
-              {blogPosts.map((post, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: T.d, borderRadius: 10, border: `1px solid ${T.b}` }}>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{post.title}</div>
-                    <div style={{ fontSize: 13, color: T.s, marginTop: 4 }}>{post.brokerage} • {new Date(post.created_at).toLocaleDateString()}</div>
-                  </div>
-                  <a href={`https://rkrt.in/blog/${post.brokerage?.toLowerCase().replace(/[^a-z0-9]/g, '-')}/${post.slug}?ref=${userId || ''}`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-                    View →
-                  </a>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: "center", padding: "60px 20px", color: T.m }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>📝</div>
-              <div>No published blog posts yet.</div>
-            </div>
-          )}
         </div>
       )}
 
