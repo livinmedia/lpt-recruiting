@@ -650,8 +650,13 @@ export default function App(){
       if(!prof?.team_id) return;
       (async()=>{
         setTeamLoading(true);
-        const {data}=await supabase.from('teams').select('*, team_members(*, profiles(full_name, email))').eq('id',prof.team_id).single();
+        const {data}=await supabase.from('teams').select('*').eq('id',prof.team_id).single();
         if(data){
+          const {data:mbrs}=await supabase.from('team_members').select('*').eq('team_id',data.id);
+          const mIds=(mbrs||[]).map(m=>m.user_id);
+          let mProfs=[];
+          if(mIds.length>0){const {data:pp}=await supabase.from('profiles').select('id,full_name,email').in('id',mIds);mProfs=pp||[];}
+          data.team_members=(mbrs||[]).map(m=>({...m,profiles:mProfs.find(p=>p.id===m.user_id)||{}}));
           setTeamData(data);
           setTeamDesc(data.description||"");
           setTeamValueProp(data.team_info?.value_prop||"");
