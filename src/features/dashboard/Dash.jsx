@@ -1,7 +1,7 @@
 // RKRT.in Dashboard Feature
 // Extracted from App.jsx for scalable architecture
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
@@ -38,6 +38,11 @@ export default function Dash({
   const [chatInput, setChatInput] = useState("");
   const [scoreAlerts, setScoreAlerts] = useState([]);
   const [copySaved, setCopySaved] = useState(false);
+  const messagesRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+  }, [inlineChatHistory, inlineLoading]);
 
   const copyResponse = () => {
     if (!inlineResponse) return;
@@ -203,7 +208,7 @@ export default function Dash({
           </div>
 
           {/* Scrollable messages */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 18px" }}>
+          <div ref={messagesRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "14px 18px" }}>
             {inlineChatHistory.filter(m => m.role !== "system").map((msg, i) => (
               <div key={i} style={{ marginBottom: 12, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
                 <div style={{ fontSize: 9, color: T.m, marginBottom: 3, fontWeight: 700, letterSpacing: 1 }}>{msg.role === "user" ? "YOU" : "RUE"}</div>
