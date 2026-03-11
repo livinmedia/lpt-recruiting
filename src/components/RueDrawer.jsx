@@ -46,6 +46,7 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [convId, setConvId] = useState(null);
   const messagesEnd = useRef(null);
   const inputRef = useRef(null);
   const firstName = profile?.full_name?.split(" ")[0] || "there";
@@ -55,10 +56,12 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Focus input when opened
+  // Focus input when opened; reset convId when closed
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 300);
+    } else {
+      setConvId(null);
     }
   }, [open]);
 
@@ -106,10 +109,12 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
         content: m.content
       }));
 
+      const body = { system: sys, messages: convHistory, user_id: userId };
+      if (convId) body.conversation_id = convId;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ system: sys, messages: convHistory })
+        body: JSON.stringify(body)
       });
 
       if (!r.ok) {
@@ -118,6 +123,7 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
         return;
       }
       const d = await r.json();
+      if (d.conversation_id) setConvId(d.conversation_id);
       const reply = d.content || "Sorry, I couldn't process that.";
       setMessages(p => [...p, { role: "assistant", content: reply, ts: Date.now() }]);
     } catch (e) {
@@ -160,13 +166,16 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
         role: m.role === "assistant" ? "assistant" : "user",
         content: m.content
       }));
+      const qbody = { system: sys, messages: convHistory, user_id: userId };
+      if (convId) qbody.conversation_id = convId;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ system: sys, messages: convHistory })
+        body: JSON.stringify(qbody)
       });
       if (!r.ok) { setMessages(p => [...p, { role: "assistant", content: `API error ${r.status}`, ts: Date.now() }]); setLoading(false); return; }
       const d = await r.json();
+      if (d.conversation_id) setConvId(d.conversation_id);
       setMessages(p => [...p, { role: "assistant", content: d.content || "No response.", ts: Date.now() }]);
     } catch (e) {
       setMessages(p => [...p, { role: "assistant", content: "Connection error.", ts: Date.now() }]);
