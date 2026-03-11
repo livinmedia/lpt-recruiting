@@ -806,7 +806,7 @@ export default function App(){
                 <td style={{padding:"13px 14px",fontSize:13,fontWeight:700,color:adminUserLeadStats[u.id]?.meeting>0?T.p:T.m}}>{adminUserLeadStats[u.id]?.meeting||0}</td>
                 <td style={{padding:"13px 14px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</td>
                 <td style={{padding:"13px 14px"}}><span style={{fontSize:12,fontWeight:700,color:u.onboarded?T.a:T.y}}>{u.onboarded?"✓ Yes":"— No"}</span></td>
-                <td style={{padding:"13px 14px"}}>{u.role!=="owner"&&<span onClick={async()=>{setImpersonateLoading(true);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();setImpersonateModal({name:u.full_name||u.email,email:u.email,plan:u.plan||'free',login_url:data.login_url});}catch(e){console.error('Impersonate error:',e);}setImpersonateLoading(false);}} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${T.bl}30`,background:"transparent",color:T.bl,fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{impersonateLoading?"...":"👁 Log In As"}</span>}</td>
+                <td style={{padding:"13px 14px"}}>{u.role!=="owner"&&<span onClick={async()=>{setImpersonateLoading(u.id);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();if(data.error){alert(data.error);setImpersonateLoading(false);return;}setImpersonateModal({name:u.full_name||u.email,email:u.email,plan:u.plan||'free',login_url:data.login_url,copied:false});}catch(e){console.error('Impersonate error:',e);alert('Failed to connect to impersonate service');}setImpersonateLoading(false);}} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${T.bl}30`,background:"transparent",color:T.bl,fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{impersonateLoading===u.id?"Loading...":"👁 View As"}</span>}</td>
               </tr>
             ):<tr><td colSpan={11} style={{textAlign:"center",padding:"40px",color:T.m,fontSize:15}}>No users found</td></tr>}</tbody>
           </table>
@@ -1323,19 +1323,17 @@ export default function App(){
       {impersonateModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.8)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}} onClick={()=>setImpersonateModal(null)}>
         <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:28,boxShadow:"0 16px 60px rgba(0,0,0,0.7)"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <div style={{fontSize:18,fontWeight:700,color:T.t}}>👁 Log In As User</div>
+            <div style={{fontSize:18,fontWeight:700,color:T.t}}>Log in as {impersonateModal.name}</div>
             <div onClick={()=>setImpersonateModal(null)} style={{cursor:"pointer",color:T.m,fontSize:18}}>✕</div>
           </div>
           <div style={{padding:"16px 18px",background:T.d,borderRadius:10,marginBottom:16}}>
-            <div style={{fontSize:16,fontWeight:600,color:T.t}}>{impersonateModal.name}</div>
-            <div style={{fontSize:13,color:T.s,marginTop:4}}>{impersonateModal.email}</div>
-            <div style={{fontSize:12,color:T.m,marginTop:4}}>Plan: <span style={{color:T.a,fontWeight:600}}>{impersonateModal.plan}</span></div>
+            <div style={{fontSize:14,color:T.s}}>{impersonateModal.email} · <span style={{color:T.a,fontWeight:600}}>{impersonateModal.plan}</span> plan</div>
           </div>
           {impersonateModal.login_url?(
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <div onClick={()=>{navigator.clipboard.writeText(impersonateModal.login_url);}} style={{padding:"14px 20px",borderRadius:10,background:T.bl,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",textAlign:"center"}}>Copy Login URL (Incognito)</div>
-              <div style={{fontSize:12,color:T.m,textAlign:"center",lineHeight:1.5}}>Open this URL in an incognito/private window.<br/>Your current session won't be affected.</div>
-              <div onClick={()=>window.open(impersonateModal.login_url,'_blank')} style={{padding:"10px 20px",borderRadius:8,background:"transparent",border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"center"}}>Open Now (will affect current session) →</div>
+              <div onClick={()=>{navigator.clipboard.writeText(impersonateModal.login_url);setImpersonateModal(p=>({...p,copied:true}));setTimeout(()=>setImpersonateModal(p=>p?{...p,copied:false}:p),2000);}} style={{padding:"14px 20px",borderRadius:10,background:impersonateModal.copied?T.a:T.a,color:"#000",fontSize:15,fontWeight:700,cursor:"pointer",textAlign:"center"}}>{impersonateModal.copied?"Copied!":"Copy Login Link"}</div>
+              <div style={{fontSize:12,color:T.m,textAlign:"center",lineHeight:1.5}}>Open in an incognito/private window to keep your current session.</div>
+              <div onClick={()=>window.open(impersonateModal.login_url,'_blank')} style={{padding:"10px 20px",borderRadius:8,background:"transparent",border:`1px solid ${T.bl}30`,color:T.bl,fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"center"}}>Open in New Tab →</div>
             </div>
           ):(
             <div style={{textAlign:"center",padding:20,color:T.r,fontSize:13}}>Failed to generate login URL. Check edge function.</div>
