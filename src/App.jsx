@@ -64,8 +64,8 @@ export default function App(){
   const [impersonateLoading,setImpersonateLoading]=useState(false);
 
   // ━━━ IMPERSONATION DERIVED VALUES ━━━━━━━━━━━━━━━━━
-  const effectiveUserId = impersonating ? impersonating.id : authUser?.id;
-  const effectiveProfile = impersonating ? impersonating : profile;
+  const effectiveUserId = impersonating?.id || authUser?.id;
+  const effectiveProfile = impersonating || profile;
 
   const sendRueIntake=useCallback(async(msg)=>{
     if(rueLoading) return;
@@ -141,6 +141,7 @@ export default function App(){
         setAuthUser(prev => (!prev || prev.id !== session.user.id) ? session.user : prev);
         logActivity(session.user.id,'login');
         const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+        console.log('PROFILE LOADED:', prof?.role, prof?.plan, prof?.email, prof?.id);
         setProfile(prof||null);
         // Check if onboarding needed
         if(prof && prof.is_beta_tester) {
@@ -502,6 +503,7 @@ export default function App(){
   const cpl=total>0?(20/total).toFixed(2):"—";
   const limits=getPlanLimits(effectiveProfile);
   const isPro=limits.isPro;
+  if(effectiveProfile) console.log('EFFECTIVE:', effectiveProfile?.role, effectiveProfile?.plan, 'isPro:', isPro, 'impersonating:', !!impersonating);
   const pScore=Math.min(100,Math.round((total>0?25:0)+(targets>0?25:0)+(leads.some(l=>l.pipeline_stage==="outreach_sent")?25:0)+(leads.some(l=>l.pipeline_stage==="meeting_booked")?25:0)));
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
