@@ -23,7 +23,8 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   }, [lead?.id]);
 
   const loadTasks = async () => {
-    const { data } = await supabase.from('lead_tasks').select('*').eq('lead_id', lead.id).order('due_date', { ascending: true });
+    const { data, error } = await supabase.from('lead_tasks').select('*').eq('lead_id', lead.id).order('created_at', { ascending: true });
+    if (error) console.error('loadTasks error:', error);
     setTasks(data || []);
   };
 

@@ -188,25 +188,25 @@ export default function App(){
   },[]);
 
   const loadNotifications = useCallback(async () => {
-    if (!authUser?.id) return;
+    if (!effectiveUserId) return;
     const { data } = await supabase.from('notifications')
       .select('*')
-      .eq('user_id', authUser.id)
+      .eq('user_id', effectiveUserId)
       .order('created_at', { ascending: false })
       .limit(20);
     setNotifications(data || []);
-  }, [authUser]);
+  }, [effectiveUserId]);
 
   // Load notifications and subscribe to realtime
   useEffect(() => {
-    if (!authUser?.id) return;
+    if (!effectiveUserId) return;
     loadNotifications();
     const channel = supabase.channel('notifs')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${authUser.id}` },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${effectiveUserId}` },
         (payload) => { setNotifications(prev => [payload.new, ...prev]); }
       ).subscribe();
     return () => supabase.removeChannel(channel);
-  }, [authUser, loadNotifications]);
+  }, [effectiveUserId, loadNotifications]);
 
   const handleOnboardingComplete = (updatedData) => {
     setProfile(p => ({ ...p, ...updatedData }));
@@ -1579,7 +1579,7 @@ select option{background:${T.card};color:${T.t}}
       {profileMenuOpen&&<div onClick={()=>setProfileMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:1099}}/>}
 
       {profileMenuOpen&&(
-        <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",width:210,background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"6px 0",zIndex:1100,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+        <div style={{position:"fixed",bottom:80,left:90,width:210,background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"6px 0",zIndex:1100,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
           {profile?.role==="owner"&&!impersonating&&<>
             <div onClick={()=>{setViewWithHistory("admin");setSidebarOpen(false);setProfileMenuOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.r,borderRadius:6}} onMouseOver={ev=>ev.currentTarget.style.background=T.r+"15"} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
               <span>🛡️</span><span>Admin Dashboard</span>
@@ -1697,7 +1697,7 @@ select option{background:${T.card};color:${T.t}}
   {notifOpen && <div style={{position:'absolute',bottom:0,left:60,width:320,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:1200,overflow:'hidden'}}>
     <div style={{padding:'12px 16px',borderBottom:`1px solid ${T.b}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
       <span style={{fontWeight:700,color:T.t,fontSize:14}}>Notifications</span>
-      {unreadCount > 0 && <span onClick={async(e)=>{e.stopPropagation();await supabase.from('notifications').update({read:true}).eq('user_id',authUser?.id).eq('read',false);loadNotifications();}} style={{fontSize:11,color:T.a,cursor:'pointer'}}>Mark all read</span>}
+      {unreadCount > 0 && <span onClick={async(e)=>{e.stopPropagation();await supabase.from('notifications').update({read:true}).eq('user_id',effectiveUserId).eq('read',false);loadNotifications();}} style={{fontSize:11,color:T.a,cursor:'pointer'}}>Mark all read</span>}
     </div>
     {notifications.length === 0
       ? <div style={{padding:24,textAlign:'center',color:T.s,fontSize:13}}>No notifications yet</div>
