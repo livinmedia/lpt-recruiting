@@ -80,8 +80,8 @@ export async function agentSearch({
 
   if (state) params.push(`state=eq.${state}`);
   if (brokerage) params.push(`brokerage_name=ilike.%25${encodeURIComponent(brokerage)}%25`);
-  if (name) params.push(`full_name=ilike.*${encodeURIComponent(name)}*`);
-  if (city) params.push(`city=ilike.*${encodeURIComponent(city)}*`);
+  if (name) params.push(`full_name=ilike.%25${encodeURIComponent(name)}%25`);
+  if (city) params.push(`city=ilike.%25${encodeURIComponent(city)}%25`);
 
   if (newDays) {
     const d = new Date();
@@ -95,7 +95,7 @@ export async function agentSearch({
   params.push(`limit=${limit}`);
   params.push(`offset=${offset}`);
   params.push(
-    `select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration,original_license_date,personal_email,work_email,mobile_phone,linkedin_url,enriched_at`
+    `select=id,state,license_number,license_type,full_name,first_name,last_name,license_status,brokerage_name,brokerage_license,city,county,address,license_expiration,original_license_date,phone,email`
   );
 
   try {
