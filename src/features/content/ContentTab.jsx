@@ -23,7 +23,7 @@ export default function ContentTab({ userId, userProfile }) {
   
   const [teamPosts, setTeamPosts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedBrokerage, setSelectedBrokerage] = useState(userProfile?.brokerage || "LPT Realty");
+  const [selectedBrokerage, setSelectedBrokerage] = useState(TARGET_BROKERAGES[0]);
   const [showWritePost, setShowWritePost] = useState(false);
   const [newPost, setNewPost] = useState({ title: "", excerpt: "", content: "" });
   const [postSaving, setPostSaving] = useState(false);
