@@ -123,6 +123,7 @@ export default function ContentTab({ userId, userProfile }) {
   return (
     <div>
       {/* Header */}
+      <style>{`@keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(0,229,160,0.3)}50%{box-shadow:0 0 20px rgba(0,229,160,0.6)}}`}</style>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 24, fontWeight: 800, color: T.t, marginBottom: 8 }}>Content Hub</div>
         <div style={{ fontSize: 14, color: T.s }}>Recruiting content, landing pages, and daily posts</div>
@@ -147,7 +148,7 @@ export default function ContentTab({ userId, userProfile }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>🎯 Recruiting Links</div>
             <select
-              value={selectedBrokerage}
+              value={selectedBrokerage} style={{ padding: "10px 16px", borderRadius: 8, background: T.d, border: "2px solid " + T.a, color: T.t, fontSize: 14, fontFamily: "inherit", cursor: "pointer", boxShadow: "0 0 12px rgba(0,229,160,0.3)", animation: "glowPulse 2s ease-in-out infinite" }}
               onChange={e => setSelectedBrokerage(e.target.value)}
               style={{ padding: "10px 16px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "inherit" }}
             >
@@ -160,6 +161,7 @@ export default function ContentTab({ userId, userProfile }) {
           </div>
 
           {/* Landing Pages */}
+      <style>{`@keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(0,229,160,0.3)}50%{box-shadow:0 0 20px rgba(0,229,160,0.6)}}`}</style>
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 14, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>LANDING PAGES</div>
             {landingPages.map((lp, i) => (
