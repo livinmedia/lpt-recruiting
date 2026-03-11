@@ -161,7 +161,6 @@ export default function ContentTab({ userId, userProfile }) {
           </div>
 
           {/* Landing Pages */}
-      <style>{`@keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(0,229,160,0.3)}50%{box-shadow:0 0 20px rgba(0,229,160,0.6)}}`}</style>
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 14, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>LANDING PAGES</div>
             {landingPages.map((lp, i) => (
