@@ -251,7 +251,7 @@ export default function App(){
 
   const loadBetaFeedback=useCallback(async()=>{
     if(!authUser)return;
-    const{data}=await supabase.from("beta_feedback").select("*").order("created_at",{ascending:false});
+    const{data}=await supabase.from("beta_feedback").select("*,profiles(full_name,email)").order("created_at",{ascending:false});
     setBetaFeedback(data||[]);
     const{data:ups}=await supabase.from("beta_feedback_upvotes").select("feedback_id").eq("user_id",authUser.id);
     setBetaFbMyUpvotes(new Set((ups||[]).map(u=>u.feedback_id)));
@@ -1049,7 +1049,12 @@ export default function App(){
             {f.steps_to_reproduce&&<div style={{marginBottom:16}}><div style={{fontSize:12,fontWeight:700,color:T.m,letterSpacing:1,marginBottom:6}}>STEPS TO REPRODUCE</div><div style={{fontSize:13,color:T.s,lineHeight:1.6,whiteSpace:"pre-wrap",background:T.d,borderRadius:8,padding:12}}>{f.steps_to_reproduce}</div></div>}
             {f.expected_behavior&&<div style={{marginBottom:16}}><div style={{fontSize:12,fontWeight:700,color:T.m,letterSpacing:1,marginBottom:6}}>EXPECTED BEHAVIOR</div><div style={{fontSize:13,color:T.s,lineHeight:1.6}}>{f.expected_behavior}</div></div>}
             {f.screenshots?.length>0&&<div style={{marginBottom:16}}><div style={{fontSize:12,fontWeight:700,color:T.m,letterSpacing:1,marginBottom:6}}>SCREENSHOTS</div><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{f.screenshots.map((s,i)=><img key={i} src={s} alt="" style={{width:120,height:80,objectFit:"cover",borderRadius:8,border:`1px solid ${T.b}`,cursor:"pointer"}} onClick={()=>window.open(s,"_blank")}/>)}</div></div>}
-            <div style={{display:"flex",gap:16,fontSize:12,color:T.m,marginBottom:16}}>
+            <div style={{display:"flex",gap:16,fontSize:12,color:T.m,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+              <span style={{display:"flex",alignItems:"center",gap:6,color:T.s,fontWeight:600}}>
+                <span style={{width:20,height:20,borderRadius:"50%",background:T.a+"30",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:T.a}}>{(f.profiles?.full_name||f.profiles?.email||"?").charAt(0).toUpperCase()}</span>
+                {f.profiles?.full_name||f.profiles?.email||"Unknown user"}
+                {f.user_id===authUser?.id&&<span style={{color:T.a}}>(you)</span>}
+              </span>
               {f.page_url&&<span>📍 {f.page_url}</span>}
               {f.screen_size&&<span>📐 {f.screen_size}</span>}
               <span>📅 {ago(f.created_at)}</span>
@@ -1117,6 +1122,11 @@ export default function App(){
                   </div>
                   <div style={{fontSize:15,fontWeight:700,color:T.t,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</div>
                   <div style={{fontSize:12,color:T.s,lineHeight:1.5,marginBottom:10,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{f.description}</div>
+                  <div style={{fontSize:11,color:T.m,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{width:18,height:18,borderRadius:"50%",background:T.a+"30",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:T.a,flexShrink:0}}>{(f.profiles?.full_name||f.profiles?.email||"?").charAt(0).toUpperCase()}</span>
+                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.profiles?.full_name||f.profiles?.email||"Unknown"}</span>
+                    {f.user_id===authUser?.id&&<span style={{fontSize:10,fontWeight:700,color:T.a,flexShrink:0}}>· you</span>}
+                  </div>
                   <div style={{display:"flex",gap:12,fontSize:12,color:T.m,alignItems:"center"}}>
                     <span style={{color:betaFbMyUpvotes.has(f.id)?T.a:T.m}}>👍 {f.upvote_count||0}</span>
                     <span>💬 {f.comment_count||0}</span>
