@@ -105,12 +105,12 @@
     },
     {
       "src": "^/([a-z0-9-]+)/([a-z0-9-]+)$",
-      "dest": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-team-blog?team=$1&post=$2",
+      "dest": "/api/team-blog?team=$1&post=$2",
       "check": true
     },
     {
       "src": "^/([a-z0-9-]+)$",
-      "dest": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-team-blog?team=$1",
+      "dest": "/api/team-blog?team=$1",
       "check": true
     },
     {
