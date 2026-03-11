@@ -573,6 +573,12 @@ export default function App(){
   const [blogTab,setBlogTab]=useState("brokerage");
   const [dailyContent,setDailyContent]=useState([]);
   const [dcExpanded,setDcExpanded]=useState({});
+  const [rkrtContent,setRkrtContent]=useState([]);
+  const [rkrtContentTab,setRkrtContentTab]=useState("social");
+  const [rkrtGenerating,setRkrtGenerating]=useState(false);
+  const [brokeragePosts,setBrokeragePosts]=useState([]);
+  const [bpFilter,setBpFilter]=useState("all");
+  const [bpApproving,setBpApproving]=useState({});
 
   const loadAdmin=useCallback(async()=>{
     setAdminLoading(true);
@@ -632,6 +638,10 @@ export default function App(){
     setLeaderboard(lbRes.data||[]);
     const dcRes=await supabase.from('daily_content').select('*').order('content_date',{ascending:false}).limit(30);
     setDailyContent(dcRes.data||[]);
+    const rkrtRes=await supabase.from('rkrt_content').select('*').order('created_at',{ascending:false}).limit(50);
+    setRkrtContent(rkrtRes.data||[]);
+    const bpRes=await supabase.from('brokerage_posts').select('*').order('created_at',{ascending:false}).limit(100);
+    setBrokeragePosts(bpRes.data||[]);
     setAdminLoading(false);
   },[]);
 
@@ -973,6 +983,125 @@ export default function App(){
             </a>
           )}
         </div>
+      </div>
+
+      {/* ━━━ RKRT MARKETING ━━━ */}
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:700,color:T.t}}>📢 RKRT Marketing</div>
+            <div style={{fontSize:12,color:T.m,marginTop:2}}>Brand content for RKRT social channels &amp; blog</div>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {[["social","Social Posts"],["blog","Blog Posts"]].map(([id,label])=>
+              <div key={id} onClick={()=>setRkrtContentTab(id)} style={{padding:"7px 14px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",background:rkrtContentTab===id?T.a+"18":T.d,color:rkrtContentTab===id?T.a:T.s,border:`1px solid ${rkrtContentTab===id?T.a+"40":T.b}`}}>{label}</div>
+            )}
+            <div onClick={async()=>{if(rkrtGenerating)return;setRkrtGenerating(true);try{await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-rkrt-content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images:true,type:'both',force:true})});const r=await supabase.from('rkrt_content').select('*').order('created_at',{ascending:false}).limit(50);setRkrtContent(r.data||[]);}catch(e){console.error('Generate error:',e);}setRkrtGenerating(false);}} style={{padding:"7px 16px",borderRadius:8,background:rkrtGenerating?T.d:T.bl+"18",color:rkrtGenerating?T.m:T.bl,fontSize:13,fontWeight:700,cursor:rkrtGenerating?"wait":"pointer",border:`1px solid ${rkrtGenerating?T.b:T.bl+"40"}`,flexShrink:0}}>{rkrtGenerating?"⏳ Generating…":"✨ Generate Content"}</div>
+          </div>
+        </div>
+        <div style={{height:1,background:T.b,margin:"14px 0"}}/>
+        {rkrtContentTab==="social"&&(()=>{
+          const posts=rkrtContent.filter(c=>c.content_type==="social"||!c.content_type);
+          const platColor=(p)=>p==="facebook"||p==="fb"?"#3B82F6":p==="instagram"||p==="ig"?"#A855F7":p==="linkedin"?"#0A66C2":"#6B7280";
+          return posts.length===0?<div style={{textAlign:"center",padding:"32px",color:T.m}}>No social content yet. Click Generate Content to create some.</div>:(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
+              {posts.map((c,i)=>(
+                <div key={c.id||i} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 18px",display:"flex",flexDirection:"column",gap:10}}>
+                  {c.image_url&&<img src={c.image_url} alt="" style={{width:"100%",height:140,objectFit:"cover",borderRadius:8,border:`1px solid ${T.b}`}} onError={e=>e.target.style.display='none'}/>}
+                  <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                    {c.platform&&<span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:999,background:platColor(c.platform)+"20",color:platColor(c.platform),textTransform:"uppercase"}}>{c.platform}</span>}
+                    {c.status&&<span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:999,background:c.status==="published"?T.a+"20":c.status==="draft"?T.y+"20":T.s+"20",color:c.status==="published"?T.a:c.status==="draft"?T.y:T.s,textTransform:"capitalize"}}>{c.status||"draft"}</span>}
+                  </div>
+                  {c.title&&<div style={{fontSize:14,fontWeight:700,color:T.t}}>{c.title}</div>}
+                  <div style={{fontSize:12,color:T.s,lineHeight:1.5,flex:1,display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{c.body||c.content||c.caption||""}</div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:11,color:T.m}}>{c.created_at?new Date(c.created_at).toLocaleDateString():"—"}</span>
+                    <CopyButton text={c.body||c.content||c.caption||""} label="Copy"/>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+        {rkrtContentTab==="blog"&&(()=>{
+          const posts=rkrtContent.filter(c=>c.content_type==="blog");
+          return posts.length===0?<div style={{textAlign:"center",padding:"32px",color:T.m}}>No blog content yet. Click Generate Content to create some.</div>:(
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {posts.map((c,i)=>(
+                <div key={c.id||i} style={{display:"flex",gap:14,background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"14px 16px",alignItems:"flex-start"}}>
+                  {c.image_url&&<img src={c.image_url} alt="" style={{width:72,height:56,objectFit:"cover",borderRadius:6,border:`1px solid ${T.b}`,flexShrink:0}} onError={e=>e.target.style.display='none'}/>}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:700,color:T.t,marginBottom:4}}>{c.title||"Untitled"}</div>
+                    <div style={{fontSize:12,color:T.s,lineHeight:1.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.excerpt||c.body||""}</div>
+                  </div>
+                  <div style={{flexShrink:0,textAlign:"right",display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
+                    <span style={{fontSize:11,color:T.m}}>{c.created_at?new Date(c.created_at).toLocaleDateString():"—"}</span>
+                    {c.slug&&<a href={`https://rkrt.in/blog/${c.slug}`} target="_blank" rel="noreferrer" style={{fontSize:12,color:T.bl,fontWeight:600,textDecoration:"none"}}>View →</a>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* ━━━ BROKERAGE BLOGS ━━━ */}
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:700,color:T.t}}>🏢 Brokerage Blogs</div>
+            <div style={{fontSize:12,color:T.m,marginTop:2}}>AI-generated recruiting content for affiliated brokerages</div>
+          </div>
+        </div>
+        {/* Stats row */}
+        {(()=>{
+          const total=brokeragePosts.length;
+          const pending=brokeragePosts.filter(p=>p.status==="draft").length;
+          const approved=brokeragePosts.filter(p=>p.status==="approved").length;
+          const published=brokeragePosts.filter(p=>p.status==="published").length;
+          const rejected=brokeragePosts.filter(p=>p.status==="rejected").length;
+          const brokerages=[...new Set(brokeragePosts.map(p=>p.brokerage_name||p.brokerage).filter(Boolean))];
+          return(<>
+            <div style={{display:"flex",gap:10,margin:"14px 0",flexWrap:"wrap"}}>
+              {[["Total",total,T.t],["Pending",pending,"#FBBF24"],["Approved",approved,T.a],["Published",published,T.bl],["Rejected",rejected,T.r]].map(([l,v,c])=>
+                <div key={l} style={{background:T.d,borderRadius:8,padding:"10px 16px",border:`1px solid ${T.b}`,textAlign:"center",minWidth:70}}>
+                  <div style={{fontSize:22,fontWeight:800,color:c}}>{adminLoading?"…":v}</div>
+                  <div style={{fontSize:10,color:T.m,fontWeight:700,letterSpacing:1}}>{l.toUpperCase()}</div>
+                </div>
+              )}
+              <select value={bpFilter} onChange={e=>setBpFilter(e.target.value)} style={{padding:"8px 12px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:13,fontFamily:"inherit",marginLeft:"auto"}}>
+                <option value="all">All Brokerages</option>
+                {brokerages.map(b=><option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div style={{height:1,background:T.b,marginBottom:12}}/>
+            {(()=>{
+              const filtered=brokeragePosts.filter(p=>bpFilter==="all"||(p.brokerage_name||p.brokerage)===bpFilter);
+              const statColor=(s)=>s==="draft"?"#FBBF24":s==="approved"?T.a:s==="published"?T.bl:s==="rejected"?T.r:T.m;
+              return filtered.length===0?<div style={{textAlign:"center",padding:"32px",color:T.m}}>No brokerage posts yet.</div>:(
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {filtered.map((p,i)=>(
+                    <div key={p.id||i} style={{display:"flex",gap:12,background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"12px 16px",alignItems:"center"}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:T.t,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.title||"Untitled"}</div>
+                        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                          {(p.brokerage_name||p.brokerage)&&<span style={{fontSize:11,color:T.s,fontWeight:600}}>🏢 {p.brokerage_name||p.brokerage}</span>}
+                          <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:999,background:statColor(p.status)+"20",color:statColor(p.status),textTransform:"capitalize"}}>{p.status||"draft"}</span>
+                          <span style={{fontSize:11,color:T.m}}>{p.created_at?new Date(p.created_at).toLocaleDateString():"—"}</span>
+                        </div>
+                      </div>
+                      {p.status==="draft"&&<div style={{display:"flex",gap:6,flexShrink:0}}>
+                        <div onClick={async()=>{if(bpApproving[p.id])return;setBpApproving(prev=>({...prev,[p.id]:"approving"}));await supabase.from("brokerage_posts").update({status:"approved",approved_by:authUser.id,approved_at:new Date().toISOString()}).eq("id",p.id);setBrokeragePosts(prev=>prev.map(x=>x.id===p.id?{...x,status:"approved",approved_by:authUser.id}:x));setBpApproving(prev=>({...prev,[p.id]:null}));}} style={{padding:"6px 14px",borderRadius:7,background:bpApproving[p.id]==="approving"?T.d:T.a+"18",color:bpApproving[p.id]==="approving"?T.m:T.a,fontSize:12,fontWeight:700,cursor:bpApproving[p.id]?"wait":"pointer",border:`1px solid ${T.a}40`}}>{bpApproving[p.id]==="approving"?"…":"✓ Approve"}</div>
+                        <div onClick={async()=>{if(bpApproving[p.id])return;setBpApproving(prev=>({...prev,[p.id]:"rejecting"}));await supabase.from("brokerage_posts").update({status:"rejected"}).eq("id",p.id);setBrokeragePosts(prev=>prev.map(x=>x.id===p.id?{...x,status:"rejected"}:x));setBpApproving(prev=>({...prev,[p.id]:null}));}} style={{padding:"6px 14px",borderRadius:7,background:bpApproving[p.id]==="rejecting"?T.d:T.r+"18",color:bpApproving[p.id]==="rejecting"?T.m:T.r,fontSize:12,fontWeight:700,cursor:bpApproving[p.id]?"wait":"pointer",border:`1px solid ${T.r}40`}}>{bpApproving[p.id]==="rejecting"?"…":"✗ Reject"}</div>
+                      </div>}
+                      {p.slug&&<a href={`https://rkrt.in/blog/${p.slug}`} target="_blank" rel="noreferrer" style={{fontSize:12,color:T.bl,fontWeight:600,textDecoration:"none",flexShrink:0}}>View →</a>}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </>);
+        })()}
       </div>
 
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
@@ -1474,7 +1603,6 @@ select option{background:${T.card};color:${T.t}}
             <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s",flexShrink:0}}>{ic}</div>
           )}
           {isBeta&&<div onClick={()=>{setViewWithHistory("beta");setSidebarOpen(false);setProfileMenuOpen(false);}} title="Beta Hub" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:view==="beta"?T.am:"transparent",color:view==="beta"?T.a:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>🧪</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Beta</span></div>}
-          {(profile?.role==="owner"||profile?.role==="admin")&&<div onClick={()=>setPreviewUrl("https://www.rkrt.in/admin/blog")} title="Blog Admin" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"transparent",color:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>📰</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Blog</span></div>}
         </div>
         <div style={{flexShrink:0,height:20}}/>
       </div>
