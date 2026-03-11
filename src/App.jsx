@@ -64,8 +64,8 @@ export default function App(){
   const [impersonateLoading,setImpersonateLoading]=useState(false);
 
   // ━━━ IMPERSONATION DERIVED VALUES ━━━━━━━━━━━━━━━━━
-  const effectiveUserId = impersonating?.id || authUser?.id;
-  const effectiveProfile = impersonating || profile;
+  const effectiveUserId = (impersonating && impersonating.id) ? impersonating.id : authUser?.id;
+  const effectiveProfile = (impersonating && impersonating.id) ? impersonating : profile;
 
   const sendRueIntake=useCallback(async(msg)=>{
     if(rueLoading) return;
@@ -84,7 +84,7 @@ export default function App(){
   },[authUser,profile,rueLoading]);
 
   const load=useCallback(async()=>{
-    const uid = impersonating ? impersonating.id : authUser?.id;
+    const uid = (impersonating && impersonating.id) ? impersonating.id : authUser?.id;
     if(!uid) return;
     setLoading(true);
     try {
@@ -109,7 +109,7 @@ export default function App(){
         event: '*',
         schema: 'public',
         table: 'leads',
-        filter: `user_id=eq.${impersonating ? impersonating.id : authUser?.id}`
+        filter: `user_id=eq.${(impersonating && impersonating.id) ? impersonating.id : authUser?.id}`
       }, (payload) => {
         if(payload.eventType === 'INSERT') {
           setLeads(p => [payload.new, ...p]);
@@ -503,7 +503,7 @@ export default function App(){
   const cpl=total>0?(20/total).toFixed(2):"—";
   const limits=getPlanLimits(effectiveProfile);
   const isPro=limits.isPro;
-  if(effectiveProfile) console.log('EFFECTIVE:', effectiveProfile?.role, effectiveProfile?.plan, 'isPro:', isPro, 'impersonating:', !!impersonating);
+  console.log('PLAN_DEBUG:', 'profile:', profile?.role, profile?.plan, '| effective:', effectiveProfile?.role, effectiveProfile?.plan, '| isPro:', isPro, '| impersonating:', impersonating, '| profileIsNull:', profile===null);
   const pScore=Math.min(100,Math.round((total>0?25:0)+(targets>0?25:0)+(leads.some(l=>l.pipeline_stage==="outreach_sent")?25:0)+(leads.some(l=>l.pipeline_stage==="meeting_booked")?25:0)));
   const tierData=["Elite","Strong","Mid","Building","New"].map(t=>({name:t,value:leads.filter(l=>l.tier===t).length})).filter(d=>d.value>0);
   const stages=STAGES.map(s=>({...s,count:leads.filter(l=>l.pipeline_stage===s.id).length}));
