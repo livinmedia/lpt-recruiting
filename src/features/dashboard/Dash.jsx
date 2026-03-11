@@ -319,44 +319,6 @@ export default function Dash({
         ))}
       </div>
 
-      {/* Recent Leads Strip */}
-      {recentLeads && recentLeads.length > 0 && (
-        <div style={{ background: T.card, borderRadius: 12, padding: "20px 24px", marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: T.t }}>🆕 Recent Leads</div>
-            <div onClick={() => onNavigate("pipeline")} style={{ fontSize: 12, color: T.a, cursor: "pointer", fontWeight: 600 }}>View All →</div>
-          </div>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                {["Name", "Market", "Brokerage", "Tier", "Urgency", "Stage", "Added"].map(h => (
-                  <th key={h} style={{ fontSize: 10, color: T.m, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", textAlign: "left", padding: "0 8px 10px", borderBottom: `1px solid ${T.b}` }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {recentLeads.slice(0, 5).map((l, i) => (
-                <tr
-                  key={i}
-                  onClick={() => { onSelectLead(l); onNavigate("lead"); }}
-                  style={{ cursor: "pointer", transition: "background 0.1s" }}
-                  onMouseOver={ev => ev.currentTarget.style.background = T.bg + "80"}
-                  onMouseOut={ev => ev.currentTarget.style.background = "transparent"}
-                >
-                  <td style={{ padding: "10px 8px", fontSize: 13, fontWeight: 700, color: T.t, whiteSpace: "nowrap", borderBottom: `1px solid ${T.b}20` }}>{l.first_name} {l.last_name}</td>
-                  <td style={{ padding: "10px 8px", fontSize: 12, color: T.s, borderBottom: `1px solid ${T.b}20` }}>{l.city && l.state ? `${l.city}, ${l.state}` : l.market || "—"}</td>
-                  <td style={{ padding: "10px 8px", fontSize: 12, color: l.brokerage ? T.a : T.m, borderBottom: `1px solid ${T.b}20` }}>{l.brokerage?.substring(0, 22) || "—"}</td>
-                  <td style={{ padding: "10px 8px", borderBottom: `1px solid ${T.b}20` }}><TPill t={l.tier} /></td>
-                  <td style={{ padding: "10px 8px", borderBottom: `1px solid ${T.b}20` }}><UPill u={l.urgency} /></td>
-                  <td style={{ padding: "10px 8px", borderBottom: `1px solid ${T.b}20` }}><Pill text={l.pipeline_stage?.replace(/_/g, " ") || "new"} color={STAGES.find(s => s.id === l.pipeline_stage)?.c || T.s} /></td>
-                  <td style={{ padding: "10px 8px", fontSize: 11, color: T.m, borderBottom: `1px solid ${T.b}20` }}>{ago(l.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
       {/* Two Column Section */}
       <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         {/* Today's Actions */}
@@ -394,43 +356,128 @@ export default function Dash({
           )}
         </div>
 
-        {/* Hottest Leads — ranked by interest_score */}
-        <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: T.t }}>🔥 Hottest Leads</span>
-            <span onClick={() => onNavigate("pipeline")} style={{ fontSize: 12, color: T.a, cursor: "pointer", fontWeight: 600 }}>View All →</span>
-          </div>
-          {scoredLeads.length > 0 ? scoredLeads.slice(0, 5).map((l, i) => {
-            const heatColor = HEAT_COLOR[l.heat_level] || T.b;
-            const heatIcon = HEAT_ICON[l.heat_level] || "❄️";
-            const isToday = l.last_activity_at && new Date(l.last_activity_at).toDateString() === new Date().toDateString();
-            return (
-              <div
-                key={i}
-                onClick={() => { onSelectLead(l); onNavigate("lead"); }}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 13px", borderRadius: 9, background: T.d, border: `1px solid ${T.b}`, marginBottom: 8, cursor: "pointer", transition: "border-color 0.15s" }}
-                onMouseOver={ev => ev.currentTarget.style.borderColor = heatColor}
-                onMouseOut={ev => ev.currentTarget.style.borderColor = T.b}
-              >
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{heatIcon}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.t, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.first_name} {l.last_name}</div>
-                  <div style={{ fontSize: 12, color: T.s, marginTop: 1 }}>{(l.brokerage_name || l.brokerage || "Unknown").substring(0, 24)}</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                  <div style={{ padding: "3px 9px", borderRadius: 20, background: heatColor + "22", border: `1px solid ${heatColor}44`, fontSize: 12, fontWeight: 800, color: heatColor }}>{l.interest_score}</div>
-                  <div style={{ fontSize: 10, color: T.m }}>{isToday ? "Active today" : l.last_activity_at ? `Last: ${ago(l.last_activity_at)}` : l.heat_level || "cold"}</div>
-                </div>
-              </div>
-            );
-          }) : (
-            <div style={{ textAlign: "center", padding: "24px 16px", color: T.m }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>🎯</div>
-              <div style={{ fontSize: 13, lineHeight: 1.5 }}>No scored leads yet. Add leads and share your recruiting links to start tracking engagement.</div>
-            </div>
-          )}
-        </div>
       </div>
+
+      {/* 🔥 Hottest Leads Podium */}
+      {(() => {
+        const ranked = [...scoredLeads].sort((a, b) => (b.interest_score || 0) - (a.interest_score || 0));
+        const top3 = ranked.slice(0, 3);
+        const rest = ranked.slice(3, 10);
+        const hotCount = scoredLeads.filter(l => l.heat_level === "hot" || l.heat_level === "on_fire").length;
+        const warmCount = scoredLeads.filter(l => l.heat_level === "warming" || l.heat_level === "interested").length;
+        const coldCount = scoredLeads.filter(l => !l.heat_level || l.heat_level === "cold").length;
+
+        const MEDAL = ["🥇", "🥈", "🥉"];
+        const MEDAL_BORDER = ["#FFD700", "#C0C0C0", "#CD7F32"];
+        const MEDAL_GLOW = ["rgba(255,215,0,0.25)", "rgba(192,192,192,0.15)", "rgba(205,127,50,0.15)"];
+        const MEDAL_SCORE_SIZE = [48, 36, 36];
+
+        return (
+          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px", marginBottom: 16 }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: T.t }}>🔥 Hottest Leads</span>
+              <span onClick={() => onNavigate("pipeline")} style={{ fontSize: 12, color: T.a, cursor: "pointer", fontWeight: 600 }}>View All →</span>
+            </div>
+
+            {scoredLeads.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 16px", color: T.m }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🎯</div>
+                <div style={{ fontSize: 14, lineHeight: 1.6 }}>No lead activity yet. Share your recruiting links and content to start tracking engagement.</div>
+              </div>
+            ) : (
+              <>
+                {/* Stats Row */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
+                  {[
+                    { label: "Total Leads", value: scoredLeads.length, color: T.a },
+                    { label: "Hot Leads", value: hotCount, color: "#FF4444" },
+                    { label: "Warming", value: warmCount, color: "#FF8C00" },
+                    { label: "Cold", value: coldCount, color: T.m },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} style={{ background: T.d, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
+                      <div style={{ fontSize: 26, fontWeight: 800, color }}>{value}</div>
+                      <div style={{ fontSize: 11, color: T.m, marginTop: 3, fontWeight: 600, letterSpacing: 0.5 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Top 3 Podium */}
+                {top3.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: `repeat(${top3.length}, 1fr)`, gap: 12, marginBottom: 20 }}>
+                    {top3.map((l, i) => {
+                      const heatColor = HEAT_COLOR[l.heat_level] || T.b;
+                      const heatIcon = HEAT_ICON[l.heat_level] || "❄️";
+                      const isToday = l.last_activity_at && new Date(l.last_activity_at).toDateString() === new Date().toDateString();
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => { onSelectLead(l); onNavigate("lead"); }}
+                          style={{
+                            background: T.d,
+                            border: `1.5px solid ${MEDAL_BORDER[i]}`,
+                            borderRadius: 12,
+                            padding: "18px 16px",
+                            cursor: "pointer",
+                            textAlign: "center",
+                            boxShadow: `0 0 18px ${MEDAL_GLOW[i]}`,
+                            transition: "transform 0.15s",
+                            position: "relative",
+                          }}
+                          onMouseOver={ev => ev.currentTarget.style.transform = "translateY(-2px)"}
+                          onMouseOut={ev => ev.currentTarget.style.transform = "translateY(0)"}
+                        >
+                          <div style={{ position: "absolute", top: 10, left: 12, fontSize: 18 }}>{MEDAL[i]}</div>
+                          <div style={{ fontSize: MEDAL_SCORE_SIZE[i], fontWeight: 900, color: MEDAL_BORDER[i], lineHeight: 1, marginBottom: 8, marginTop: 8 }}>{l.interest_score || 0}</div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: T.t, marginBottom: 3 }}>{l.first_name} {l.last_name}</div>
+                          <div style={{ fontSize: 12, color: T.s, marginBottom: 8 }}>{(l.brokerage_name || l.brokerage || "Unknown").substring(0, 22)}</div>
+                          <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: heatColor + "22", border: `1px solid ${heatColor}44`, color: heatColor, fontWeight: 700 }}>{heatIcon} {(l.heat_level || "cold").replace(/_/g, " ")}</span>
+                            {l.last_activity_at && (
+                              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: T.b + "30", color: T.m, fontWeight: 600 }}>{isToday ? "Active today" : ago(l.last_activity_at)}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* #4–10 Compact List */}
+                {rest.length > 0 && (
+                  <div style={{ borderTop: `1px solid ${T.b}`, paddingTop: 16 }}>
+                    {rest.map((l, i) => {
+                      const heatColor = HEAT_COLOR[l.heat_level] || T.b;
+                      const heatIcon = HEAT_ICON[l.heat_level] || "❄️";
+                      const isToday = l.last_activity_at && new Date(l.last_activity_at).toDateString() === new Date().toDateString();
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => { onSelectLead(l); onNavigate("lead"); }}
+                          style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 10px", borderRadius: 8, marginBottom: 4, cursor: "pointer", transition: "background 0.1s" }}
+                          onMouseOver={ev => ev.currentTarget.style.background = T.d}
+                          onMouseOut={ev => ev.currentTarget.style.background = "transparent"}
+                        >
+                          <span style={{ fontSize: 12, color: T.m, fontWeight: 800, minWidth: 22, textAlign: "center" }}>#{i + 4}</span>
+                          <span style={{ fontSize: 14, flexShrink: 0 }}>{heatIcon}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: T.t, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.first_name} {l.last_name}</div>
+                            <div style={{ fontSize: 11, color: T.s }}>{(l.brokerage_name || l.brokerage || "Unknown").substring(0, 28)}</div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                            <div style={{ padding: "3px 9px", borderRadius: 20, background: heatColor + "22", border: `1px solid ${heatColor}44`, fontSize: 12, fontWeight: 800, color: heatColor }}>{l.interest_score || 0}</div>
+                            <div style={{ fontSize: 10, color: T.m, minWidth: 60, textAlign: "right" }}>{isToday ? "Today" : l.last_activity_at ? ago(l.last_activity_at) : "—"}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Pipeline & Activity Row */}
       <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
