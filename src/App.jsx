@@ -66,6 +66,7 @@ export default function App(){
   // ━━━ IMPERSONATION DERIVED VALUES ━━━━━━━━━━━━━━━━━
   const effectiveUserId = (impersonating && impersonating.id) ? impersonating.id : authUser?.id;
   const effectiveProfile = (impersonating && impersonating.id) ? impersonating : profile;
+  console.log('EFFECTIVE:', effectiveProfile?.role, effectiveProfile?.plan, 'impersonating:', !!(impersonating && impersonating.id));
 
   const sendRueIntake=useCallback(async(msg)=>{
     if(rueLoading) return;
@@ -140,6 +141,7 @@ export default function App(){
         if(!session){setAuthLoading(false);return;}
         setAuthUser(prev => (!prev || prev.id !== session.user.id) ? session.user : prev);
         const {data:prof}=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+        console.log('PROFILE LOADED:', prof?.role, prof?.plan, prof?.email);
         setProfile(prof||null);
         // Check if onboarding needed
         // Check intake status — rue_intake (new) takes priority over beta_intake (legacy)
@@ -154,10 +156,10 @@ export default function App(){
         } else if(prof && !prof.onboarded) {
           setShowOnboarding(true);
         }
-        // Check Rue intake
-        if(prof && prof.onboarded && !sessionStorage.getItem('rue_intake_skipped')){
+        // Check Rue intake (skip for owner/admin, skip if already completed or dismissed)
+        if(prof && prof.onboarded && prof.role!=="owner" && prof.role!=="admin" && !sessionStorage.getItem('rue_intake_skipped')){
           const {data:rueIntake}=await supabase.from('rue_intake').select('completed').eq('user_id',prof.id).single();
-          if(rueIntake && rueIntake.completed) { /* already done */ } else if(!rueIntake) { setShowRueIntake(true); }
+          if(!rueIntake || !rueIntake.completed) setShowRueIntake(true);
         }
         const initialView = window.location.hash.replace("#","");
         if (initialView && initialView !== "home") setView(initialView);
@@ -627,7 +629,7 @@ export default function App(){
 
 
 
-  useEffect(()=>{if(view==="admin"){if(profile?.role!=="owner"){setView("home");return;}loadAdmin();}},[view,loadAdmin,profile]);
+  useEffect(()=>{if(view==="admin"){if(authLoading)return;if(profile?.role!=="owner"){setView("home");return;}loadAdmin();}},[view,loadAdmin,profile,authLoading]);
 
   const publishContent=async()=>{
     if(!newContent.title.trim())return;
@@ -1489,8 +1491,8 @@ select option{background:${T.card};color:${T.t}}
 </div>
 )}
 <Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0,5)} onNavigate={setViewWithHistory} onSelectLead={setSelLead} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
-        {view==="pipeline"&&<><AskRueBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={setSelLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} search={search} setSearch={setSearch}/></>}
-        {view==="crm"&&<><AskRueBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/>{!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={setSelLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/></>}
+        {view==="pipeline"&&<><AskRueBar prompts={[["📱","Draft Outreach",`Look at my pipeline and draft outreach for my highest priority lead.`,T.a],["🔄","Follow-ups",`Which leads need follow-up? Draft messages for each.`,T.bl],["🎯","Strategy",`Analyze my pipeline and suggest what I should focus on.`,T.p],["📊","Conversion Tips",`Based on my pipeline, what can I do to improve conversion?`,T.y]]}/>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={setSelLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} search={search} setSearch={setSearch}/></>}
+        {view==="crm"&&<><AskRueBar prompts={[["🔍","Find Prospects",`Find me 5 real estate agents who might be looking to switch brokerages.`,T.a],["📊","Score Leads",`Score my current leads and tell me who to prioritize.`,T.bl],["📱","Outreach Plan",`Create an outreach plan for all my new and researched leads.`,T.p],["🎯","Market Analysis",`Which markets should I be targeting for recruiting?`,T.y]]}/>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={setSelLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading}/></>}
         {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
         {view==="content"&&<ContentTab userId={effectiveUserId} userProfile={effectiveProfile}/>}
         {view==="calculator"&&<ProGate feature="Commission Calculator" userId={effectiveUserId} userProfile={effectiveProfile}><div style={{textAlign:"center",padding:60,color:T.s}}>Calculator coming soon</div></ProGate>}
