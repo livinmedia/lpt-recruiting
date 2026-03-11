@@ -1306,8 +1306,6 @@ export default function App(){
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.s,fontSize:18,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>Authenticating…</div>;
   if(!authUser){window.location.href="/login";return null;}
-  if(!authUser){window.location.href="/login";return null;}
-  if(!authUser){window.location.href="/login";return null;}
 
   // Show beta intake for beta testers
   if(showBetaIntake && authUser) {
