@@ -137,11 +137,23 @@ export default function EmailInbox({ supabase, userId, profile }) {
     setRueLoading(true);
     try {
       const ctx = messages.map(m => `${m.direction === "inbound" ? "LEAD" : "YOU"}: ${strip(m.body_text || m.body_html || "")}`).join("\n");
-      const res = await fetch(`${SUPABASE_FN}/rue-chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, message: `Draft a follow-up reply for this email thread. Be professional but warm. Conversation:\n\n${ctx}\n\nLead: ${selectedThread.contact_name || "this person"}. ${selectedThread.heat_level ? `Heat: ${selectedThread.heat_level}.` : ""} Write ONLY the reply text.` }) });
+      const prompt = `Draft a follow-up reply for this email thread. Be professional but warm. Here is the conversation:\n\n${ctx}\n\nThe lead's name is ${selectedThread.contact_name || "this person"}. ${selectedThread.heat_level ? "Their heat level is " + selectedThread.heat_level + "." : ""} Write ONLY the email reply text, nothing else.`;
+      const res = await fetch(SUPABASE_FN + "/rue-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, messages: [{ role: "user", content: prompt }], save: false }) });
       const data = await res.json();
-      const draft = data.reply || data.response || data.message;
-      if (draft) { setReplyText(draft); setComposing(true); }
+      if (data.content) { setReplyText(data.content); setComposing(true); }
     } catch (err) { console.error("Rue error:", err); }
+    setRueLoading(false);
+  };
+
+  const askRueCompose = async () => {
+    if (!newTo.trim()) return;
+    setRueLoading(true);
+    try {
+      const prompt = `Draft a recruiting outreach email to ${newTo}. ${newSubject ? "Subject: " + newSubject + ". " : ""}Be professional, warm, and compelling. Write ONLY the email body text, nothing else. Keep it concise — 3-4 paragraphs max.`;
+      const res = await fetch(SUPABASE_FN + "/rue-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, messages: [{ role: "user", content: prompt }], save: false }) });
+      const data = await res.json();
+      if (data.content) setNewBody(data.content);
+    } catch (err) { console.error("Rue compose error:", err); }
     setRueLoading(false);
   };
 
@@ -231,9 +243,12 @@ export default function EmailInbox({ supabase, userId, profile }) {
             <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Subject</label><input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Subject..." style={inputStyle} onFocus={focusHandler} onBlur={blurHandler} /></div>
             <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Message</label><textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Write your email..." rows={10} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={focusHandler} onBlur={blurHandler} /></div>
           </div>
-          <div style={{ padding: "12px 24px", borderTop: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button onClick={() => setComposeNew(false)} style={{ padding: "10px 20px", fontSize: 12, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
-            <button onClick={sendNew} disabled={sending || !newTo.trim() || !newBody.trim()} style={{ padding: "10px 24px", fontSize: 12, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !newTo.trim() || !newBody.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "Sending..." : "Send ✉️"}</button>
+          <div style={{ padding: "12px 24px", borderTop: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <button onClick={askRueCompose} disabled={rueLoading || !newTo.trim()} style={{ padding: "10px 16px", fontSize: 12, borderRadius: 8, cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)", fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setComposeNew(false)} style={{ padding: "10px 20px", fontSize: 12, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
+              <button onClick={sendNew} disabled={sending || !newTo.trim() || !newBody.trim()} style={{ padding: "10px 24px", fontSize: 12, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !newTo.trim() || !newBody.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "Sending..." : "Send ✉️"}</button>
+            </div>
           </div>
         </div>)}
 
