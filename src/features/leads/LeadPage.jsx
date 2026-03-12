@@ -11,6 +11,57 @@ import { CopyButton } from '../../components/ui/CopyButton';
 
 const RUE_CHAT_URL = "https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat";
 
+function timeAgo(ts) {
+  if (!ts) return "";
+  const s = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+const EVENT_META = {
+  email_open:           { icon: "📧", color: "#10b981", label: (m) => `Opened email${m?.subject ? `: ${m.subject}` : ""}` },
+  outreach_sent:        { icon: "✉️", color: "#22d3ee", label: (m) => `Email sent${m?.subject ? `: ${m.subject}` : ""}` },
+  blog_visit:           { icon: "📝", color: "#a78bfa", label: () => "Visited blog" },
+  return_visit:         { icon: "🔄", color: "#f59e0b", label: () => "Returned to site" },
+  multiple_visits_day:  { icon: "👀", color: "#f97316", label: () => "Multiple page views" },
+  agent_enriched:       { icon: "🔍", color: "#22d3ee", label: () => "Contact enriched from directory" },
+  lead_created:         { icon: "➕", color: "#10b981", label: () => "Added to CRM" },
+  form_submit:          { icon: "📋", color: "#3b82f6", label: () => "Submitted form" },
+  landing_page_submit:  { icon: "🏠", color: "#10b981", label: () => "Landing page submission" },
+};
+
+function ScoreGauge({ score }) {
+  const s = Math.min(Math.max(score || 0, 0), 100);
+  const pct = s / 100;
+  const label = s >= 81 ? "On Fire 🔥" : s >= 61 ? "Hot" : s >= 41 ? "Interested" : s >= 21 ? "Warming" : "Cold";
+  const color = s >= 81 ? "#ef4444" : s >= 61 ? "#f97316" : s >= 41 ? "#f59e0b" : s >= 21 ? "#22d3ee" : "#3b82f6";
+  const r = 80, cx = 100, cy = 95, sw = 16;
+  const circumference = Math.PI * r;
+  const dashLen = circumference * pct;
+  return (
+    <div style={{ textAlign: "center", padding: "16px 0" }}>
+      <svg viewBox="0 0 200 120" width="100%" style={{ maxWidth: 220 }}>
+        <defs>
+          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="25%" stopColor="#22d3ee" />
+            <stop offset="50%" stopColor="#f59e0b" />
+            <stop offset="75%" stopColor="#f97316" />
+            <stop offset="100%" stopColor="#ef4444" />
+          </linearGradient>
+        </defs>
+        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="#1a2540" strokeWidth={sw} strokeLinecap="round" />
+        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeDasharray={`${dashLen} ${circumference}`} style={{ transition: "stroke-dasharray 1s ease, stroke 0.5s ease" }} />
+      </svg>
+      <div style={{ marginTop: -10, fontSize: 36, fontWeight: 800, color, fontFamily: "'JetBrains Mono', monospace" }}>{s}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color, marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Based on engagement</div>
+    </div>
+  );
+}
+
 export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, inlineLoading, userId, onDelete, userProfile }) {
   const [tab, setTab] = useState("overview");
   const [notes, setNotes] = useState(lead.notes || "");
@@ -32,9 +83,12 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   const [emailHistory, setEmailHistory] = useState([]);
   const [emailHistoryLoading, setEmailHistoryLoading] = useState(false);
 
+  const [events, setEvents] = useState([]);
+
   useEffect(() => {
     if (lead?.id) {
       loadTasks();
+      supabase.from("lead_events").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(10).then(({ data }) => setEvents(data || []));
     }
   }, [lead?.id]);
 
@@ -544,35 +598,70 @@ Write the email body. Be specific to this person — reference their brokerage, 
 
         {/* Sidebar */}
         <div>
-          {/* Interest Score */}
-          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "20px", marginBottom: 16 }}>
-            <div style={{ fontSize: 13, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>INTEREST SCORE</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ fontSize: 36, fontWeight: 800, color: interest.color }}>{lead.interest_score || 0}</div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: interest.color }}>{interest.emoji} {interest.label}</div>
-                <div style={{ fontSize: 12, color: T.s }}>Based on engagement</div>
-              </div>
-            </div>
+          {/* Interest Score Gauge */}
+          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "12px 20px 8px", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700 }}>INTEREST SCORE</div>
+            <ScoreGauge score={lead.interest_score} />
           </div>
 
           {/* Quick Stats */}
-          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "20px" }}>
-            <div style={{ fontSize: 13, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>QUICK STATS</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 14, color: T.s }}>Added</span>
-                <span style={{ fontSize: 14, color: T.t }}>{ago(lead.created_at)}</span>
+          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "20px", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12 }}>QUICK STATS</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: T.s }}>📅 Added</span>
+                <span style={{ fontSize: 13, color: T.t }}>{ago(lead.created_at)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 14, color: T.s }}>Source</span>
-                <span style={{ fontSize: 14, color: T.t }}>{lead.source || "Ad"}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: T.s }}>📌 Source</span>
+                <span style={{ fontSize: 13, color: T.t }}>{lead.source || "Ad"}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 14, color: T.s }}>License</span>
-                <span style={{ fontSize: 14, color: T.t }}>{lead.license_number || "—"}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: T.s }}>🪪 License</span>
+                <span style={{ fontSize: 13, color: T.t, fontFamily: "'JetBrains Mono', monospace" }}>{lead.license_number || "—"}</span>
               </div>
+              {lead.license_state && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 13, color: T.s }}>📍 State</span>
+                  <span style={{ fontSize: 13, color: T.t, fontWeight: 700 }}>{lead.license_state}</span>
+                </div>
+              )}
+              {lead.transaction_count != null && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 13, color: T.s }}>📊 Transactions</span>
+                  <span style={{ fontSize: 13, color: T.t, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{lead.transaction_count}</span>
+                </div>
+              )}
+              {lead.enrichment_quality != null && (() => {
+                const q = lead.enrichment_quality;
+                const c = q >= 60 ? "#10b981" : q >= 30 ? "#f59e0b" : "#ef4444";
+                return (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 13, color: T.s }}>🔍 Enrichment</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 10, background: `${c}15`, color: c, border: `1px solid ${c}40`, fontFamily: "'JetBrains Mono', monospace" }}>{q}/100</span>
+                  </div>
+                );
+              })()}
             </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "20px" }}>
+            <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12 }}>RECENT ACTIVITY</div>
+            {events.length === 0 ? (
+              <div style={{ fontSize: 12, color: T.s, fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No activity yet</div>
+            ) : events.map((ev, i) => {
+              const meta = EVENT_META[ev.event_type] || { icon: "⚡", color: "#64748b", label: () => ev.event_type?.replace(/_/g, " ") || "Event" };
+              return (
+                <div key={ev.id || i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "8px 0 8px 10px", borderLeft: `2px solid ${meta.color}40`, borderBottom: i < events.length - 1 ? `1px solid #1a254030` : "none", marginBottom: i < events.length - 1 ? 4 : 0 }}>
+                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{meta.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: T.t, lineHeight: 1.4 }}>{meta.label(ev.metadata || ev.meta || {})}</div>
+                    <div style={{ fontSize: 11, color: T.s, marginTop: 2 }}>{timeAgo(ev.created_at)}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
