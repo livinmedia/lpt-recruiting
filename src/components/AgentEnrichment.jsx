@@ -546,6 +546,17 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                   </div>
                 )}
 
+                {/* Realtor.com */}
+                {enrichResult.realtor_url && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: T.s, marginBottom: 4 }}>🏡 Realtor.com</div>
+                    <a href={enrichResult.realtor_url} target="_blank" rel="noreferrer"
+                      style={{ color: T.a, fontSize: 13, textDecoration: "none", wordBreak: "break-all" }}>
+                      View profile
+                    </a>
+                  </div>
+                )}
+
                 {/* Recent Sales */}
                 {enrichResult.recent_sales != null && (
                   <div style={{ marginBottom: 14 }}>
