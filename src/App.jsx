@@ -544,6 +544,12 @@ export default function App(){
     setLeads(p => p.filter(l => l.id !== leadId));
   };
 
+  const loadProfile = async () => {
+    if (!authUser?.id) return;
+    const { data } = await supabase.from("profiles").select("*").eq("id", authUser.id).single();
+    if (data) setProfile(data);
+  };
+
   const total=leads.length,targets=leads.filter(l=>l.brokerage&&!l.brokerage.toLowerCase().includes("lpt")).length,urgent=leads.filter(l=>l.urgency==="HIGH").length;
   const today=leads.filter(l=>l.created_at&&new Date(l.created_at).toDateString()===new Date().toDateString()).length;
   const apiCost=activity.reduce((s,a)=>s+parseFloat(a.cost||0),0);
@@ -1665,7 +1671,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="team"&&effectiveProfile?.team_id&&<TeamView userId={effectiveUserId} profile={effectiveProfile}/>}
         {view==="admin"&&!impersonating&&profile?.role==="owner"&&<AdminView/>}
         {view==="beta"&&isBeta&&<BetaHubView/>}
-        {view==="profile"&&<ProfilePage profile={effectiveProfile} userId={effectiveUserId} leads={leads} onProfileUpdate={async()=>{const{data}=await supabase.from("profiles").select("*").eq("id",authUser?.id).single();if(data)setProfile(data);}}/>}
+        {view==="profile"&&<ProfilePage profile={effectiveProfile} userId={effectiveUserId} leads={leads} onProfileUpdate={loadProfile}/>}
         {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onDelete={handleDeleteLead} userProfile={effectiveProfile}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
