@@ -24,6 +24,7 @@ export default function Pipeline({
   askRueInline,
   search,
   setSearch,
+  inlineLoading = false,
   onUpdateStage,
 }) {
   const [pipeView, setPipeView] = useState("kanban");

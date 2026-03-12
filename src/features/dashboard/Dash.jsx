@@ -21,6 +21,7 @@ export default function Dash({
   onNavigate = () => {},
   onSelectLead = () => {},
   askRueInline = () => {},
+  inlineLoading = false,
   chartsReady = false,
   BarChart,
   Bar,

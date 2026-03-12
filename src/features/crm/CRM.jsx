@@ -18,6 +18,7 @@ export default function CRM({
   onSelectLead,
   onNavigate,
   askRueInline,
+  inlineLoading = false,
   userId = null,
   onBulkDelete = () => {},
 }) {
