@@ -670,6 +670,10 @@ export default function App(){
   const [brokeragePosts,setBrokeragePosts]=useState([]);
   const [bpFilter,setBpFilter]=useState("all");
   const [bpApproving,setBpApproving]=useState({});
+  const [bpTab,setBpTab]=useState("pending");
+  const [bpRejectOpen,setBpRejectOpen]=useState(false);
+  const [bpRejectReason,setBpRejectReason]=useState("");
+  const [bpRejectingPost,setBpRejectingPost]=useState(null);
 
   const loadAdmin=useCallback(async()=>{
     setAdminLoading(true);
@@ -1111,59 +1115,110 @@ export default function App(){
 
       {/* ━━━ BROKERAGE BLOGS ━━━ */}
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-          <div>
-            <div style={{fontSize:18,fontWeight:700,color:T.t}}>🏢 Brokerage Blogs</div>
-            <div style={{fontSize:12,color:T.m,marginTop:2}}>AI-generated recruiting content for affiliated brokerages</div>
+        <style>{`.bp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:900px){.bp-grid{grid-template-columns:repeat(2,1fr)!important}}@media(max-width:600px){.bp-grid{grid-template-columns:1fr!important}}`}</style>
+        {/* Reject modal */}
+        {bpRejectOpen&&(
+          <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div style={{width:"100%",maxWidth:420,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:24}}>
+              <div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:16}}>Reject Post</div>
+              <textarea value={bpRejectReason} onChange={e=>setBpRejectReason(e.target.value)} rows={3} placeholder="Reason for rejection (optional)..." style={{width:"100%",padding:"10px 12px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,fontFamily:"inherit",resize:"none",outline:"none",boxSizing:"border-box"}}/>
+              <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:16}}>
+                <div onClick={()=>setBpRejectOpen(false)} style={{padding:"10px 18px",borderRadius:8,background:T.d,color:T.s,fontSize:13,fontWeight:700,cursor:"pointer"}}>Cancel</div>
+                <div onClick={async()=>{if(!bpRejectingPost)return;await supabase.from("brokerage_posts").update({status:"rejected",rejection_reason:bpRejectReason}).eq("id",bpRejectingPost.id);setBrokeragePosts(prev=>prev.map(x=>x.id===bpRejectingPost.id?{...x,status:"rejected",rejection_reason:bpRejectReason}:x));setBpRejectOpen(false);setBpRejectingPost(null);setBpRejectReason("");}} style={{padding:"10px 18px",borderRadius:8,background:"#F85149",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Reject Post</div>
+              </div>
+            </div>
           </div>
-        </div>
-        {/* Stats row */}
+        )}
         {(()=>{
           const total=brokeragePosts.length;
-          const pending=brokeragePosts.filter(p=>p.status==="draft").length;
-          const approved=brokeragePosts.filter(p=>p.status==="approved").length;
-          const published=brokeragePosts.filter(p=>p.status==="published").length;
-          const rejected=brokeragePosts.filter(p=>p.status==="rejected").length;
+          const pendingPosts=brokeragePosts.filter(p=>p.status==="draft"||p.status==="pending");
+          const approvedPosts=brokeragePosts.filter(p=>p.status==="approved");
+          const publishedPosts=brokeragePosts.filter(p=>p.status==="published");
+          const rejectedPosts=brokeragePosts.filter(p=>p.status==="rejected");
           const brokerages=[...new Set(brokeragePosts.map(p=>p.brokerage_name||p.brokerage).filter(Boolean))];
+          const statusColor={draft:"#F59E0B",pending:"#F59E0B",approved:T.bl,published:T.a,rejected:"#F85149"};
+          const statusLabel={draft:"Pending",pending:"Pending",approved:"Approved",published:"Published",rejected:"Rejected"};
+          const tabPosts=(bpTab==="pending"?pendingPosts:bpTab==="approved"?approvedPosts:bpTab==="published"?publishedPosts:rejectedPosts)
+            .filter(p=>bpFilter==="all"||(p.brokerage_name||p.brokerage)===bpFilter);
+          const bpUpdate=async(post,updates)=>{await supabase.from("brokerage_posts").update(updates).eq("id",post.id);setBrokeragePosts(prev=>prev.map(x=>x.id===post.id?{...x,...updates}:x));};
           return(<>
-            <div style={{display:"flex",gap:10,margin:"14px 0",flexWrap:"wrap"}}>
-              {[["Total",total,T.t],["Pending",pending,"#FBBF24"],["Approved",approved,T.a],["Published",published,T.bl],["Rejected",rejected,T.r]].map(([l,v,c])=>
-                <div key={l} style={{background:T.d,borderRadius:8,padding:"10px 16px",border:`1px solid ${T.b}`,textAlign:"center",minWidth:70}}>
-                  <div style={{fontSize:22,fontWeight:800,color:c}}>{adminLoading?"…":v}</div>
-                  <div style={{fontSize:10,color:T.m,fontWeight:700,letterSpacing:1}}>{l.toUpperCase()}</div>
-                </div>
-              )}
-              <select value={bpFilter} onChange={e=>setBpFilter(e.target.value)} style={{padding:"8px 12px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:13,fontFamily:"inherit",marginLeft:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+              <div>
+                <div style={{fontSize:18,fontWeight:700,color:T.t}}>🏢 Brokerage Blogs</div>
+                <div style={{fontSize:12,color:T.m,marginTop:2}}>AI-generated recruiting content for affiliated brokerages</div>
+              </div>
+              <select value={bpFilter} onChange={e=>setBpFilter(e.target.value)} style={{padding:"8px 12px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:13,fontFamily:"inherit"}}>
                 <option value="all">All Brokerages</option>
                 {brokerages.map(b=><option key={b} value={b}>{b}</option>)}
               </select>
             </div>
-            <div style={{height:1,background:T.b,marginBottom:12}}/>
-            {(()=>{
-              const filtered=brokeragePosts.filter(p=>bpFilter==="all"||(p.brokerage_name||p.brokerage)===bpFilter);
-              const statColor=(s)=>s==="draft"?"#FBBF24":s==="approved"?T.a:s==="published"?T.bl:s==="rejected"?T.r:T.m;
-              return filtered.length===0?<div style={{textAlign:"center",padding:"32px",color:T.m}}>No brokerage posts yet.</div>:(
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  {filtered.map((p,i)=>(
-                    <div key={p.id||i} style={{display:"flex",gap:12,background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"12px 16px",alignItems:"center"}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:700,color:T.t,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.title||"Untitled"}</div>
-                        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                          {(p.brokerage_name||p.brokerage)&&<span style={{fontSize:11,color:T.s,fontWeight:600}}>🏢 {p.brokerage_name||p.brokerage}</span>}
-                          <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:999,background:statColor(p.status)+"20",color:statColor(p.status),textTransform:"capitalize"}}>{p.status||"draft"}</span>
-                          <span style={{fontSize:11,color:T.m}}>{p.created_at?new Date(p.created_at).toLocaleDateString():"—"}</span>
+            {/* Stats row */}
+            <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+              {[["Total",total,T.t],["Pending",pendingPosts.length,"#F59E0B"],["Approved",approvedPosts.length,T.bl],["Published",publishedPosts.length,T.a],["Rejected",rejectedPosts.length,"#F85149"]].map(([l,v,c])=>
+                <div key={l} style={{background:T.d,borderRadius:8,padding:"8px 14px",border:`1px solid ${T.b}`,textAlign:"center",minWidth:64}}>
+                  <div style={{fontSize:20,fontWeight:800,color:c}}>{adminLoading?"…":v}</div>
+                  <div style={{fontSize:10,color:T.m,fontWeight:700,letterSpacing:1}}>{l.toUpperCase()}</div>
+                </div>
+              )}
+            </div>
+            {/* Tab bar */}
+            <div style={{display:"flex",gap:8,marginBottom:20}}>
+              {[{id:"pending",label:"📝 Pending",count:pendingPosts.length},{id:"approved",label:"✅ Approved",count:approvedPosts.length},{id:"published",label:"📰 Published",count:publishedPosts.length},{id:"rejected",label:"❌ Rejected",count:rejectedPosts.length}].map(tab=>(
+                <div key={tab.id} onClick={()=>setBpTab(tab.id)} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 16px",borderRadius:20,background:bpTab===tab.id?T.a+"18":T.d,border:`1px solid ${bpTab===tab.id?T.a+"40":T.b}`,color:bpTab===tab.id?T.a:T.s,fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                  {tab.label}
+                  <span style={{padding:"2px 7px",borderRadius:10,background:bpTab===tab.id?T.a+"30":T.card,fontSize:11,fontWeight:800}}>{tab.count}</span>
+                </div>
+              ))}
+            </div>
+            {/* Card grid */}
+            {tabPosts.length===0
+              ?<div style={{textAlign:"center",padding:"48px 20px",color:T.m,background:T.d,borderRadius:12,border:`1px solid ${T.b}`}}><div style={{fontSize:32,marginBottom:8}}>📝</div>No posts in this category.</div>
+              :<div className="bp-grid">
+                {tabPosts.map(p=>{
+                  const brk=p.brokerage_name||p.brokerage||"";
+                  const sc=statusColor[p.status]||T.m;
+                  return(
+                    <div key={p.id} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+                      {p.image_url
+                        ?<img src={p.image_url} alt="" style={{width:"100%",height:180,objectFit:"cover",display:"block"}}/>
+                        :<div style={{width:"100%",height:180,background:"linear-gradient(135deg,#1a1a2e,#16213e)",display:"flex",alignItems:"center",justifyContent:"center",padding:16,boxSizing:"border-box"}}>
+                          <div style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.35)",textAlign:"center",lineHeight:1.4}}>{p.title||brk||"Blog Post"}</div>
+                        </div>
+                      }
+                      <div style={{padding:"12px 14px",flex:1,display:"flex",flexDirection:"column",gap:6}}>
+                        {brk&&<span style={{padding:"2px 8px",borderRadius:20,background:T.bl+"18",color:T.bl,fontSize:11,fontWeight:700,alignSelf:"flex-start"}}>🏢 {brk}</span>}
+                        <div style={{fontSize:14,fontWeight:700,color:T.t,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{p.title||"Untitled"}</div>
+                        {p.excerpt&&<div style={{fontSize:12,color:T.s,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.5}}>{p.excerpt}</div>}
+                        {p.status==="rejected"&&p.rejection_reason&&<div style={{fontSize:11,color:"#F85149",fontStyle:"italic"}}>"{p.rejection_reason}"</div>}
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:"auto",paddingTop:6}}>
+                          <div style={{fontSize:11,color:T.m}}>{p.created_at?new Date(p.created_at).toLocaleDateString():"—"}</div>
+                          <span style={{padding:"3px 8px",borderRadius:6,background:sc+"18",color:sc,fontSize:11,fontWeight:700}}>{statusLabel[p.status]||p.status}</span>
                         </div>
                       </div>
-                      {p.status==="draft"&&<div style={{display:"flex",gap:6,flexShrink:0}}>
-                        <div onClick={async()=>{if(bpApproving[p.id])return;setBpApproving(prev=>({...prev,[p.id]:"approving"}));await supabase.from("brokerage_posts").update({status:"approved",approved_by:authUser.id,approved_at:new Date().toISOString()}).eq("id",p.id);setBrokeragePosts(prev=>prev.map(x=>x.id===p.id?{...x,status:"approved",approved_by:authUser.id}:x));setBpApproving(prev=>({...prev,[p.id]:null}));}} style={{padding:"6px 14px",borderRadius:7,background:bpApproving[p.id]==="approving"?T.d:T.a+"18",color:bpApproving[p.id]==="approving"?T.m:T.a,fontSize:12,fontWeight:700,cursor:bpApproving[p.id]?"wait":"pointer",border:`1px solid ${T.a}40`}}>{bpApproving[p.id]==="approving"?"…":"✓ Approve"}</div>
-                        <div onClick={async()=>{if(bpApproving[p.id])return;setBpApproving(prev=>({...prev,[p.id]:"rejecting"}));await supabase.from("brokerage_posts").update({status:"rejected"}).eq("id",p.id);setBrokeragePosts(prev=>prev.map(x=>x.id===p.id?{...x,status:"rejected"}:x));setBpApproving(prev=>({...prev,[p.id]:null}));}} style={{padding:"6px 14px",borderRadius:7,background:bpApproving[p.id]==="rejecting"?T.d:T.r+"18",color:bpApproving[p.id]==="rejecting"?T.m:T.r,fontSize:12,fontWeight:700,cursor:bpApproving[p.id]?"wait":"pointer",border:`1px solid ${T.r}40`}}>{bpApproving[p.id]==="rejecting"?"…":"✗ Reject"}</div>
-                      </div>}
-                      {p.slug&&<a href={`https://rkrt.in/blog/${p.slug}`} target="_blank" rel="noreferrer" style={{fontSize:12,color:T.bl,fontWeight:600,textDecoration:"none",flexShrink:0}}>View →</a>}
+                      <div style={{padding:"10px 14px",borderTop:`1px solid ${T.b}`,display:"flex",gap:6,flexWrap:"wrap"}}>
+                        {bpTab==="pending"&&<>
+                          <div onClick={()=>bpUpdate(p,{status:"approved",approved_by:authUser.id,approved_at:new Date().toISOString()})} style={{padding:"5px 10px",borderRadius:6,background:T.a+"18",color:T.a,fontSize:12,fontWeight:700,cursor:"pointer"}}>✅ Approve</div>
+                          {p.slug&&<a href={`https://rkrt.in/blog/${p.slug}`} target="_blank" rel="noreferrer" style={{padding:"5px 10px",borderRadius:6,background:T.bl+"18",color:T.bl,fontSize:12,fontWeight:700,textDecoration:"none"}}>👁️ Preview</a>}
+                          <div onClick={()=>{setBpRejectingPost(p);setBpRejectReason("");setBpRejectOpen(true);}} style={{padding:"5px 10px",borderRadius:6,background:"#F8514918",color:"#F85149",fontSize:12,fontWeight:700,cursor:"pointer"}}>❌ Reject</div>
+                        </>}
+                        {bpTab==="approved"&&<>
+                          <div onClick={()=>bpUpdate(p,{status:"published",published_at:new Date().toISOString()})} style={{padding:"5px 10px",borderRadius:6,background:T.a+"18",color:T.a,fontSize:12,fontWeight:700,cursor:"pointer"}}>📰 Publish</div>
+                          {p.slug&&<a href={`https://rkrt.in/blog/${p.slug}`} target="_blank" rel="noreferrer" style={{padding:"5px 10px",borderRadius:6,background:T.bl+"18",color:T.bl,fontSize:12,fontWeight:700,textDecoration:"none"}}>👁️ Preview</a>}
+                          <div onClick={()=>bpUpdate(p,{status:"draft"})} style={{padding:"5px 10px",borderRadius:6,background:T.d,color:T.m,fontSize:12,fontWeight:700,cursor:"pointer"}}>↩️ Unpublish</div>
+                        </>}
+                        {bpTab==="published"&&<>
+                          {p.slug&&<a href={`https://rkrt.in/blog/${p.slug}`} target="_blank" rel="noreferrer" style={{padding:"5px 10px",borderRadius:6,background:T.bl+"18",color:T.bl,fontSize:12,fontWeight:700,textDecoration:"none"}}>👁️ View →</a>}
+                          <div onClick={()=>bpUpdate(p,{status:"approved"})} style={{padding:"5px 10px",borderRadius:6,background:T.d,color:T.m,fontSize:12,fontWeight:700,cursor:"pointer"}}>↩️ Unpublish</div>
+                        </>}
+                        {bpTab==="rejected"&&<>
+                          <div onClick={()=>bpUpdate(p,{status:"draft",rejection_reason:null})} style={{padding:"5px 10px",borderRadius:6,background:T.bl+"18",color:T.bl,fontSize:12,fontWeight:700,cursor:"pointer"}}>↩️ Move to Pending</div>
+                        </>}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              );
-            })()}
+                  );
+                })}
+              </div>
+            }
           </>);
         })()}
       </div>
