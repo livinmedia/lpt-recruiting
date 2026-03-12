@@ -489,7 +489,7 @@ export default function CRM({
                   <td style={{ padding: "14px 16px", fontSize: 14, color: T.bl }}>
                     {l.email ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <a href={`mailto:${l.email}`} style={{ color: T.bl, textDecoration: "none" }}>{l.email.length > 22 ? l.email.substring(0, 22) + "…" : l.email}</a>
+                        <span onClick={() => openEmail(l)} style={{ color: T.bl, cursor: "pointer" }}>{l.email.length > 22 ? l.email.substring(0, 22) + "…" : l.email}</span>
                         <div onClick={() => openEmail(l)} title="Open email composer" style={{ width: 22, height: 22, borderRadius: 4, background: T.bl + "20", border: `1px solid ${T.bl}30`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 11, flexShrink: 0 }}>✉️</div>
                       </div>
                     ) : "—"}
