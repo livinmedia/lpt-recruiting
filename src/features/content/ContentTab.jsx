@@ -36,8 +36,15 @@ export default function ContentTab({ userId, userProfile }) {
   const [postExcerpt, setPostExcerpt] = useState("");
   const [postContent, setPostContent] = useState("");
   const isTeamLeader = (userProfile?.plan === "team_leader" || userProfile?.plan === "regional_operator" || userProfile?.plan === "enterprise" || userProfile?.role === "owner") && userProfile?.team_id;
+  const isAdmin = userProfile?.role === "owner" || userProfile?.role === "admin";
 
   const [teamSlug, setTeamSlug] = useState("");
+  const [blogTab, setBlogTab] = useState(isAdmin ? "needs_approval" : "published");
+  const [editingPost, setEditingPost] = useState(null);
+  const [declineOpen, setDeclineOpen] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [decliningPost, setDecliningPost] = useState(null);
+  const [postToast, setPostToast] = useState("");
 
   useEffect(() => {
     loadContent();
@@ -68,6 +75,8 @@ export default function ContentTab({ userId, userProfile }) {
     setTeamPosts(data || []);
   };
 
+  const showToast = (msg) => { setPostToast(msg); setTimeout(() => setPostToast(""), 3500); };
+
   const resetPostModal = () => {
     setShowWritePost(false);
     setPostStep("input");
@@ -78,6 +87,7 @@ export default function ContentTab({ userId, userProfile }) {
     setPostTitle("");
     setPostExcerpt("");
     setPostContent("");
+    setEditingPost(null);
   };
 
   const handleImageUpload = async (file) => {
@@ -118,24 +128,85 @@ export default function ContentTab({ userId, userProfile }) {
     setRueDrafting(false);
   };
 
-  const publishTeamPost = async (status) => {
+  const publishTeamPost = async (requestedStatus) => {
     if (!postTitle.trim() || !userProfile?.team_id) return;
     setPostSaving(true);
-    const slug = postTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) + '-' + crypto.randomUUID().split('-')[0];
-    await supabase.from('team_posts').insert({
-      team_id: userProfile.team_id,
-      author_id: userId,
-      title: postTitle,
-      slug,
-      excerpt: postExcerpt,
-      content: postContent,
-      image_url: imageUrl || null,
-      status,
-      ...(status === 'published' ? { published_at: new Date().toISOString() } : {}),
-      content_source: 'rue_ai',
-    });
+    // Non-admins submitting "publish" get 'pending' instead
+    const finalStatus = requestedStatus === 'published' && !isAdmin ? 'pending' : requestedStatus;
+    const now = new Date().toISOString();
+    if (editingPost) {
+      await supabase.from('team_posts').update({
+        title: postTitle,
+        excerpt: postExcerpt,
+        content: postContent,
+        image_url: imageUrl || editingPost.image_url || null,
+        status: finalStatus,
+        ...(finalStatus === 'published' ? { published_at: now } : {}),
+      }).eq('id', editingPost.id);
+    } else {
+      const slug = postTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) + '-' + crypto.randomUUID().split('-')[0];
+      const { data: inserted } = await supabase.from('team_posts').insert({
+        team_id: userProfile.team_id,
+        author_id: userId,
+        title: postTitle,
+        slug,
+        excerpt: postExcerpt,
+        content: postContent,
+        image_url: imageUrl || null,
+        status: finalStatus,
+        ...(finalStatus === 'published' ? { published_at: now } : {}),
+        content_source: 'rue_ai',
+      }).select().single();
+      // Fire-and-forget image backfill if no image uploaded
+      if (!imageUrl) {
+        fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-team-content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ team_id: userProfile.team_id, backfill_images: true }),
+        }).catch(() => {});
+      }
+    }
     resetPostModal();
     setPostSaving(false);
+    loadTeamPosts();
+    if (finalStatus === 'pending') showToast("✅ Post submitted for approval!");
+  };
+
+  const openEditPost = (post) => {
+    setEditingPost(post);
+    setPostTitle(post.title || "");
+    setPostExcerpt(post.excerpt || "");
+    setPostContent(post.content || "");
+    setImageUrl(post.image_url || null);
+    setPostSubject(post.title || "");
+    setPostStep("review");
+    setShowWritePost(true);
+  };
+
+  const approvePost = async (post) => {
+    const now = new Date().toISOString();
+    await supabase.from('team_posts').update({ status: 'published', approved_by: userId, approved_at: now, published_at: now }).eq('id', post.id);
+    loadTeamPosts();
+  };
+
+  const unpublishPost = async (post) => {
+    await supabase.from('team_posts').update({ status: 'draft' }).eq('id', post.id);
+    loadTeamPosts();
+  };
+
+  const deletePost = async (post) => {
+    await supabase.from('team_posts').delete().eq('id', post.id);
+    loadTeamPosts();
+  };
+
+  const openDecline = (post) => { setDecliningPost(post); setDeclineReason(""); setDeclineOpen(true); };
+
+  const submitDecline = async () => {
+    if (!decliningPost) return;
+    const now = new Date().toISOString();
+    await supabase.from('team_posts').update({ status: 'declined', decline_reason: declineReason, declined_by: userId, declined_at: now }).eq('id', decliningPost.id);
+    setDeclineOpen(false);
+    setDecliningPost(null);
     loadTeamPosts();
   };
 
@@ -435,38 +506,114 @@ export default function ContentTab({ userId, userProfile }) {
 
       {/* Team Blog Tab */}
       {contentTab === "team_blog" && isTeamLeader && (
-        <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "28px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <style>{`
+            .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+            @media (max-width: 900px) { .blog-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+            @media (max-width: 600px) { .blog-grid { grid-template-columns: 1fr !important; } }
+          `}</style>
+
+          {/* Toast */}
+          {postToast && (
+            <div style={{ position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)", background: T.a, color: "#000", padding: "12px 24px", borderRadius: 10, fontSize: 14, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>{postToast}</div>
+          )}
+
+          {/* Header */}
+          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "20px 24px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>👥 Team Blog</div>
               {teamSlug && <div style={{ fontSize: 13, color: T.s, marginTop: 4 }}>Published at <a href={`https://rkrt.in/${teamSlug}`} target="_blank" rel="noopener noreferrer" style={{ color: T.bl, textDecoration: "none", fontFamily: "monospace" }}>rkrt.in/{teamSlug}</a></div>}
             </div>
-            <div onClick={() => setShowWritePost(true)} style={{ padding: "10px 20px", borderRadius: 8, background: T.a, color: "#000", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Write Post</div>
+            <div onClick={() => { resetPostModal(); setShowWritePost(true); }} style={{ padding: "10px 20px", borderRadius: 8, background: T.a, color: "#000", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>✍️ Write Post</div>
           </div>
 
-          {teamPosts.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {teamPosts.map((post, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 20px", background: T.d, borderRadius: 10, border: `1px solid ${T.b}` }}>
-                  {post.image_url ? <img src={post.image_url} alt="" style={{ width: 80, height: 56, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} /> : <div style={{ width: 80, height: 56, borderRadius: 6, flexShrink: 0, background: "linear-gradient(135deg, #0d2847, #1a1040)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📝</div>}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{post.title}</div>
-                    {post.excerpt && <div style={{ fontSize: 13, color: T.s, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{post.excerpt}</div>}
-                    <div style={{ fontSize: 12, color: T.m, marginTop: 4 }}>{new Date(post.created_at).toLocaleDateString()}</div>
+          {/* Approval tabs */}
+          {(() => {
+            const needsApproval = teamPosts.filter(p => p.status === 'pending' || p.status === 'draft');
+            const published = teamPosts.filter(p => p.status === 'published');
+            const declined = teamPosts.filter(p => p.status === 'declined');
+            const tabPosts = blogTab === "needs_approval" ? needsApproval : blogTab === "published" ? published : declined;
+            const statusColor = { published: T.a, pending: "#F59E0B", draft: "#F59E0B", declined: "#F85149" };
+            const statusLabel = { published: "Published", pending: "Pending", draft: "Draft", declined: "Declined" };
+            return (<>
+              <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+                {[
+                  { id: "needs_approval", label: "📝 Needs Approval", count: needsApproval.length },
+                  { id: "published", label: "✅ Published", count: published.length },
+                  { id: "declined", label: "❌ Declined", count: declined.length },
+                ].map(tab => (
+                  <div key={tab.id} onClick={() => setBlogTab(tab.id)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 20, background: blogTab === tab.id ? T.a + "18" : T.card, border: `1px solid ${blogTab === tab.id ? T.a + "40" : T.b}`, color: blogTab === tab.id ? T.a : T.s, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    {tab.label}
+                    <span style={{ padding: "2px 7px", borderRadius: 10, background: blogTab === tab.id ? T.a + "30" : T.d, fontSize: 11, fontWeight: 800 }}>{tab.count}</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                    <span style={{ padding: "4px 10px", borderRadius: 6, background: post.status === "published" ? T.a + "18" : T.y + "18", color: post.status === "published" ? T.a : T.y, fontSize: 11, fontWeight: 700, textTransform: "capitalize" }}>{post.status}</span>
-                    {post.status === "published" && teamSlug && (
-                      <a href={`https://rkrt.in/${teamSlug}/${post.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>View →</a>
-                    )}
-                  </div>
+                ))}
+              </div>
+
+              {tabPosts.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "60px 20px", color: T.m, background: T.card, borderRadius: 12, border: `1px solid ${T.b}` }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>📝</div>
+                  <div>{blogTab === "needs_approval" ? "No posts pending approval" : blogTab === "published" ? "No published posts yet" : "No declined posts"}</div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: "center", padding: "60px 20px", color: T.m }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>📝</div>
-              <div>No team posts yet. Write your first post!</div>
+              ) : (
+                <div className="blog-grid">
+                  {tabPosts.map((post) => (
+                    <div key={post.id} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                      {/* Image */}
+                      {post.image_url
+                        ? <img src={post.image_url} alt="" style={{ width: "100%", height: 180, objectFit: "cover", display: "block" }} />
+                        : <div style={{ width: "100%", height: 180, background: "linear-gradient(135deg, #1a1a2e, #16213e)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.4)", textAlign: "center", lineHeight: 1.4 }}>{post.title}</div>
+                            </div>
+                          </div>
+                      }
+                      {/* Body */}
+                      <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: T.t, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{post.title}</div>
+                        {post.excerpt && <div style={{ fontSize: 13, color: T.s, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.5 }}>{post.excerpt}</div>}
+                        {post.status === "declined" && post.decline_reason && (
+                          <div style={{ fontSize: 12, color: "#F85149", marginTop: 4, fontStyle: "italic" }}>"{post.decline_reason}"</div>
+                        )}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 8 }}>
+                          <div style={{ fontSize: 11, color: T.m }}>{new Date(post.created_at).toLocaleDateString()}</div>
+                          <span style={{ padding: "3px 8px", borderRadius: 6, background: (statusColor[post.status] || T.m) + "18", color: statusColor[post.status] || T.m, fontSize: 11, fontWeight: 700 }}>{statusLabel[post.status] || post.status}</span>
+                        </div>
+                      </div>
+                      {/* Actions */}
+                      <div style={{ padding: "10px 16px", borderTop: `1px solid ${T.b}`, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {blogTab === "needs_approval" && isAdmin && (<>
+                          <div onClick={() => approvePost(post)} style={{ padding: "6px 12px", borderRadius: 6, background: T.a + "18", color: T.a, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✅ Approve</div>
+                          <div onClick={() => openEditPost(post)} style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "18", color: T.bl, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✏️ Edit</div>
+                          <div onClick={() => openDecline(post)} style={{ padding: "6px 12px", borderRadius: 6, background: "#F8514918", color: "#F85149", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>❌ Decline</div>
+                        </>)}
+                        {blogTab === "published" && (<>
+                          {teamSlug && <a href={`https://rkrt.in/${teamSlug}/${post.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "18", color: T.bl, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>👁️ View</a>}
+                          <div onClick={() => openEditPost(post)} style={{ padding: "6px 12px", borderRadius: 6, background: T.d, color: T.s, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✏️ Edit</div>
+                          <div onClick={() => unpublishPost(post)} style={{ padding: "6px 12px", borderRadius: 6, background: T.d, color: T.m, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>🗑️ Unpublish</div>
+                        </>)}
+                        {blogTab === "declined" && (<>
+                          <div onClick={() => openEditPost(post)} style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "18", color: T.bl, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✏️ Edit & Resubmit</div>
+                          <div onClick={() => deletePost(post)} style={{ padding: "6px 12px", borderRadius: 6, background: "#F8514918", color: "#F85149", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>🗑️ Delete</div>
+                        </>)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>);
+          })()}
+
+          {/* Decline Modal */}
+          {declineOpen && (
+            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: "100%", maxWidth: 420, background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: 24 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: T.t, marginBottom: 16 }}>Decline Post</div>
+                <textarea value={declineReason} onChange={e => setDeclineReason(e.target.value)} rows={3} placeholder="Reason for declining (optional)..." style={{ width: "100%", padding: "10px 12px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "inherit", resize: "none", outline: "none", boxSizing: "border-box" }} />
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
+                  <div onClick={() => setDeclineOpen(false)} style={{ padding: "10px 18px", borderRadius: 8, background: T.d, color: T.s, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancel</div>
+                  <div onClick={submitDecline} style={{ padding: "10px 18px", borderRadius: 8, background: "#F85149", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Decline Post</div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -477,8 +624,8 @@ export default function ContentTab({ userId, userProfile }) {
                 {/* Header */}
                 <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.b}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>✨ Write Post with Rue</div>
-                    <div style={{ fontSize: 12, color: T.m, marginTop: 2 }}>{postStep === "input" ? "Step 1 — Give Rue a subject and context" : "Step 2 — Review and edit Rue's draft"}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>{editingPost ? "✏️ Edit Post" : "✨ Write Post with Rue"}</div>
+                    <div style={{ fontSize: 12, color: T.m, marginTop: 2 }}>{editingPost ? "Update title, excerpt, or content then save" : postStep === "input" ? "Step 1 — Give Rue a subject and context" : "Step 2 — Review and edit Rue's draft"}</div>
                   </div>
                   <div onClick={resetPostModal} style={{ cursor: "pointer", color: T.m, fontSize: 18, padding: "4px 8px" }}>✕</div>
                 </div>
@@ -571,7 +718,7 @@ export default function ContentTab({ userId, userProfile }) {
                         <div style={{ display: "flex", gap: 10 }}>
                           <div onClick={() => !postSaving && publishTeamPost("draft")} style={{ padding: "12px 22px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 14, fontWeight: 700, cursor: postSaving ? "default" : "pointer" }}>Save Draft</div>
                           <div onClick={() => !postSaving && postTitle.trim() && publishTeamPost("published")} style={{ padding: "12px 22px", borderRadius: 8, background: postTitle.trim() && !postSaving ? T.a : "#333", color: postTitle.trim() && !postSaving ? "#000" : T.m, fontSize: 14, fontWeight: 700, cursor: postTitle.trim() && !postSaving ? "pointer" : "default" }}>
-                            {postSaving ? "Publishing..." : "Publish"}
+                            {postSaving ? "Saving..." : editingPost ? "Update" : isAdmin ? "Publish" : "Submit for Approval"}
                           </div>
                         </div>
                       </div>
