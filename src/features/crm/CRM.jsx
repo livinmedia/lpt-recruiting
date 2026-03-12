@@ -156,17 +156,45 @@ export default function CRM({
   const draftWithRue = async () => {
     if (!emailLead) return;
     setEmailDrafting(true);
+    const lead = emailLead;
+    const autoSubject = !emailSubject.trim()
+      ? (lead.brokerage_name ? `Quick question about ${lead.brokerage_name}` : `${lead.first_name}, quick thought for you`)
+      : emailSubject;
+    if (!emailSubject.trim()) setEmailSubject(autoSubject);
     try {
-      const coachingContext = rueCoaching ? `\n\nCoaching notes: ${rueCoaching}` : "";
+      const draftPrompt = `Write a recruiting email from me to this lead.
+
+ABOUT ME (the recruiter):
+- Name: ${profile?.full_name || "your recruiter"}
+- My brokerage: ${profile?.brokerage || "LPT Realty"}
+- My email: ${profile?.rkrt_email || profile?.email || ""}
+- My market: ${profile?.market || "nationwide"}
+
+ABOUT THE LEAD:
+- Name: ${lead.first_name} ${lead.last_name}
+- Their current brokerage: ${lead.brokerage_name || lead.brokerage || "unknown"}
+- Their market: ${lead.market || "unknown"}
+- Email: ${lead.email || "unknown"}
+- Phone: ${lead.phone || "unknown"}
+- Pipeline stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}
+- Interest score: ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"})
+- Activity: ${lead.activity_summary ? JSON.stringify(lead.activity_summary) : "no activity yet"}
+- Source: ${lead.source || "unknown"}
+- Tier: ${lead.tier || "unknown"}
+- Notes: ${lead.notes || "none"}
+- Pain points: ${lead.pain_points ? JSON.stringify(lead.pain_points) : "unknown"}
+- Outreach angle: ${lead.outreach_angle || "none set"}
+${rueCoaching ? `\nCoaching notes from Rue: ${rueCoaching}` : ""}
+
+EMAIL SUBJECT: ${autoSubject}
+
+Write the email body. Be specific to this person — reference their brokerage, market, or situation. Make it feel like I actually know them. No generic recruiting spam.`;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system: "You are Rue, a recruiting email assistant. Draft a professional, personalized recruiting email. Output ONLY the email body — no subject line, no preamble.",
-          messages: [{
-            role: "user",
-            content: `Draft a recruiting email to ${emailLead.first_name} ${emailLead.last_name} who works at ${emailLead.brokerage_name || emailLead.brokerage || "their current brokerage"}. They are in the ${(emailLead.pipeline_stage || "new").replace(/_/g, " ")} stage. Engagement score: ${emailLead.interest_score || 0}/100.${coachingContext} Make it personal, compelling, and focused on why they should consider switching to LPT Realty.`,
-          }],
+          system: "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.\n\nCRITICAL RULES:\n- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.\n- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"\n- Use SPECIFIC details about the lead and recruiter provided\n- Keep it conversational and direct — like a real person texting a colleague\n- Short paragraphs, 150-250 words max\n- End with a clear, low-pressure CTA\n- Do NOT include a subject line in the body — just write the email body\n- Sign off with the recruiter's actual name",
+          messages: [{ role: "user", content: draftPrompt }],
           user_id: userId,
         }),
       });
