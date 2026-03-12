@@ -7,6 +7,7 @@ import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
 import { Pill, UPill, TPill } from '../../components/ui/Pill';
 import { supabase } from '../../lib/supabase';
+import { trackActivity } from '../../lib/track';
 
 const HEAT_COLOR = { cold: "#2A3345", warming: "#3B82F6", interested: "#F59E0B", hot: "#f97316", on_fire: "#F43F5E" };
 const HEAT_ICON = { cold: "❄️", warming: "🌡️", interested: "🔥", hot: "🔥🔥", on_fire: "🔥🔥🔥" };
@@ -83,6 +84,7 @@ export default function CRM({
   const handleBulkDelete = async () => {
     setDeleting(true);
     const ids = [...selectedIds];
+    trackActivity(userId, 'bulk_delete', { count: ids.length });
     await supabase.from('leads').delete().in('id', ids);
     onBulkDelete(ids);
     setSelectedIds(new Set());
@@ -139,6 +141,7 @@ export default function CRM({
       });
       if (emailLead?.id && userId) {
         await supabase.from('lead_activities').insert({ lead_id: emailLead.id, user_id: userId, action: 'outreach_sent', notes: `Email: ${emailSubject}` });
+        trackActivity(userId, 'send_email', { lead_id: emailLead.id });
       }
     } catch { /* swallow */ }
     setEmailSending(false);
