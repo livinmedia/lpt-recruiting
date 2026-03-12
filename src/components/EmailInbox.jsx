@@ -70,6 +70,8 @@ export default function EmailInbox({ supabase, userId, profile }) {
   const [newSubject, setNewSubject] = useState("");
   const [newBody, setNewBody] = useState("");
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [toSuggestions, setToSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const messagesEndRef = useRef(null);
 
   const loadInbox = useCallback(async () => {
@@ -136,12 +138,41 @@ export default function EmailInbox({ supabase, userId, profile }) {
     if (!selectedThread) return;
     setRueLoading(true);
     try {
-      const ctx = messages.map(m => `${m.direction === "inbound" ? "LEAD" : "YOU"}: ${strip(m.body_text || m.body_html || "")}`).join("\n");
-      const prompt = `Draft a follow-up reply for this email thread. Be professional but warm. Here is the conversation:\n\n${ctx}\n\nThe lead's name is ${selectedThread.contact_name || "this person"}. ${selectedThread.heat_level ? "Their heat level is " + selectedThread.heat_level + "." : ""} Write ONLY the email reply text, nothing else.`;
-      const res = await fetch(SUPABASE_FN + "/rue-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, messages: [{ role: "user", content: prompt }], save: false }) });
+      let leadContext = "";
+      if (selectedThread.lead_id) {
+        const { data: lead } = await supabase.from("leads").select("*").eq("id", selectedThread.lead_id).single();
+        if (lead) {
+          leadContext = `\n\nABOUT THE LEAD:\n- Name: ${lead.first_name} ${lead.last_name}\n- Brokerage: ${lead.brokerage_name || lead.brokerage || "unknown"}\n- Market: ${lead.market || "unknown"}\n- Score: ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"})\n- Stage: ${lead.pipeline_stage || "new"}\n- Notes: ${lead.notes || "none"}\n- Outreach angle: ${lead.outreach_angle || "none"}`;
+        }
+      }
+      const ctx = messages.map(m => `${m.direction === "inbound" ? "THEM" : "ME"}: ${strip(m.body_text || m.body_html || "")}`).join("\n");
+      const contactName = selectedThread.contact_name || selectedThread.from_email?.split("@")[0] || "this person";
+      const myName = profile?.full_name || "the recruiter";
+      const prompt = `Write a reply to this email conversation. I am ${myName}${profile?.brokerage ? " from " + profile.brokerage : ""}.
+
+EMAIL THREAD:
+${ctx}
+
+I am replying to: ${contactName} (${selectedThread.from_email})
+Subject: ${selectedThread.subject}
+${leadContext}
+
+RULES:
+- Write ONLY the reply body text — no subject line, no "Subject:", no preamble
+- Address them by their actual first name (${contactName.split(" ")[0]})
+- Sign off as ${myName.split(" ")[0]}
+- Be warm, professional, conversational — not corporate
+- 100-200 words max
+- If they asked a question, answer it directly
+- Do NOT use placeholders like [Name] or [Company]`;
+      const res = await fetch(SUPABASE_FN + "/rue-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ system: "You are Rue, a recruiting email assistant. Write natural, personalized emails. NEVER use placeholders. NEVER hallucinate names or details not provided. Only reference information explicitly given to you.", messages: [{ role: "user", content: prompt }], user_id: userId, save: false }),
+      });
       const data = await res.json();
       if (data.content) { setReplyText(data.content); setComposing(true); }
-    } catch (err) { console.error("Rue error:", err); }
+    } catch (err) { console.error("Rue draft error:", err); }
     setRueLoading(false);
   };
 
@@ -149,12 +180,40 @@ export default function EmailInbox({ supabase, userId, profile }) {
     if (!newTo.trim()) return;
     setRueLoading(true);
     try {
-      const prompt = `Draft a recruiting outreach email to ${newTo}. ${newSubject ? "Subject: " + newSubject + ". " : ""}Be professional, warm, and compelling. Write ONLY the email body text, nothing else. Keep it concise — 3-4 paragraphs max.`;
-      const res = await fetch(SUPABASE_FN + "/rue-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, messages: [{ role: "user", content: prompt }], save: false }) });
+      let leadContext = "";
+      const { data: matchedLead } = await supabase.from("leads").select("*").eq("user_id", userId).ilike("email", newTo.trim()).maybeSingle();
+      if (matchedLead) {
+        leadContext = `\nABOUT RECIPIENT:\n- Name: ${matchedLead.first_name} ${matchedLead.last_name}\n- Brokerage: ${matchedLead.brokerage_name || matchedLead.brokerage || "unknown"}\n- Market: ${matchedLead.market || "unknown"}\n- Score: ${matchedLead.interest_score || 0}/100 (${matchedLead.heat_level || "cold"})\n- Stage: ${matchedLead.pipeline_stage || "new"}`;
+        if (!newSubject.trim()) {
+          setNewSubject(matchedLead.brokerage_name ? `Quick question about ${matchedLead.brokerage_name}` : `${matchedLead.first_name}, quick thought for you`);
+        }
+      }
+      const myName = profile?.full_name || "the recruiter";
+      const prompt = `Draft a recruiting outreach email from ${myName}${profile?.brokerage ? " at " + profile.brokerage : ""} to ${newTo}.${newSubject ? " Subject: " + newSubject + "." : ""}${leadContext}
+
+RULES:
+- Write ONLY the email body — no subject line, no preamble
+- Be professional, warm, compelling — not spammy
+- 150-250 words, 3-4 short paragraphs
+- End with a low-pressure CTA
+- Sign off as ${myName.split(" ")[0]}
+- NEVER use placeholders`;
+      const res = await fetch(SUPABASE_FN + "/rue-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ system: "You are Rue, a recruiting email assistant. Write personalized outreach emails. NEVER use placeholders or hallucinate details.", messages: [{ role: "user", content: prompt }], user_id: userId, save: false }),
+      });
       const data = await res.json();
       if (data.content) setNewBody(data.content);
     } catch (err) { console.error("Rue compose error:", err); }
     setRueLoading(false);
+  };
+
+  const searchContacts = async (query) => {
+    if (query.length < 2) { setToSuggestions([]); setShowSuggestions(false); return; }
+    const { data } = await supabase.from("leads").select("id, first_name, last_name, email, brokerage_name, heat_level").eq("user_id", userId).or(`email.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`).limit(5);
+    setToSuggestions(data || []);
+    setShowSuggestions((data || []).length > 0);
   };
 
   const filtered = threads.filter(t => {
@@ -239,7 +298,23 @@ export default function EmailInbox({ supabase, userId, profile }) {
         {composeNew && !selectedThread && (<div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 16, fontWeight: 700, color: T.t }}>✏️ New Message</span><IconBtn onClick={() => setComposeNew(false)}>✕</IconBtn></div>
           <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
-            <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>To</label><input value={newTo} onChange={e => setNewTo(e.target.value)} placeholder="lead@email.com" style={inputStyle} onFocus={focusHandler} onBlur={blurHandler} /></div>
+            <div style={{ marginBottom: 12, position: "relative" }}>
+              <label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>To</label>
+              <input value={newTo} onChange={e => { setNewTo(e.target.value); searchContacts(e.target.value); }} placeholder="Type a name or email..." style={inputStyle} onFocus={e => { e.target.style.borderColor = T.a; if (toSuggestions.length) setShowSuggestions(true); }} onBlur={e => { e.target.style.borderColor = T.b; setTimeout(() => setShowSuggestions(false), 200); }} />
+              {showSuggestions && (
+                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, marginTop: 4, zIndex: 10, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                  {toSuggestions.map(s => (
+                    <div key={s.id} onClick={() => { setNewTo(s.email); setShowSuggestions(false); if (!newSubject) setNewSubject(s.brokerage_name ? `Quick question about ${s.brokerage_name}` : `${s.first_name}, quick thought`); }} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${T.b}10`, display: "flex", justifyContent: "space-between", alignItems: "center" }} onMouseEnter={e => e.currentTarget.style.background = T.cardHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: T.t }}>{s.first_name} {s.last_name}</div>
+                        <div style={{ fontSize: 11, color: T.m }}>{s.email}</div>
+                      </div>
+                      <div style={{ fontSize: 11, color: T.s }}>{s.brokerage_name || ""}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Subject</label><input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Subject..." style={inputStyle} onFocus={focusHandler} onBlur={blurHandler} /></div>
             <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Message</label><textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Write your email..." rows={10} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={focusHandler} onBlur={blurHandler} /></div>
           </div>
