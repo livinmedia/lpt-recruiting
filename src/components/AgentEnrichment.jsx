@@ -135,7 +135,7 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
-      if (data) setUsage({ used: data.used ?? 0, limit: data.limit ?? 0, remaining: data.remaining ?? 0, plan: data.plan_name ?? "" });
+      if (data) setUsage({ used: data.used_this_month ?? 0, limit: data.monthly_limit ?? 0, remaining: data.remaining ?? 0, plan: data.plan ?? "" });
     } catch {}
   }
 
@@ -155,8 +155,9 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
       }
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Enrichment failed."); setEnriching(false); return; }
-      setEnrichResult(json.data || json);
-      setSelectedEmail(json.data?.email || json.email || "");
+      const d = json.data || {};
+      setEnrichResult({ ...d, quality: json.quality, sources: json.sources, status: json.status, pattern_guess: d.email_confidence === "pattern_guess" });
+      setSelectedEmail(d.email || "");
       fetchUsage();
     } catch (err) {
       setError("Network error — please try again.");
@@ -363,7 +364,7 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 6 }}>
                 <span style={{ fontSize: 20, fontWeight: 700, color: T.t }}>{agentName}</span>
-                {enrichResult.quality_score != null && <QualityBadge score={enrichResult.quality_score} />}
+                {enrichResult.quality != null && <QualityBadge score={enrichResult.quality} />}
               </div>
               {enrichResult.sources?.length > 0 && (
                 <div style={{ fontSize: 12, color: T.s }}>
@@ -461,10 +462,10 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                 {/* LinkedIn */}
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 12, color: T.s, marginBottom: 4 }}>🔗 LinkedIn</div>
-                  {enrichResult.linkedin_url ? (
-                    <a href={enrichResult.linkedin_url} target="_blank" rel="noreferrer"
+                  {enrichResult.linkedin ? (
+                    <a href={enrichResult.linkedin} target="_blank" rel="noreferrer"
                       style={{ color: T.a, fontSize: 13, textDecoration: "none", wordBreak: "break-all" }}>
-                      {enrichResult.linkedin_url.replace("https://", "")}
+                      {enrichResult.linkedin.replace("https://", "")}
                     </a>
                   ) : (
                     <span style={{ color: T.s, fontSize: 13 }}>Not found</span>
@@ -496,6 +497,54 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                     <span style={{ color: T.s, fontSize: 13 }}>Not found</span>
                   )}
                 </div>
+
+                {/* Facebook */}
+                {enrichResult.facebook && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: T.s, marginBottom: 4 }}>📘 Facebook</div>
+                    <a href={enrichResult.facebook} target="_blank" rel="noreferrer"
+                      style={{ color: T.a, fontSize: 13, textDecoration: "none", wordBreak: "break-all" }}>
+                      {enrichResult.facebook.replace("https://", "")}
+                    </a>
+                  </div>
+                )}
+
+                {/* Instagram */}
+                {enrichResult.instagram && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: T.s, marginBottom: 4 }}>📸 Instagram</div>
+                    <a
+                      href={enrichResult.instagram.startsWith("@") ? `https://instagram.com/${enrichResult.instagram.slice(1)}` : enrichResult.instagram}
+                      target="_blank" rel="noreferrer"
+                      style={{ color: T.a, fontSize: 13, textDecoration: "none", wordBreak: "break-all" }}>
+                      {enrichResult.instagram}
+                    </a>
+                  </div>
+                )}
+
+                {/* YouTube */}
+                {enrichResult.youtube && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: T.s, marginBottom: 4 }}>🎬 YouTube</div>
+                    <a href={enrichResult.youtube} target="_blank" rel="noreferrer"
+                      style={{ color: T.a, fontSize: 13, textDecoration: "none", wordBreak: "break-all" }}>
+                      {enrichResult.youtube.replace("https://", "")}
+                    </a>
+                  </div>
+                )}
+
+                {/* TikTok */}
+                {enrichResult.tiktok && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: T.s, marginBottom: 4 }}>🎵 TikTok</div>
+                    <a
+                      href={enrichResult.tiktok.startsWith("@") ? `https://tiktok.com/${enrichResult.tiktok}` : enrichResult.tiktok}
+                      target="_blank" rel="noreferrer"
+                      style={{ color: T.a, fontSize: 13, textDecoration: "none", wordBreak: "break-all" }}>
+                      {enrichResult.tiktok}
+                    </a>
+                  </div>
+                )}
 
                 {/* Recent Sales */}
                 {enrichResult.recent_sales != null && (
