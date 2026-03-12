@@ -30,6 +30,7 @@ import RKRTCommunity from './components/RKRTCommunity';
 import BetaIntakeFlow from './components/BetaIntakeFlow';
 import RueDrawer from "./components/RueDrawer";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import EmailInbox from "./components/EmailInbox";
 import { useState, useEffect, useCallback, useRef } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
 const rechartsReady = import("recharts").then(m => {
@@ -137,6 +138,7 @@ export default function App(){
   const [rueChatInput,setRueChatInput]=useState("");
   const [rueCopySaved,setRueCopySaved]=useState(false);
   const rueMessagesRef=useRef(null);
+  const [inboxUnread,setInboxUnread]=useState(0);
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [profileMenuOpen,setProfileMenuOpen]=useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -744,6 +746,17 @@ export default function App(){
 
 
   useEffect(()=>{if(view==="admin"){if(authLoading)return;if(profile?.role!=="owner"){setView("home");return;}setAdminTab("users");loadAdmin();}},[view,loadAdmin,profile,authLoading]);
+
+  useEffect(()=>{
+    if(!authUser)return;
+    const loadUnread=async()=>{
+      const {data}=await supabase.from('v_unread_count').select('unread').eq('user_id',authUser.id).maybeSingle();
+      setInboxUnread(data?.unread||0);
+    };
+    loadUnread();
+    const interval=setInterval(loadUnread,30000);
+    return()=>clearInterval(interval);
+  },[authUser]);
 
   const publishContent=async()=>{
     if(!newContent.title.trim())return;
@@ -1747,8 +1760,11 @@ select option{background:${T.card};color:${T.t}}
       <div className={`app-sidebar${sidebarOpen?" open":""}`} style={{width:80,background:T.side,borderRight:`1px solid ${T.b}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflow:"hidden"}}>
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:14,width:"100%",overflow:"auto"}}>
           <div style={{width:44,height:44,borderRadius:9,marginBottom:6,background:"linear-gradient(135deg,#00E5A0,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,letterSpacing:"-0.5px",lineHeight:1,flexShrink:0}}><span style={{color:"#fff"}}>rkrt</span><span style={{color:"#000"}}>.in</span></div>
-          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["community","💬"],...(effectiveProfile?.team_id?[["team","👥"]]:[])].map(([id,ic])=>
-            <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s",flexShrink:0}}>{ic}</div>
+          {[["home","⬡"],["pipeline","◎"],["crm","📋"],["agents","🔍"],["content","📝"],["inbox","📬"],["community","💬"],...(effectiveProfile?.team_id?[["team","👥"]]:[])].map(([id,ic])=>
+            <div key={id} onClick={()=>{setViewWithHistory(id);setSidebarOpen(false);setProfileMenuOpen(false);}} title={id} className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,background:view===id?T.am:"transparent",color:view===id?T.a:T.m,transition:"all 0.12s",flexShrink:0,position:"relative"}}>
+              {ic}
+              {id==="inbox"&&inboxUnread>0&&<span style={{position:"absolute",top:6,right:6,minWidth:16,height:16,borderRadius:8,background:T.a,color:"#000",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px",lineHeight:1}}>{inboxUnread>99?"99+":inboxUnread}</span>}
+            </div>
           )}
           {isBeta&&<div onClick={()=>{setViewWithHistory("beta");setSidebarOpen(false);setProfileMenuOpen(false);}} title="Beta Hub" className="nav-btn" style={{width:48,height:48,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:view==="beta"?T.am:"transparent",color:view==="beta"?T.a:T.m,transition:"all 0.12s",flexShrink:0,gap:2}}><span style={{fontSize:18}}>🧪</span><span style={{fontSize:8,fontWeight:700,letterSpacing:0.5}}>Beta</span></div>}
         </div>
@@ -1809,6 +1825,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="crm"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} userId={effectiveUserId} profile={effectiveProfile} onBulkDelete={(ids)=>setLeads(p=>p.filter(l=>!ids.includes(l.id)))}/></>}
         {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
         {view==="content"&&<ContentTab userId={effectiveUserId} userProfile={effectiveProfile}/>}
+        {view==="inbox"&&<EmailInbox supabase={supabase} userId={authUser?.id} profile={effectiveProfile} />}
         {view==="community"&&<RKRTCommunity userId={effectiveUserId} profile={effectiveProfile} supabase={supabase}/>}
         {view==="team"&&effectiveProfile?.team_id&&<TeamView userId={effectiveUserId} profile={effectiveProfile}/>}
         {view==="admin"&&!impersonating&&profile?.role==="owner"&&<AdminView/>}
