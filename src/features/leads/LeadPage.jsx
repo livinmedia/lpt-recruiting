@@ -331,7 +331,7 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
                   <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>EMAIL</div>
-                  <div style={{ fontSize: 15, color: lead.email ? T.bl : T.m }}>{lead.email || "—"}</div>
+                  <div onClick={lead.email ? openEmailSidebar : undefined} style={{ fontSize: 15, color: lead.email ? T.bl : T.m, cursor: lead.email ? "pointer" : "default", textDecoration: lead.email ? "underline" : "none" }}>{lead.email || "—"}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>PHONE</div>
