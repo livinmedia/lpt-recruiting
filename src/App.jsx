@@ -617,6 +617,7 @@ export default function App(){
 
   // ━━━ ADMIN ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const [adminStats,setAdminStats]=useState({users:0,leads:0,contentToday:0,agents:0});
+  const [adminTab,setAdminTab]=useState("users");
   const [adminUsers,setAdminUsers]=useState([]);
   const [adminActivity,setAdminActivity]=useState([]);
   const [adminContent,setAdminContent]=useState([]);
@@ -702,7 +703,7 @@ export default function App(){
 
 
 
-  useEffect(()=>{if(view==="admin"){if(authLoading)return;if(profile?.role!=="owner"){setView("home");return;}loadAdmin();}},[view,loadAdmin,profile,authLoading]);
+  useEffect(()=>{if(view==="admin"){if(authLoading)return;if(profile?.role!=="owner"){setView("home");return;}setAdminTab("users");loadAdmin();}},[view,loadAdmin,profile,authLoading]);
 
   const publishContent=async()=>{
     if(!newContent.title.trim())return;
@@ -825,8 +826,17 @@ export default function App(){
     );
   };
 
-  const AdminView=()=>(
-    <>
+  const AdminView=()=>{
+    const tabStyle=(id)=>({padding:"10px 24px",borderRadius:20,fontSize:14,fontWeight:700,cursor:"pointer",border:"none",transition:"all 0.15s",background:adminTab===id?T.a:"transparent",color:adminTab===id?"#000":T.m});
+    return(<>
+      {/* Tab bar */}
+      <div style={{display:"flex",gap:8,marginBottom:24,background:T.card,padding:"8px",borderRadius:24,border:`1px solid ${T.b}`,width:"fit-content"}}>
+        {[["users","👥 Users"],["content","📰 Content"],["system","⚡ System"]].map(([id,label])=>
+          <button key={id} onClick={()=>setAdminTab(id)} style={tabStyle(id)}>{label}</button>
+        )}
+      </div>
+
+      {adminTab==="users"&&<>
       <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
         {[["👥","Total Users",adminStats.users,"Platform accounts",T.bl],["🎯","Total Leads",adminStats.leads,"Across all users",T.a],["📝","Content Today",adminStats.contentToday,"Posts generated",T.y],["🔍","Agent Directory",adminStats.agents?.toLocaleString(),"Licensed agents",T.p],["🏆","Recruited",adminStats.recruited||0,"Agents recruited",T.a],["📅","Meetings",adminStats.meetings||0,"Meetings booked",T.p],["📰","Blog Pending",adminStats.blogPending||0,"Awaiting review","#FBBF24"],["✅","Blog Published",adminStats.blogPublished||0,"Live on site",T.a]].map(([ic,l,v,s,c],i)=>
           <div key={i} className="kpi-card" style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"22px 24px",display:"flex",alignItems:"center",gap:16}}>
@@ -839,7 +849,9 @@ export default function App(){
           </div>
         )}
       </div>
+      </>}
 
+      {adminTab==="content"&&<>
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <div style={{fontSize:18,fontWeight:700,color:T.t}}>📰 Blog & Content</div>
@@ -874,7 +886,9 @@ export default function App(){
           }):<div style={{textAlign:"center",padding:"24px",color:T.m,fontSize:14}}>No daily content yet</div>}
         </div>}
       </div>
+      </>}
 
+      {adminTab==="users"&&<>
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
         <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>👥 Users ({adminUsers.length})</div>
         <div style={{overflowX:"auto"}}>
@@ -997,49 +1011,9 @@ export default function App(){
         </div>);
       })()}
 
-      <div className="two-col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
-          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>📊 Recent Activity</div>
-          {adminActivity.length>0?adminActivity.map((a,i)=>{
-            const u=adminUsers.find(x=>x.id===a.user_id);
-            const AL={login:'Logged in',add_lead:'Added lead',add_lead_from_directory:'Added from directory',generate_content:'Generated content',copy_content:'Copied content',mark_posted:'Marked as posted',search_agents:'Searched agents',research_lead:'Researched lead',draft_outreach:'Drafted outreach',update_profile:'Updated profile',delete_lead:'Deleted lead',onboarding_complete:'Completed onboarding'};
-            const AI={login:'🔑',add_lead:'➕',add_lead_from_directory:'🔍',generate_content:'✨',copy_content:'📋',mark_posted:'✅',search_agents:'🔎',research_lead:'🔬',draft_outreach:'📱',update_profile:'👤',delete_lead:'🗑️',onboarding_complete:'🚀'};
-            const meta=a.metadata||{};
-            const detail=meta.lead_name||meta.agent_name||(meta.platform?meta.platform:'')||(meta.date?meta.date:'');
-            return(
-            <div key={i} style={{display:"flex",gap:10,padding:"10px 0",alignItems:"flex-start",borderBottom:i<adminActivity.length-1?`1px solid ${T.b}`:"none"}}>
-              <span style={{fontSize:16,flexShrink:0,marginTop:1}}>{AI[a.action]||'📌'}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u?.full_name||u?.email||a.user_id?.substring(0,8)||"—"}</div>
-                <div style={{fontSize:12,color:T.s,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{AL[a.action]||a.action||"—"}{detail?` · ${detail}`:''}</div>
-              </div>
-              <span style={{fontSize:11,color:T.m,flexShrink:0}}>{ago(a.created_at)}</span>
-            </div>);}):(<div style={{textAlign:"center",padding:"40px",color:T.m}}><div style={{fontSize:28,marginBottom:8}}>📋</div><div style={{fontSize:14}}>No activity logged yet</div></div>)}
-        </div>
+      </>}
 
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
-          <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>⚡ System Status</div>
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>EDGE FUNCTIONS</div>
-            {[["sync-agents","Agent directory sync (FL/TX/NY/CT)","ok"],["generate-content","Daily AI content generation (6 posts)","ok"],["research-to-lead","AI agent research & dossier","ok"],["enrich-agent","Apollo.io contact enrichment","ok"],["parse-research","Parse research into lead fields","ok"],["migrate-leads","Lead data migration tool","ok"],["bulk-agent-load","Bulk agent directory loader","ok"],["load-fl-csv","Florida CSV agent loader","ok"],["lp","Landing page server (v3 - has bug)","warn"]].map(([name,desc,status])=>
-              <div key={name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${status==="warn"?T.y+"30":T.b}`,marginBottom:6}}>
-                <div style={{minWidth:0,flex:1}}>
-                  <div style={{fontSize:13,fontWeight:600,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
-                  <div style={{fontSize:11,color:T.s}}>{desc}</div>
-                </div>
-                <span style={{fontSize:13,color:status==="warn"?T.y:T.a,fontWeight:700,flexShrink:0,marginLeft:8}}>{status==="warn"?"⚠️":"✅"}</span>
-              </div>
-            )}
-          </div>
-          <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>QUICK LINKS</div>
-          {[["📰","Blog Admin","https://www.rkrt.in/admin/blog"],["🗄️","Supabase Dashboard","https://supabase.com/dashboard/project/usknntguurefeyzusbdh"],["▲","Vercel Dashboard","https://vercel.com/livinmedias-projects/lpt-recruiting"],["🐙","GitHub Repo","https://github.com/livinmedia/lpt-recruiting"]].map(([ic,label,url])=>
-            <a key={label} href={url} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6,textDecoration:"none",color:T.t}}>
-              <span style={{fontSize:18}}>{ic}</span><span style={{fontSize:13,fontWeight:600}}>{label}</span><span style={{marginLeft:"auto",fontSize:12,color:T.s}}>→</span>
-            </a>
-          )}
-        </div>
-      </div>
-
+      {adminTab==="content"&&<>
       {/* ━━━ RKRT MARKETING ━━━ */}
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
@@ -1195,8 +1169,33 @@ export default function App(){
           </div>
         ):<div style={{textAlign:"center",padding:"24px",color:T.m}}>No content published yet</div>}
       </div>
-    </>
-  );
+      </>}
+
+      {adminTab==="system"&&<>
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
+        <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>⚡ System Status</div>
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>EDGE FUNCTIONS</div>
+          {[["sync-agents","Agent directory sync (FL/TX/NY/CT)","ok"],["generate-content","Daily AI content generation (6 posts)","ok"],["research-to-lead","AI agent research & dossier","ok"],["enrich-agent","Apollo.io contact enrichment","ok"],["parse-research","Parse research into lead fields","ok"],["migrate-leads","Lead data migration tool","ok"],["bulk-agent-load","Bulk agent directory loader","ok"],["load-fl-csv","Florida CSV agent loader","ok"],["lp","Landing page server (v3 - has bug)","warn"]].map(([name,desc,status])=>
+            <div key={name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${status==="warn"?T.y+"30":T.b}`,marginBottom:6}}>
+              <div style={{minWidth:0,flex:1}}>
+                <div style={{fontSize:13,fontWeight:600,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
+                <div style={{fontSize:11,color:T.s}}>{desc}</div>
+              </div>
+              <span style={{fontSize:13,color:status==="warn"?T.y:T.a,fontWeight:700,flexShrink:0,marginLeft:8}}>{status==="warn"?"⚠️":"✅"}</span>
+            </div>
+          )}
+        </div>
+        <div style={{fontSize:11,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>QUICK LINKS</div>
+        {[["📰","Blog Admin","https://www.rkrt.in/admin/blog"],["🗄️","Supabase Dashboard","https://supabase.com/dashboard/project/usknntguurefeyzusbdh"],["▲","Vercel Dashboard","https://vercel.com/livinmedias-projects/lpt-recruiting"],["🐙","GitHub Repo","https://github.com/livinmedia/lpt-recruiting"]].map(([ic,label,url])=>
+          <a key={label} href={url} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6,textDecoration:"none",color:T.t}}>
+            <span style={{fontSize:18}}>{ic}</span><span style={{fontSize:13,fontWeight:600}}>{label}</span><span style={{marginLeft:"auto",fontSize:12,color:T.s}}>→</span>
+          </a>
+        )}
+      </div>
+      </>}
+    </>);
+  };
 
   // ━━━ BETA HUB VIEW ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const BetaHubView=()=>{
