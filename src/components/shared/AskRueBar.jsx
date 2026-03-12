@@ -4,7 +4,7 @@
 import T from '../../lib/theme';
 import { CopyButton } from '../ui';
 
-export function AskRueBar({ prompts = [], onAskRue, inlineResponse, inlineLoading }) {
+export function AskRueBar({ prompts = [], onAskRue, inlineResponse = null, inlineLoading = false }) {
   // If no onAskRue provided, component is display-only
   if (!prompts || !prompts.length) return null;
   
