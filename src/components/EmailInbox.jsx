@@ -412,18 +412,18 @@ RULES:
               <span style={{ fontSize: 15, fontWeight: 700, color: T.t }}>✏️ New Message</span>
             </div>
             <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
-              <div style={{ marginBottom: 14, position: "relative" }}>
-                <label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>To</label>
-                <input value={newTo} onChange={e => { setNewTo(e.target.value); searchContacts(e.target.value); }} placeholder="Type a name or email..." style={inputStyle} onFocus={e => { e.target.style.borderColor = T.a; if (toSuggestions.length) setShowSuggestions(true); }} onBlur={e => { e.target.style.borderColor = T.b; setTimeout(() => setShowSuggestions(false), 200); }} />
+              <div style={{ marginBottom: 12, position: "relative" }}>
+                <label style={{ fontSize: 11, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>To</label>
+                <input value={newTo} onChange={e => { setNewTo(e.target.value); searchContacts(e.target.value); }} placeholder="Type a name or email..." style={{ width: "100%", padding: "10px 14px", fontSize: 14, borderRadius: 8, background: T.card, color: T.t, border: `1px solid ${T.b}`, outline: "none", boxSizing: "border-box" }} onFocus={e => { e.target.style.borderColor = T.a; if (toSuggestions.length) setShowSuggestions(true); }} onBlur={e => { e.target.style.borderColor = T.b; setTimeout(() => setShowSuggestions(false), 200); }} />
                 {showSuggestions && (
                   <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, marginTop: 4, zIndex: 10, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                     {toSuggestions.map(s => (
-                      <div key={s.id} onClick={() => { setNewTo(s.email); setShowSuggestions(false); if (!newSubject) setNewSubject(s.brokerage_name ? `Quick question about ${s.brokerage_name}` : `${s.first_name}, quick thought`); }} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${T.b}10`, display: "flex", justifyContent: "space-between", alignItems: "center" }} onMouseEnter={e => e.currentTarget.style.background = T.cardHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      <div key={s.id} onClick={() => { setNewTo(s.email); setShowSuggestions(false); setToSuggestions([]); if (!newSubject) setNewSubject(s.brokerage_name ? "Quick question about " + s.brokerage_name : s.first_name + ", quick thought"); }} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${T.b}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }} onMouseEnter={e => e.currentTarget.style.background = T.cardHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: T.t }}>{s.first_name} {s.last_name}</div>
-                          <div style={{ fontSize: 11, color: T.m }}>{s.email}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: T.t }}>{s.first_name} {s.last_name}</div>
+                          <div style={{ fontSize: 12, color: T.m }}>{s.email}</div>
                         </div>
-                        <div style={{ fontSize: 11, color: T.s }}>{s.brokerage_name || ""}</div>
+                        <div style={{ fontSize: 12, color: T.s }}>{s.brokerage_name || ""}</div>
                       </div>
                     ))}
                   </div>
