@@ -591,7 +591,7 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
 
             {/* Notes */}
             <div style={{ padding: "0 28px 20px" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: T.m, marginBottom: 8 }}>📝 Add notes for your pipeline</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.m, marginBottom: 8 }}>📝 Add notes</div>
               <textarea
                 value={leadNotes}
                 onChange={e => setLeadNotes(e.target.value)}
@@ -633,7 +633,7 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
 
               {leadAdded ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ color: T.green, fontSize: 14, fontWeight: 700 }}>✅ Added to pipeline!</span>
+                  <span style={{ color: T.green, fontSize: 14, fontWeight: 700 }}>✅ Added to CRM!</span>
                   <span style={{ color: T.s, fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>ID: {leadAdded.id || leadAdded.lead_id}</span>
                 </div>
               ) : (
@@ -648,7 +648,7 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                     transition: "opacity 0.2s",
                   }}
                 >
-                  {addingLead ? "Adding..." : "➕ Add to Pipeline"}
+                  {addingLead ? "Adding..." : "➕ Add to CRM"}
                 </button>
               )}
             </div>

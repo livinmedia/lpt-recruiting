@@ -384,6 +384,104 @@ Write the email body. Be specific to this person — reference their brokerage, 
                 </div>
               )}
 
+              {/* Online Presence */}
+              {(lead.website_url || lead.zillow_url || lead.realtor_url) && (
+                <div style={{ marginTop: 16, background: "#111827", border: "1px solid #1a2540", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12 }}>ONLINE PRESENCE</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {lead.website_url && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: T.s, minWidth: 80 }}>🌐 Website</span>
+                        <a href={lead.website_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#22d3ee", textDecoration: "none", wordBreak: "break-all" }}>{lead.website_url.replace("https://", "")}</a>
+                      </div>
+                    )}
+                    {lead.zillow_url && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: T.s, minWidth: 80 }}>🏠 Zillow</span>
+                        <a href={lead.zillow_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#22d3ee", textDecoration: "none" }}>View Zillow Profile</a>
+                      </div>
+                    )}
+                    {lead.realtor_url && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: T.s, minWidth: 80 }}>🏡 Realtor.com</span>
+                        <a href={lead.realtor_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#22d3ee", textDecoration: "none" }}>View Realtor Profile</a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Social Media */}
+              {(lead.linkedin_url || lead.facebook_url || lead.instagram_handle || lead.youtube_channel || lead.tiktok_handle) && (
+                <div style={{ marginTop: 16, background: "#111827", border: "1px solid #1a2540", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12 }}>SOCIAL MEDIA</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {lead.linkedin_url && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: T.s, minWidth: 80 }}>🔗 LinkedIn</span>
+                        <a href={lead.linkedin_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#22d3ee", textDecoration: "none", wordBreak: "break-all" }}>{lead.linkedin_url.replace("https://", "")}</a>
+                      </div>
+                    )}
+                    {lead.facebook_url && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: T.s, minWidth: 80 }}>📘 Facebook</span>
+                        <a href={lead.facebook_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#22d3ee", textDecoration: "none", wordBreak: "break-all" }}>{lead.facebook_url.replace("https://", "")}</a>
+                      </div>
+                    )}
+                    {lead.instagram_handle && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: T.s, minWidth: 80 }}>📸 Instagram</span>
+                        <a href={lead.instagram_handle.startsWith("@") ? `https://instagram.com/${lead.instagram_handle.slice(1)}` : lead.instagram_handle} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#22d3ee", textDecoration: "none" }}>{lead.instagram_handle}</a>
+                      </div>
+                    )}
+                    {lead.youtube_channel && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: T.s, minWidth: 80 }}>🎬 YouTube</span>
+                        <a href={lead.youtube_channel} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#22d3ee", textDecoration: "none", wordBreak: "break-all" }}>{lead.youtube_channel.replace("https://", "")}</a>
+                      </div>
+                    )}
+                    {lead.tiktok_handle && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: T.s, minWidth: 80 }}>🎵 TikTok</span>
+                        <a href={lead.tiktok_handle.startsWith("@") ? `https://tiktok.com/${lead.tiktok_handle}` : lead.tiktok_handle} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#22d3ee", textDecoration: "none" }}>{lead.tiktok_handle}</a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Enrichment */}
+              {lead.enrichment_quality != null && (
+                <div style={{ marginTop: 16, background: "#111827", border: "1px solid #1a2540", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12 }}>ENRICHMENT</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, color: T.s }}>Quality</span>
+                      {(() => {
+                        const q = lead.enrichment_quality;
+                        const color = q >= 60 ? "#10b981" : q >= 30 ? "#f59e0b" : "#ef4444";
+                        const label = q >= 60 ? "High" : q >= 30 ? "Moderate" : "Low";
+                        return (
+                          <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: `${color}15`, color, border: `1px solid ${color}40`, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {q}/100 · {label}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    {lead.enrichment_sources && (
+                      <div style={{ fontSize: 12, color: T.s }}>
+                        Sources: <span style={{ color: T.m }}>{Array.isArray(lead.enrichment_sources) ? lead.enrichment_sources.join(" + ") : lead.enrichment_sources}</span>
+                      </div>
+                    )}
+                    {lead.transaction_count != null && (
+                      <div style={{ fontSize: 12, color: T.s }}>
+                        Transactions: <span style={{ color: T.t, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{lead.transaction_count}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Stage Selector */}
               <div style={{ marginTop: 24 }}>
                 <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 8 }}>PIPELINE STAGE</div>
