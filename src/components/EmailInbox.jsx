@@ -178,34 +178,46 @@ RULES:
   };
 
   const askRueCompose = async () => {
-    if (!newTo.trim()) return;
     setRueLoading(true);
     try {
       let leadContext = "";
-      const { data: matchedLead } = await supabase.from("leads").select("*").eq("user_id", userId).ilike("email", newTo.trim()).maybeSingle();
-      if (matchedLead) {
-        leadContext = `\nABOUT RECIPIENT:\n- Name: ${matchedLead.first_name} ${matchedLead.last_name}\n- Brokerage: ${matchedLead.brokerage_name || matchedLead.brokerage || "unknown"}\n- Market: ${matchedLead.market || "unknown"}\n- Score: ${matchedLead.interest_score || 0}/100 (${matchedLead.heat_level || "cold"})\n- Stage: ${matchedLead.pipeline_stage || "new"}`;
-        if (!newSubject.trim()) {
-          setNewSubject(matchedLead.brokerage_name ? `Quick question about ${matchedLead.brokerage_name}` : `${matchedLead.first_name}, quick thought for you`);
+      let recipientName = "a real estate agent";
+
+      if (newTo.trim()) {
+        const { data: matchedLead } = await supabase.from("leads").select("*").eq("user_id", userId).ilike("email", newTo.trim()).maybeSingle();
+        if (matchedLead) {
+          recipientName = matchedLead.first_name + " " + matchedLead.last_name;
+          leadContext = "\n\nABOUT RECIPIENT:\n- Name: " + matchedLead.first_name + " " + matchedLead.last_name + "\n- Brokerage: " + (matchedLead.brokerage_name || matchedLead.brokerage || "unknown") + "\n- Market: " + (matchedLead.market || "unknown") + "\n- Score: " + (matchedLead.interest_score || 0) + "/100 (" + (matchedLead.heat_level || "cold") + ")\n- Stage: " + (matchedLead.pipeline_stage || "new");
+          if (!newSubject.trim()) {
+            setNewSubject(matchedLead.brokerage_name ? "Quick question about " + matchedLead.brokerage_name : matchedLead.first_name + ", quick thought for you");
+          }
         }
       }
-      const myName = profile?.full_name || "the recruiter";
-      const prompt = `Draft a recruiting outreach email from ${myName}${profile?.brokerage ? " at " + profile.brokerage : ""} to ${newTo}.${newSubject ? " Subject: " + newSubject + "." : ""}${leadContext}
 
-RULES:
-- Write ONLY the email body — no subject line, no preamble
-- Be professional, warm, compelling — not spammy
-- 150-250 words, 3-4 short paragraphs
-- End with a low-pressure CTA
-- Sign off as ${myName.split(" ")[0]}
-- NEVER use placeholders`;
+      const myName = profile?.full_name || "the recruiter";
+      const myBrokerage = profile?.brokerage || "LPT Realty";
+      const prompt = "Write a recruiting outreach email from " + myName + " at " + myBrokerage + " to " + recipientName + "." + (newSubject.trim() ? " Subject: " + newSubject + "." : " Also generate a compelling subject line — put it on the first line as 'Subject: ...' followed by a blank line, then the email body.") + leadContext + "\n\nRULES:\n- If no subject was provided, your FIRST line must be 'Subject: [your subject here]' then a blank line\n- Then write the email body\n- Be professional, warm, compelling\n- 150-250 words, 3-4 short paragraphs\n- End with a low-pressure CTA\n- Sign off as " + myName.split(" ")[0] + "\n- NEVER use placeholders like [Name] or [Company]";
+
       const res = await fetch(SUPABASE_FN + "/rue-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ system: "You are Rue, a recruiting email assistant. Write personalized outreach emails. NEVER use placeholders or hallucinate details.", messages: [{ role: "user", content: prompt }], user_id: userId, save: false }),
+        body: JSON.stringify({
+          system: "You are Rue, a recruiting email assistant. Write personalized outreach emails. NEVER use placeholders. If asked to generate a subject line, put it as the FIRST line in format 'Subject: ...' followed by a blank line before the body.",
+          messages: [{ role: "user", content: prompt }],
+          user_id: userId,
+          save: false,
+        }),
       });
       const data = await res.json();
-      if (data.content) setNewBody(data.content);
+      if (data.content) {
+        let content = data.content.trim();
+        const subjectMatch = content.match(/^Subject:\s*(.+)/i);
+        if (subjectMatch) {
+          if (!newSubject.trim()) setNewSubject(subjectMatch[1].trim());
+          content = content.replace(/^Subject:\s*.+\n\n?/, "").trim();
+        }
+        setNewBody(content);
+      }
     } catch (err) { console.error("Rue compose error:", err); }
     setRueLoading(false);
   };
@@ -421,7 +433,7 @@ RULES:
               <div><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Message</label><textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Write your email..." rows={14} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={focusHandler} onBlur={blurHandler} /></div>
             </div>
             <div style={{ padding: "12px 24px", borderTop: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <button onClick={askRueCompose} disabled={rueLoading || !newTo.trim()} style={{ padding: "10px 16px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)", fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
+              <button onClick={askRueCompose} disabled={rueLoading} style={{ padding: "10px 16px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)", fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={goBack} style={{ padding: "10px 20px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
                 <button onClick={sendNew} disabled={sending || !newTo.trim() || !newBody.trim()} style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !newTo.trim() || !newBody.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "Sending..." : "Send ✉️"}</button>
