@@ -25,8 +25,16 @@ export default function ContentTab({ userId, userProfile }) {
   const [loading, setLoading] = useState(false);
   const [selectedBrokerage, setSelectedBrokerage] = useState("");
   const [showWritePost, setShowWritePost] = useState(false);
-  const [newPost, setNewPost] = useState({ title: "", excerpt: "", content: "" });
   const [postSaving, setPostSaving] = useState(false);
+  const [postStep, setPostStep] = useState("input"); // "input" | "review"
+  const [postSubject, setPostSubject] = useState("");
+  const [postContext, setPostContext] = useState("");
+  const [imageUrl, setImageUrl] = useState(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [rueDrafting, setRueDrafting] = useState(false);
+  const [postTitle, setPostTitle] = useState("");
+  const [postExcerpt, setPostExcerpt] = useState("");
+  const [postContent, setPostContent] = useState("");
   const isTeamLeader = (userProfile?.plan === "team_leader" || userProfile?.plan === "regional_operator" || userProfile?.plan === "enterprise" || userProfile?.role === "owner") && userProfile?.team_id;
 
   const [teamSlug, setTeamSlug] = useState("");
@@ -60,23 +68,73 @@ export default function ContentTab({ userId, userProfile }) {
     setTeamPosts(data || []);
   };
 
+  const resetPostModal = () => {
+    setShowWritePost(false);
+    setPostStep("input");
+    setPostSubject("");
+    setPostContext("");
+    setImageUrl(null);
+    setRueDrafting(false);
+    setPostTitle("");
+    setPostExcerpt("");
+    setPostContent("");
+  };
+
+  const handleImageUpload = async (file) => {
+    if (!file || !userProfile?.team_id) return;
+    setImageUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `team-posts/${userProfile.team_id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('content-images').upload(path, file, { upsert: true });
+    if (error) { setImageUploading(false); return; }
+    const { data: { publicUrl } } = supabase.storage.from('content-images').getPublicUrl(path);
+    setImageUrl(publicUrl);
+    setImageUploading(false);
+  };
+
+  const draftWithRue = async () => {
+    if (!postSubject.trim()) return;
+    setRueDrafting(true);
+    setPostStep("review");
+    try {
+      const res = await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: "You are Rue, an AI content writer for a real estate recruiting team blog. Write engaging, professional blog posts that attract agents to join the team. Use markdown formatting. Write 400-600 words.",
+          messages: [{ role: "user", content: `Write a blog post about: ${postSubject}\n\nContext from the team: ${postContext || "No additional context provided."}\n\nTeam name: ${teamSlug || 'our team'}. Make it compelling for real estate agents considering joining a team. Use a conversational but professional tone.` }],
+          user_id: userId,
+          save: false,
+        }),
+      });
+      const data = await res.json();
+      const draft = data.response || data.message || data.content || "";
+      setPostTitle(postSubject);
+      setPostContent(draft);
+      setPostExcerpt(draft.replace(/#+\s[^\n]*/g, '').replace(/\*+/g, '').trim().substring(0, 150) + "…");
+    } catch (e) {
+      // leave fields empty so user can type manually
+    }
+    setRueDrafting(false);
+  };
+
   const publishTeamPost = async (status) => {
-    if (!newPost.title.trim() || !userProfile?.team_id) return;
+    if (!postTitle.trim() || !userProfile?.team_id) return;
     setPostSaving(true);
-    const slug = newPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) + '-' + crypto.randomUUID().split('-')[0];
+    const slug = postTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) + '-' + crypto.randomUUID().split('-')[0];
     await supabase.from('team_posts').insert({
       team_id: userProfile.team_id,
       author_id: userId,
-      title: newPost.title,
+      title: postTitle,
       slug,
-      excerpt: newPost.excerpt,
-      content: newPost.content,
+      excerpt: postExcerpt,
+      content: postContent,
+      image_url: imageUrl || null,
       status,
       ...(status === 'published' ? { published_at: new Date().toISOString() } : {}),
-      content_source: 'manual',
+      content_source: 'rue_ai',
     });
-    setNewPost({ title: "", excerpt: "", content: "" });
-    setShowWritePost(false);
+    resetPostModal();
     setPostSaving(false);
     loadTeamPosts();
   };
@@ -415,30 +473,110 @@ export default function ContentTab({ userId, userProfile }) {
           {/* Write Post Modal */}
           {showWritePost && (
             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
-              <div style={{ width: "100%", maxWidth: 640, maxHeight: "85vh", background: T.card, border: `1px solid ${T.b}`, borderRadius: 16, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ width: "100%", maxWidth: 700, maxHeight: "90vh", background: T.card, border: `1px solid ${T.b}`, borderRadius: 16, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                {/* Header */}
                 <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.b}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>Write Post</div>
-                  <div onClick={() => { setShowWritePost(false); setNewPost({ title: "", excerpt: "", content: "" }); }} style={{ cursor: "pointer", color: T.m, fontSize: 18 }}>✕</div>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>✨ Write Post with Rue</div>
+                    <div style={{ fontSize: 12, color: T.m, marginTop: 2 }}>{postStep === "input" ? "Step 1 — Give Rue a subject and context" : "Step 2 — Review and edit Rue's draft"}</div>
+                  </div>
+                  <div onClick={resetPostModal} style={{ cursor: "pointer", color: T.m, fontSize: 18, padding: "4px 8px" }}>✕</div>
                 </div>
-                <div style={{ padding: 24, overflow: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
-                  <div>
-                    <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 6 }}>TITLE *</div>
-                    <input value={newPost.title} onChange={e => setNewPost(p => ({ ...p, title: e.target.value }))} placeholder="Post title" style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${newPost.title.trim() ? T.a + "30" : T.b}`, color: T.t, fontSize: 15, fontWeight: 600, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 6 }}>EXCERPT</div>
-                    <textarea value={newPost.excerpt} onChange={e => setNewPost(p => ({ ...p, excerpt: e.target.value }))} rows={2} placeholder="Brief summary for previews..." style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box" }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 6 }}>CONTENT (Markdown)</div>
-                    <textarea value={newPost.content} onChange={e => setNewPost(p => ({ ...p, content: e.target.value }))} rows={12} placeholder="Write your post content here..." style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "'SF Mono', monospace", resize: "vertical", outline: "none", boxSizing: "border-box", lineHeight: 1.6 }} />
-                  </div>
-                  <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-                    <div onClick={() => !postSaving && publishTeamPost("draft")} style={{ padding: "12px 24px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 14, fontWeight: 700, cursor: postSaving ? "default" : "pointer" }}>Save Draft</div>
-                    <div onClick={() => !postSaving && newPost.title.trim() && publishTeamPost("published")} style={{ padding: "12px 24px", borderRadius: 8, background: newPost.title.trim() && !postSaving ? T.a : "#333", color: newPost.title.trim() && !postSaving ? "#000" : T.m, fontSize: 14, fontWeight: 700, cursor: newPost.title.trim() && !postSaving ? "pointer" : "default" }}>
-                      {postSaving ? "Publishing..." : "Publish"}
+
+                <div style={{ padding: 24, overflow: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
+                  {/* ── STEP 1: Input ── */}
+                  {postStep === "input" && (<>
+                    <div>
+                      <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 8 }}>WHAT'S THIS POST ABOUT? *</div>
+                      <input
+                        value={postSubject}
+                        onChange={e => setPostSubject(e.target.value)}
+                        placeholder="e.g. Why top agents are leaving big brokerages in 2025"
+                        style={{ width: "100%", padding: "14px 16px", borderRadius: 8, background: T.d, border: `1px solid ${postSubject.trim() ? T.a + "40" : T.b}`, color: T.t, fontSize: 18, fontWeight: 700, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+                      />
                     </div>
-                  </div>
+                    <div>
+                      <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 8 }}>CONTEXT FOR RUE</div>
+                      <textarea
+                        value={postContext}
+                        onChange={e => setPostContext(e.target.value)}
+                        rows={4}
+                        placeholder="Give Rue some context — key points, stats, stories, tone, what makes your team special..."
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box", lineHeight: 1.6 }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 8 }}>FEATURED IMAGE (optional)</div>
+                      {imageUrl ? (
+                        <div style={{ position: "relative", display: "inline-block" }}>
+                          <img src={imageUrl} alt="Featured" style={{ maxHeight: 160, borderRadius: 8, border: `1px solid ${T.b}`, display: "block" }} />
+                          <div onClick={() => setImageUrl(null)} style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "rgba(0,0,0,0.7)", color: "#fff", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>✕</div>
+                        </div>
+                      ) : (
+                        <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "24px", borderRadius: 8, border: `2px dashed ${T.b}`, cursor: "pointer", color: T.m }}>
+                          {imageUploading ? <span style={{ fontSize: 13 }}>Uploading...</span> : (<><span style={{ fontSize: 24 }}>📷</span><span style={{ fontSize: 13, fontWeight: 600 }}>Upload Image</span></>)}
+                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
+                        </label>
+                      )}
+                    </div>
+                    <div
+                      onClick={() => postSubject.trim() && draftWithRue()}
+                      style={{ padding: "16px", borderRadius: 10, background: postSubject.trim() ? T.a : "#333", color: postSubject.trim() ? "#000" : T.m, fontSize: 16, fontWeight: 800, textAlign: "center", cursor: postSubject.trim() ? "pointer" : "default", letterSpacing: 0.3 }}
+                    >
+                      ✨ Draft with Rue
+                    </div>
+                  </>)}
+
+                  {/* ── STEP 2: Review/Edit ── */}
+                  {postStep === "review" && (<>
+                    {rueDrafting && (
+                      <div style={{ textAlign: "center", padding: "40px 20px", color: T.a }}>
+                        <div style={{ fontSize: 32, marginBottom: 12, animation: "glowPulse 1.5s ease-in-out infinite" }}>✨</div>
+                        <div style={{ fontSize: 16, fontWeight: 700 }}>Rue is writing your post...</div>
+                        <div style={{ fontSize: 13, color: T.m, marginTop: 6 }}>This usually takes 10-20 seconds</div>
+                      </div>
+                    )}
+                    {!rueDrafting && (<>
+                      <div>
+                        <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 8 }}>TITLE</div>
+                        <input
+                          value={postTitle}
+                          onChange={e => setPostTitle(e.target.value)}
+                          style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 16, fontWeight: 700, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700, marginBottom: 8 }}>EXCERPT</div>
+                        <textarea
+                          value={postExcerpt}
+                          onChange={e => setPostExcerpt(e.target.value)}
+                          rows={2}
+                          style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                          <div style={{ fontSize: 12, color: T.m, letterSpacing: 1.2, fontWeight: 700 }}>CONTENT (Markdown)</div>
+                          <div onClick={draftWithRue} style={{ fontSize: 12, fontWeight: 700, color: T.a, cursor: "pointer", padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.a}30` }}>🔄 Regenerate</div>
+                        </div>
+                        <textarea
+                          value={postContent}
+                          onChange={e => setPostContent(e.target.value)}
+                          rows={14}
+                          style={{ width: "100%", padding: "12px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 13, fontFamily: "'SF Mono', monospace", resize: "vertical", outline: "none", boxSizing: "border-box", lineHeight: 1.7, minHeight: 300 }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", gap: 10, justifyContent: "space-between", alignItems: "center" }}>
+                        <div onClick={() => setPostStep("input")} style={{ fontSize: 13, color: T.m, cursor: "pointer", padding: "4px 0" }}>← Back</div>
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <div onClick={() => !postSaving && publishTeamPost("draft")} style={{ padding: "12px 22px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 14, fontWeight: 700, cursor: postSaving ? "default" : "pointer" }}>Save Draft</div>
+                          <div onClick={() => !postSaving && postTitle.trim() && publishTeamPost("published")} style={{ padding: "12px 22px", borderRadius: 8, background: postTitle.trim() && !postSaving ? T.a : "#333", color: postTitle.trim() && !postSaving ? "#000" : T.m, fontSize: 14, fontWeight: 700, cursor: postTitle.trim() && !postSaving ? "pointer" : "default" }}>
+                            {postSaving ? "Publishing..." : "Publish"}
+                          </div>
+                        </div>
+                      </div>
+                    </>)}
+                  </>)}
                 </div>
               </div>
             </div>
