@@ -31,6 +31,7 @@ import BetaIntakeFlow from './components/BetaIntakeFlow';
 import RueDrawer from "./components/RueDrawer";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import EmailInbox from "./components/EmailInbox";
+import AgentEnrichment from "./components/AgentEnrichment";
 import { useState, useEffect, useCallback, useRef } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
 const rechartsReady = import("recharts").then(m => {
@@ -654,6 +655,7 @@ export default function App(){
   const inOutreach=leads.filter(l=>l.pipeline_stage==="outreach_sent");
 
   // ━━━ ADMIN ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const [enrichAgent,setEnrichAgent]=useState(null);
   const [adminStats,setAdminStats]=useState({users:0,leads:0,contentToday:0,agents:0});
   const [adminTab,setAdminTab]=useState("users");
   const [adminUsers,setAdminUsers]=useState([]);
@@ -1823,7 +1825,8 @@ select option{background:${T.card};color:${T.t}}
 <Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0,5)} userId={effectiveUserId} onNavigate={setViewWithHistory} onSelectLead={handleSelectLead} askRueInline={askRueInline} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
         {view==="pipeline"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} search={search} setSearch={setSearch}/></>}
         {view==="crm"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} userId={effectiveUserId} profile={effectiveProfile} onBulkDelete={(ids)=>setLeads(p=>p.filter(l=>!ids.includes(l.id)))}/></>}
-        {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
+        {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}} onEnrich={(agent)=>setEnrichAgent(agent)}/></ProGate>}
+        {enrichAgent&&<AgentEnrichment supabase={supabase} agent={enrichAgent} userId={authUser?.id} profile={profile} onClose={()=>setEnrichAgent(null)} onLeadAdded={(lead)=>{setEnrichAgent(null);}}/>}
         {view==="content"&&<ContentTab userId={effectiveUserId} userProfile={effectiveProfile}/>}
         {view==="inbox"&&<EmailInbox supabase={supabase} userId={authUser?.id} profile={effectiveProfile} />}
         {view==="community"&&<RKRTCommunity userId={effectiveUserId} profile={effectiveProfile} supabase={supabase}/>}

@@ -10,7 +10,7 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 const STATE_DATA = { FL: 939832, TX: 189036, NY: 143738, CT: 19568 };
 const TOTAL_AGENTS = 1292174;
 
-export default function AgentDirectory({ userId, userProfile, onAddLead }) {
+export default function AgentDirectory({ userId, userProfile, onAddLead, onEnrich }) {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -180,7 +180,10 @@ export default function AgentDirectory({ userId, userProfile, onAddLead }) {
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: 13, color: T.m }}>{a.original_license_date ? new Date(a.original_license_date).getFullYear() : "—"}</td>
                   <td style={{ padding: "14px 16px" }}>
-                    <div onClick={() => setSelectedAgent(a)} style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center" }}>View</div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <div onClick={() => setSelectedAgent(a)} style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center" }}>View</div>
+                      {onEnrich && <button onClick={(e) => { e.stopPropagation(); onEnrich(a); }} style={{ fontSize: 12, padding: "4px 10px", background: "rgba(34,211,238,0.15)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}>🔍 Enrich</button>}
+                    </div>
                   </td>
                 </tr>
               )) : (
