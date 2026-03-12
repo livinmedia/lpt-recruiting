@@ -29,6 +29,7 @@ import { ProGate } from './components/shared';
 import RKRTCommunity from './components/RKRTCommunity';
 import BetaIntakeFlow from './components/BetaIntakeFlow';
 import RueDrawer from "./components/RueDrawer";
+import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import { useState, useEffect, useCallback, useRef } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
 const rechartsReady = import("recharts").then(m => {
@@ -870,7 +871,7 @@ export default function App(){
     return(<>
       {/* Tab bar */}
       <div style={{display:"flex",gap:8,marginBottom:24,background:T.card,padding:"8px",borderRadius:24,border:`1px solid ${T.b}`,width:"fit-content"}}>
-        {[["users","👥 Users"],["content","📰 Content"],["system","⚡ System"]].map(([id,label])=>
+        {[["users","👥 Users"],["content","📰 Content"],["system","⚡ System"],["analytics","📊 Analytics"]].map(([id,label])=>
           <button key={id} onClick={()=>setAdminTab(id)} style={tabStyle(id)}>{label}</button>
         )}
       </div>
@@ -1284,6 +1285,8 @@ export default function App(){
         )}
       </div>
       </>}
+
+      {adminTab==="analytics"&&<AnalyticsDashboard supabase={supabase} isAdmin={true} />}
     </>);
   };
 
