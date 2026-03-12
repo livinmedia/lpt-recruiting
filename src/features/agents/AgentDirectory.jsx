@@ -10,6 +10,13 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 const STATE_DATA = { FL: 939832, TX: 189036, NY: 143738, CT: 19568 };
 const TOTAL_AGENTS = 1292174;
 
+const CREDIT_PACKS = [
+  { label: "10 for $25", desc: "Starter" },
+  { label: "100 for $50", desc: "Popular" },
+  { label: "500 for $200", desc: "Pro" },
+  { label: "1000 for $500", desc: "Team" },
+];
+
 export default function AgentDirectory({ userId, userProfile, onAddLead, onEnrich }) {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -19,6 +26,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [enriching, setEnriching] = useState(false);
   const [enrichedData, setEnrichedData] = useState(null);
+  const [usage, setUsage] = useState(null);
   const didInit = useRef(false);
 
   const LIMIT = 50;
@@ -51,7 +59,15 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
       setFilters(f => ({ ...f, state: userProfile.license_state }));
     }
     setTimeout(() => search(true), 100);
+    fetchUsage();
   }, [userProfile]);
+
+  async function fetchUsage() {
+    try {
+      const { data } = await supabase.from("v_enrichment_usage").select("*").eq("user_id", userId).maybeSingle();
+      if (data) setUsage({ used: data.used_this_month ?? 0, limit: data.monthly_limit ?? 0, remaining: data.remaining ?? 0, plan: data.plan ?? "" });
+    } catch {}
+  }
 
   const agentName = (a) => {
     if (a.full_name && a.full_name.trim()) return a.full_name;
@@ -105,6 +121,46 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
 
   return (
     <div>
+      {/* Credits Bar */}
+      {usage && (() => {
+        const pct = usage.limit > 0 ? Math.min((usage.used / usage.limit) * 100, 100) : 0;
+        const barColor = pct < 50 ? "#10b981" : pct < 80 ? "#f59e0b" : "#ef4444";
+        return (
+          <div style={{ background: "#111827", border: "1px solid #1a2540", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: 13, color: "#94a3b8" }}>
+                🔍 <strong style={{ color: "#e2e8f0" }}>{usage.used}</strong> / {usage.limit} Enrichments Used
+                {usage.plan ? <span style={{ fontSize: 11, color: "#64748b", marginLeft: 8 }}>· {usage.plan} plan</span> : null}
+              </span>
+              <span style={{ fontSize: 12, color: barColor, fontWeight: 700 }}>{usage.remaining} remaining</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: "#334155", overflow: "hidden", marginBottom: 10 }}>
+              <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: 3, transition: "width 0.5s ease" }} />
+            </div>
+            {usage.remaining < 20 && (
+              <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 10 }}>
+                ⚠️ Running low on enrichments — top up to keep prospecting.
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {CREDIT_PACKS.map(pack => (
+                <button
+                  key={pack.label}
+                  onClick={() => alert("Coming soon — Stripe checkout")}
+                  style={{
+                    padding: "5px 12px", fontSize: 12, borderRadius: 6, cursor: "pointer",
+                    background: "rgba(34,211,238,0.08)", color: "#22d3ee",
+                    border: "1px solid rgba(34,211,238,0.25)", fontWeight: 600,
+                  }}
+                >
+                  {pack.label} <span style={{ fontSize: 10, color: "#64748b", fontWeight: 400 }}>{pack.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Stats Bar */}
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         {[["TOTAL AGENTS", TOTAL_AGENTS, T.a], ["FLORIDA", STATE_DATA.FL, T.bl], ["TEXAS", STATE_DATA.TX, "#FBBF24"], ["NEW YORK", STATE_DATA.NY, T.p], ["CONNECTICUT", STATE_DATA.CT, T.s]].map(([label, val, color]) => (
@@ -180,10 +236,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: 13, color: T.m }}>{a.original_license_date ? new Date(a.original_license_date).getFullYear() : "—"}</td>
                   <td style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <div onClick={() => setSelectedAgent(a)} style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center" }}>View</div>
-                      {onEnrich && <button onClick={(e) => { e.stopPropagation(); onEnrich(a); }} style={{ fontSize: 12, padding: "4px 10px", background: "rgba(34,211,238,0.15)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}>🔍 Enrich</button>}
-                    </div>
+                    {onEnrich && <button onClick={(e) => { e.stopPropagation(); onEnrich(a); }} style={{ fontSize: 12, padding: "4px 10px", background: "rgba(34,211,238,0.15)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}>🔍 Enrich</button>}
                   </td>
                 </tr>
               )) : (

@@ -171,7 +171,13 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
       const res = await fetch(`${SUPABASE_FN}/enrich-agent-ai`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent_id: agent.id, user_id: userId, add_to_leads: true, lead_notes: leadNotes }),
+        body: JSON.stringify({
+          agent_id: agent.id,
+          user_id: userId,
+          add_to_leads: true,
+          override_email: selectedEmail || undefined,
+          lead_notes: [selectedEmail ? `Selected email: ${selectedEmail}` : "", leadNotes].filter(Boolean).join("\n"),
+        }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Failed to add to pipeline."); setAddingLead(false); return; }
