@@ -20,6 +20,7 @@ export default function CRM({
   askRueInline,
   inlineLoading = false,
   userId = null,
+  profile = null,
   onBulkDelete = () => {},
 }) {
   const [crmSearch, setCrmSearch] = useState("");
@@ -35,6 +36,15 @@ export default function CRM({
   const [emailDrafting, setEmailDrafting] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState(false);
+
+  // Rue coaching
+  const [rueCoaching, setRueCoaching] = useState("");
+  const [rueCoachingLoading, setRueCoachingLoading] = useState(false);
+  const [rueCoachingOpen, setRueCoachingOpen] = useState(true);
+
+  // Email history
+  const [emailHistory, setEmailHistory] = useState([]);
+  const [emailHistoryLoading, setEmailHistoryLoading] = useState(false);
 
   const ruePrompts = [
     ["🔍", "Find Prospects", `Find me 5 real estate agents who might be looking to switch brokerages.`, T.a],
@@ -91,26 +101,71 @@ export default function CRM({
     setDeleting(false);
   };
 
+  const loadCoaching = async (lead) => {
+    setRueCoachingLoading(true);
+    setRueCoaching("");
+    try {
+      const content = `I'm about to email ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}. Their engagement score is ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"}). Pipeline stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}. ${lead.activity_summary ? `Activity: ${JSON.stringify(lead.activity_summary)}.` : ""} What approach should I take? What should I mention or avoid?`;
+      const r = await fetch(RUE_CHAT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: "You are Rue, a recruiting email coach. Give brief, actionable advice for this specific email. Be concise — 2-3 bullet points max.",
+          messages: [{ role: "user", content }],
+          user_id: userId,
+        }),
+      });
+      const d = await r.json();
+      if (d.content) setRueCoaching(d.content);
+    } catch {
+      setRueCoaching("Coaching unavailable right now.");
+    }
+    setRueCoachingLoading(false);
+  };
+
+  const loadEmailHistory = async (lead) => {
+    if (!lead.id) return;
+    setEmailHistoryLoading(true);
+    try {
+      const { data } = await supabase
+        .from('email_log')
+        .select('*')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      setEmailHistory(data || []);
+    } catch {
+      setEmailHistory([]);
+    }
+    setEmailHistoryLoading(false);
+  };
+
   const openEmail = (lead) => {
     setEmailLead(lead);
     setEmailTo(lead.email || "");
     setEmailSubject(`Why ${lead.brokerage_name || lead.brokerage || "your brokerage"} agents are making a move`);
     setEmailBody("");
     setEmailSuccess(false);
+    setRueCoaching("");
+    setRueCoachingOpen(true);
+    setEmailHistory([]);
+    loadCoaching(lead);
+    loadEmailHistory(lead);
   };
 
   const draftWithRue = async () => {
     if (!emailLead) return;
     setEmailDrafting(true);
     try {
+      const coachingContext = rueCoaching ? `\n\nCoaching notes: ${rueCoaching}` : "";
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system: "You are Rue, a recruiting email assistant. Draft a professional recruiting email.",
+          system: "You are Rue, a recruiting email assistant. Draft a professional, personalized recruiting email. Output ONLY the email body — no subject line, no preamble.",
           messages: [{
             role: "user",
-            content: `Draft a recruiting email to ${emailLead.first_name} ${emailLead.last_name} who works at ${emailLead.brokerage_name || emailLead.brokerage || "their current brokerage"}. They are in the ${(emailLead.pipeline_stage || "new").replace(/_/g, " ")} stage. Make it personal, compelling, and focused on why they should consider switching brokerages.`,
+            content: `Draft a recruiting email to ${emailLead.first_name} ${emailLead.last_name} who works at ${emailLead.brokerage_name || emailLead.brokerage || "their current brokerage"}. They are in the ${(emailLead.pipeline_stage || "new").replace(/_/g, " ")} stage. Engagement score: ${emailLead.interest_score || 0}/100.${coachingContext} Make it personal, compelling, and focused on why they should consider switching to LPT Realty.`,
           }],
           user_id: userId,
         }),
@@ -131,9 +186,10 @@ export default function CRM({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          type: "user_outreach",
           to: emailTo,
           subject: emailSubject,
-          html: emailBody.replace(/\n/g, "<br/>"),
+          body: emailBody,
           lead_id: emailLead?.id,
           user_id: userId,
         }),
@@ -146,6 +202,9 @@ export default function CRM({
     setEmailSending(false);
     setEmailSuccess(true);
   };
+
+  const rkrtEmail = profile?.rkrt_email;
+  const fromName = profile?.full_name || "You";
 
   return (
     <>
@@ -192,11 +251,28 @@ export default function CRM({
       {emailLead && (
         <>
           <div onClick={() => setEmailLead(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", zIndex: 900 }} />
-          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 480, background: T.side, borderLeft: `1px solid ${T.b}`, zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)", animation: "slideInRight 0.25s ease" }}>
+          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 500, background: T.side, borderLeft: `1px solid ${T.b}`, zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)", animation: "slideInRight 0.25s ease" }}>
+            {/* Header */}
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.b}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: T.t, flex: 1 }}>📧 Email {emailLead.first_name} {emailLead.last_name}</span>
               <div onClick={() => setEmailLead(null)} style={{ width: 28, height: 28, borderRadius: 6, background: T.d, border: `1px solid ${T.b}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: T.s, fontSize: 14 }}>✕</div>
             </div>
+
+            {/* From address */}
+            <div style={{ padding: "12px 24px", borderBottom: `1px solid ${T.b}`, background: T.d, flexShrink: 0 }}>
+              {rkrtEmail ? (
+                <>
+                  <div style={{ fontSize: 12, color: T.m, fontWeight: 700, letterSpacing: 1 }}>FROM</div>
+                  <div style={{ fontSize: 13, color: T.t, marginTop: 3 }}>
+                    {fromName} <span style={{ color: T.a, fontWeight: 700 }}>&lt;{rkrtEmail}&gt;</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: T.m, marginTop: 2 }}>Replies go to {profile?.email || "your email"}</div>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: "#F59E0B" }}>⚠️ Set up your @rkrt.in email in <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => { setEmailLead(null); onNavigate("profile"); }}>Profile settings</span></div>
+              )}
+            </div>
+
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               {emailSuccess ? (
                 <div style={{ textAlign: "center", padding: "60px 20px" }}>
@@ -206,36 +282,91 @@ export default function CRM({
                 </div>
               ) : (
                 <>
+                  {/* Rue Coaching */}
+                  <div style={{ borderLeft: `3px solid ${T.a}`, background: T.a + "08", borderRadius: "0 8px 8px 0", overflow: "hidden" }}>
+                    <div
+                      onClick={() => setRueCoachingOpen(o => !o)}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", cursor: "pointer" }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 700, color: T.a, flex: 1 }}>🤖 Rue's Coaching</span>
+                      {rueCoachingLoading && <div style={{ width: 10, height: 10, borderRadius: "50%", background: T.a, animation: "pulse 0.8s infinite" }} />}
+                      <span style={{ fontSize: 11, color: T.m }}>{rueCoachingOpen ? "▲" : "▼"}</span>
+                    </div>
+                    {rueCoachingOpen && (
+                      <div style={{ padding: "0 14px 12px" }}>
+                        {rueCoachingLoading ? (
+                          <div style={{ fontSize: 12, color: T.m, fontStyle: "italic" }}>Rue is analyzing this lead...</div>
+                        ) : rueCoaching ? (
+                          <div style={{ fontSize: 13, color: T.t, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{rueCoaching}</div>
+                        ) : (
+                          <div style={{ fontSize: 12, color: T.m }}>No coaching available.</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* To */}
                   <div>
                     <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1.2, marginBottom: 6 }}>TO</div>
                     <input value={emailTo} onChange={e => setEmailTo(e.target.value)} style={{ width: "100%", background: T.d, border: `1px solid ${T.b}`, borderRadius: 7, padding: "10px 14px", fontSize: 14, color: T.t, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
                   </div>
+
+                  {/* Subject */}
                   <div>
                     <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1.2, marginBottom: 6 }}>SUBJECT</div>
                     <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} style={{ width: "100%", background: T.d, border: `1px solid ${T.b}`, borderRadius: 7, padding: "10px 14px", fontSize: 14, color: T.t, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
                   </div>
+
+                  {/* Draft button */}
                   <div
                     onClick={draftWithRue}
                     style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 8, background: T.a + "15", border: `1px solid ${T.a}30`, cursor: emailDrafting ? "wait" : "pointer", opacity: emailDrafting ? 0.6 : 1 }}
                   >
                     <span style={{ fontSize: 18 }}>✨</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: T.a }}>{emailDrafting ? "Drafting..." : "Ask Rue to Draft"}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: T.a }}>{emailDrafting ? "Drafting..." : "Draft with Rue"}</span>
                   </div>
+
+                  {/* Body */}
                   <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
                     <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1.2, marginBottom: 6 }}>BODY</div>
                     <textarea
                       value={emailBody}
                       onChange={e => setEmailBody(e.target.value)}
-                      placeholder="Type your message or click ✨ Ask Rue to Draft..."
-                      style={{ flex: 1, minHeight: 220, width: "100%", background: T.d, border: `1px solid ${T.b}`, borderRadius: 7, padding: "12px 14px", fontSize: 14, color: T.t, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }}
+                      placeholder="Type your message or click ✨ Draft with Rue..."
+                      style={{ flex: 1, minHeight: 200, width: "100%", background: T.d, border: `1px solid ${T.b}`, borderRadius: 7, padding: "12px 14px", fontSize: 14, color: T.t, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }}
                     />
                   </div>
+
+                  {/* Send */}
                   <div
                     onClick={sendEmail}
-                    style={{ padding: "12px", borderRadius: 8, background: (!emailTo || !emailSubject || !emailBody || emailSending) ? T.d : T.a, color: (!emailTo || !emailSubject || !emailBody || emailSending) ? T.m : "#000", fontSize: 14, fontWeight: 700, textAlign: "center", cursor: (!emailTo || !emailSubject || !emailBody || emailSending) ? "not-allowed" : "pointer", transition: "all 0.15s" }}
+                    style={{ padding: "13px", borderRadius: 8, background: (!emailTo || !emailSubject || !emailBody || emailSending) ? T.d : T.a, color: (!emailTo || !emailSubject || !emailBody || emailSending) ? T.m : "#000", fontSize: 14, fontWeight: 700, textAlign: "center", cursor: (!emailTo || !emailSubject || !emailBody || emailSending) ? "not-allowed" : "pointer", transition: "all 0.15s", width: "100%", boxSizing: "border-box" }}
                   >
                     {emailSending ? "Sending..." : "📤 Send Email"}
                   </div>
+
+                  {/* Email History */}
+                  {(emailHistory.length > 0 || emailHistoryLoading) && (
+                    <div style={{ borderTop: `1px solid ${T.b}`, paddingTop: 12 }}>
+                      <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8 }}>PREVIOUS EMAILS</div>
+                      {emailHistoryLoading ? (
+                        <div style={{ fontSize: 12, color: T.m }}>Loading history...</div>
+                      ) : (
+                        emailHistory.map((h, i) => (
+                          <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < emailHistory.length - 1 ? `1px solid ${T.b}` : "none", alignItems: "flex-start" }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.subject || "No subject"}</div>
+                              <div style={{ fontSize: 11, color: T.m, marginTop: 2 }}>{h.from_address || rkrtEmail || "—"}</div>
+                            </div>
+                            <div style={{ flexShrink: 0, textAlign: "right" }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: h.status === "opened" ? T.a : h.status === "delivered" ? T.bl : h.status === "bounced" ? "#F43F5E" : T.m }}>{h.status || "sent"}</div>
+                              <div style={{ fontSize: 11, color: T.m, marginTop: 2 }}>{ago(h.created_at)}</div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
