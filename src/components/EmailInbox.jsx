@@ -59,6 +59,7 @@ export default function EmailInbox({ supabase, userId, profile }) {
   const [threadLoading, setThreadLoading] = useState(false);
   const [folder, setFolder] = useState("all");
   const [search, setSearch] = useState("");
+  const [mainView, setMainView] = useState("list");
   const [composing, setComposing] = useState(false);
   const [composeNew, setComposeNew] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -87,7 +88,7 @@ export default function EmailInbox({ supabase, userId, profile }) {
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const openThread = async (thread) => {
-    setSelectedThread(thread); setThreadLoading(true); setComposing(false); setComposeNew(false); setReplyText("");
+    setSelectedThread(thread); setMainView("thread"); setThreadLoading(true); setComposing(false); setComposeNew(false); setReplyText("");
     const { data } = await supabase.from("email_messages").select("*").eq("thread_id", thread.thread_id).eq("user_id", userId).order("created_at", { ascending: true });
     if (data) {
       setMessages(data);
@@ -253,157 +254,103 @@ RULES:
     { id: "archived", icon: "📦", label: "Archived", count: threads.filter(t => archived.has(t.thread_id)).length },
   ];
 
+  const goBack = () => { setMainView("list"); setSelectedThread(null); setComposing(false); setReplyText(""); };
+
   return (
     <div style={{ display: "flex", height: "calc(100vh - 100px)", background: T.bg, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.b}` }}>
 
-      {/* LEFT PANEL */}
-      <div style={{ width: 320, background: T.d, borderRight: `1px solid ${T.b}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-
-        {/* Compose Button */}
-        <div style={{ padding: "16px 12px 8px" }}>
-          <button onClick={() => { setComposeNew(true); setSelectedThread(null); }} style={{ width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 700, borderRadius: 16, background: `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, justifyContent: "center", boxShadow: `0 2px 16px ${T.aGlow}`, transition: "opacity 0.15s" }} onMouseEnter={e => e.currentTarget.style.opacity = "0.88"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>✏️ Compose</button>
+      {/* LEFT SIDEBAR — 240px */}
+      <div style={{ width: 240, background: T.d, borderRight: `1px solid ${T.b}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ padding: "16px 10px 8px" }}>
+          <button onClick={() => { setMainView("compose"); setSelectedThread(null); setNewTo(""); setNewSubject(""); setNewBody(""); }} style={{ width: "100%", padding: "13px 0", fontSize: 14, fontWeight: 700, borderRadius: 16, background: `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, justifyContent: "center", boxShadow: `0 2px 14px ${T.aGlow}`, transition: "opacity 0.15s" }} onMouseEnter={e => e.currentTarget.style.opacity = "0.88"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>✏️ Compose</button>
         </div>
-
-        {/* Folders */}
         <div style={{ padding: "4px 0 8px" }}>
           {FOLDER_DEFS.map(f => {
             const isActive = folder === f.id;
             return (
-              <button key={f.id} onClick={() => { setFolder(f.id); setSelectedIds(new Set()); }} style={{ width: "calc(100% - 12px)", marginLeft: 12, padding: "10px 16px", fontSize: 14, fontWeight: isActive ? 700 : 500, borderRadius: "0 24px 24px 0", background: isActive ? T.aDim : "transparent", color: isActive ? T.a : T.m, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.12s" }}
+              <button key={f.id} onClick={() => { setFolder(f.id); setSelectedIds(new Set()); setMainView("list"); }} style={{ width: "calc(100% - 10px)", marginLeft: 10, padding: "9px 14px", fontSize: 13, fontWeight: isActive ? 700 : 500, borderRadius: "0 22px 22px 0", background: isActive ? T.aDim : "transparent", color: isActive ? T.a : T.m, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 9, transition: "all 0.12s" }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = T.card; }} onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
-                <span style={{ fontSize: 15 }}>{f.icon}</span>
+                <span style={{ fontSize: 14 }}>{f.icon}</span>
                 <span style={{ flex: 1, textAlign: "left" }}>{f.label}</span>
-                {f.count > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? T.a : T.s, fontFamily: "'JetBrains Mono', monospace" }}>{f.count}</span>}
+                {f.count > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: isActive ? T.a : T.s, fontFamily: "'JetBrains Mono', monospace" }}>{f.count}</span>}
               </button>
-            );
-          })}
-        </div>
-
-        {/* Divider */}
-        <div style={{ height: 1, background: T.b, margin: "0 12px 8px" }} />
-
-        {/* Search + Bulk Actions */}
-        <div style={{ padding: "0 12px 8px" }}>
-          <div style={{ display: "flex", gap: 6 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search conversations..." style={{ flex: 1, padding: "8px 12px", fontSize: 13, borderRadius: 8, background: T.card, color: T.t, border: `1px solid ${T.b}`, outline: "none" }} onFocus={e => e.target.style.borderColor = T.a} onBlur={e => e.target.style.borderColor = T.b} />
-            <IconBtn onClick={loadInbox} title="Refresh">↻</IconBtn>
-          </div>
-          {selectedIds.size > 0 && (<div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 11, color: T.m, marginTop: 6 }}><span style={{ color: T.a, fontWeight: 700 }}>{selectedIds.size} selected</span><IconBtn onClick={bulkDelete} title="Delete selected" danger>🗑</IconBtn><IconBtn onClick={() => setSelectedIds(new Set())} title="Deselect">✕</IconBtn></div>)}
-        </div>
-
-        {/* Conversation List */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {loading ? (
-            <div style={{ padding: 40, textAlign: "center", color: T.m }}><div style={{ fontSize: 20, animation: "pulse 1.5s infinite" }}>📬</div><div style={{ fontSize: 12, marginTop: 8 }}>Loading...</div></div>
-          ) : filtered.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: T.m }}><div style={{ fontSize: 36, marginBottom: 8 }}>📭</div><div style={{ fontSize: 13, fontWeight: 600 }}>No messages</div><div style={{ fontSize: 11, marginTop: 4, color: T.s }}>{folder === "all" ? "Replies to outreach appear here" : `No messages in ${FOLDER_DEFS.find(f => f.id === folder)?.label || folder}`}</div></div>
-          ) : filtered.map(t => {
-            const isHot = ["hot", "on_fire"].includes(t.heat_level);
-            const isSel = selectedIds.has(t.thread_id);
-            const isAct = selectedThread?.thread_id === t.thread_id;
-            const name = t.contact_name || t.from_email || "?";
-            const initials = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() || "?";
-            const avatarBg = getAvatarColor(name);
-            return (
-              <div key={t.thread_id} onClick={() => openThread(t)} style={{ padding: "10px 12px", cursor: "pointer", borderBottom: `1px solid ${T.b}18`, borderLeft: isHot ? `3px solid ${T.hot}` : isAct ? `3px solid ${T.a}` : "3px solid transparent", background: isAct ? T.cardActive : isSel ? T.aDim : "transparent", transition: "background 0.12s", display: "flex", gap: 10, alignItems: "flex-start" }}
-                onMouseEnter={e => { if (!isAct) e.currentTarget.style.background = T.cardHover; }} onMouseLeave={e => { if (!isAct && !isSel) e.currentTarget.style.background = "transparent"; }}>
-                <div onClick={e => toggleSelect(t.thread_id, e)} style={{ width: 36, height: 36, borderRadius: "50%", background: isSel ? T.aDim : avatarBg, border: isSel ? `2px solid ${T.a}` : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: isSel ? T.a : "#000", flexShrink: 0, cursor: "pointer", marginTop: 1 }}>
-                  {isSel ? "✓" : initials}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
-                    <span style={{ fontSize: 14, fontWeight: t.unread_count > 0 ? 700 : 500, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{name}</span>
-                    <span style={{ fontSize: 11, color: T.s, fontFamily: "'JetBrains Mono', monospace", flexShrink: 0, marginLeft: 6 }}>{timeAgo(t.last_message_at)}</span>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: t.unread_count > 0 ? 600 : 400, color: t.unread_count > 0 ? T.t : T.m, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{t.subject || "(no subject)"}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 11, color: T.s, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{trunc(strip(t.body_text), 50)}</span>
-                    <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
-                      {t.unread_count > 0 && <UnreadDot />}
-                      {t.heat_level && <HeatPill level={t.heat_level} />}
-                      {t.message_count > 1 && <span style={{ fontSize: 10, color: T.m, background: T.aDim, padding: "1px 5px", borderRadius: 4, fontFamily: "'JetBrains Mono', monospace" }}>{t.message_count}</span>}
-                    </div>
-                  </div>
-                </div>
-              </div>
             );
           })}
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* MAIN AREA */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", background: T.bg, minWidth: 0 }}>
 
-        {/* Compose New */}
-        {composeNew && !selectedThread && (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: T.t }}>✏️ New Message</span>
-              <IconBtn onClick={() => setComposeNew(false)}>✕</IconBtn>
+        {/* ── LIST VIEW ── */}
+        {mainView === "list" && (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+            {/* Search + bulk toolbar */}
+            <div style={{ padding: "10px 16px", borderBottom: `1px solid ${T.b}`, background: T.card, display: "flex", gap: 8, alignItems: "center" }}>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search conversations..." style={{ flex: 1, padding: "8px 12px", fontSize: 13, borderRadius: 8, background: T.d, color: T.t, border: `1px solid ${T.b}`, outline: "none" }} onFocus={e => e.target.style.borderColor = T.a} onBlur={e => e.target.style.borderColor = T.b} />
+              <IconBtn onClick={loadInbox} title="Refresh">↻</IconBtn>
+              {selectedIds.size > 0 && (<><span style={{ fontSize: 12, color: T.a, fontWeight: 700 }}>{selectedIds.size} selected</span><IconBtn onClick={bulkDelete} danger title="Delete selected">🗑</IconBtn><IconBtn onClick={() => setSelectedIds(new Set())} title="Deselect">✕</IconBtn></>)}
             </div>
-            <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
-              <div style={{ marginBottom: 12, position: "relative" }}>
-                <label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>To</label>
-                <input value={newTo} onChange={e => { setNewTo(e.target.value); searchContacts(e.target.value); }} placeholder="Type a name or email..." style={inputStyle} onFocus={e => { e.target.style.borderColor = T.a; if (toSuggestions.length) setShowSuggestions(true); }} onBlur={e => { e.target.style.borderColor = T.b; setTimeout(() => setShowSuggestions(false), 200); }} />
-                {showSuggestions && (
-                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, marginTop: 4, zIndex: 10, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
-                    {toSuggestions.map(s => (
-                      <div key={s.id} onClick={() => { setNewTo(s.email); setShowSuggestions(false); if (!newSubject) setNewSubject(s.brokerage_name ? `Quick question about ${s.brokerage_name}` : `${s.first_name}, quick thought`); }} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${T.b}10`, display: "flex", justifyContent: "space-between", alignItems: "center" }} onMouseEnter={e => e.currentTarget.style.background = T.cardHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: T.t }}>{s.first_name} {s.last_name}</div>
-                          <div style={{ fontSize: 11, color: T.m }}>{s.email}</div>
-                        </div>
-                        <div style={{ fontSize: 11, color: T.s }}>{s.brokerage_name || ""}</div>
-                      </div>
-                    ))}
+            {/* Conversation rows */}
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {loading ? (
+                <div style={{ padding: 60, textAlign: "center", color: T.m }}><div style={{ fontSize: 24, animation: "pulse 1.5s infinite" }}>📬</div><div style={{ fontSize: 13, marginTop: 10 }}>Loading...</div></div>
+              ) : filtered.length === 0 ? (
+                <div style={{ padding: 60, textAlign: "center", color: T.m }}><div style={{ fontSize: 40, marginBottom: 10 }}>📭</div><div style={{ fontSize: 14, fontWeight: 600 }}>No messages</div><div style={{ fontSize: 12, marginTop: 4, color: T.s }}>{folder === "all" ? "Replies to outreach appear here" : `No messages in ${FOLDER_DEFS.find(f => f.id === folder)?.label || folder}`}</div></div>
+              ) : filtered.map(t => {
+                const isHot = ["hot", "on_fire"].includes(t.heat_level);
+                const isSel = selectedIds.has(t.thread_id);
+                const isAct = selectedThread?.thread_id === t.thread_id;
+                const name = t.contact_name || t.from_email || "?";
+                const initials = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+                const preview = strip(t.body_text || "");
+                return (
+                  <div key={t.thread_id} onClick={() => openThread(t)} style={{ height: 48, padding: "0 16px", cursor: "pointer", borderBottom: `1px solid ${T.b}18`, borderLeft: isHot ? `3px solid ${T.hot}` : "3px solid transparent", background: isAct ? T.cardActive : isSel ? T.aDim : t.unread_count > 0 ? `${T.card}88` : "transparent", transition: "background 0.1s", display: "flex", alignItems: "center", gap: 10 }}
+                    onMouseEnter={e => { if (!isAct) e.currentTarget.style.background = T.cardHover; }} onMouseLeave={e => { if (!isAct && !isSel) e.currentTarget.style.background = t.unread_count > 0 ? `${T.card}88` : "transparent"; }}>
+                    {/* Checkbox / avatar */}
+                    <div onClick={e => toggleSelect(t.thread_id, e)} style={{ width: 32, height: 32, borderRadius: "50%", background: isSel ? T.aDim : getAvatarColor(name), border: isSel ? `2px solid ${T.a}` : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: isSel ? T.a : "#000", flexShrink: 0, cursor: "pointer" }}>
+                      {isSel ? "✓" : initials}
+                    </div>
+                    {/* Sender name — fixed 160px */}
+                    <span style={{ width: 160, minWidth: 160, fontSize: 13, fontWeight: t.unread_count > 0 ? 700 : 500, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                    {/* Subject + preview — flex:1, one line */}
+                    <span style={{ flex: 1, fontSize: 13, color: T.m, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+                      <span style={{ fontWeight: t.unread_count > 0 ? 600 : 400, color: t.unread_count > 0 ? T.t : T.m }}>{t.subject || "(no subject)"}</span>
+                      {preview && <span style={{ color: T.s }}>{" — "}{trunc(preview, 60)}</span>}
+                    </span>
+                    {/* Badges + time */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                      {t.unread_count > 0 && <UnreadDot />}
+                      {t.heat_level && <HeatPill level={t.heat_level} />}
+                      {t.message_count > 1 && <span style={{ fontSize: 10, color: T.m, background: T.aDim, padding: "1px 5px", borderRadius: 4 }}>{t.message_count}</span>}
+                      <span style={{ fontSize: 11, color: T.s, fontFamily: "'JetBrains Mono', monospace", minWidth: 32, textAlign: "right" }}>{timeAgo(t.last_message_at)}</span>
+                    </div>
                   </div>
-                )}
-              </div>
-              <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Subject</label><input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Subject..." style={inputStyle} onFocus={focusHandler} onBlur={blurHandler} /></div>
-              <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Message</label><textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Write your email..." rows={12} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={focusHandler} onBlur={blurHandler} /></div>
-            </div>
-            <div style={{ padding: "12px 24px", borderTop: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <button onClick={askRueCompose} disabled={rueLoading || !newTo.trim()} style={{ padding: "10px 16px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)", fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setComposeNew(false)} style={{ padding: "10px 20px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
-                <button onClick={sendNew} disabled={sending || !newTo.trim() || !newBody.trim()} style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !newTo.trim() || !newBody.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "Sending..." : "Send ✉️"}</button>
-              </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Empty State */}
-        {!selectedThread && !composeNew && (
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ textAlign: "center", color: T.m }}>
-              <div style={{ fontSize: 56, marginBottom: 16, opacity: 0.4 }}>📧</div>
-              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: T.t }}>Select a conversation</div>
-              <div style={{ fontSize: 13, color: T.s }}>or compose a new message</div>
-              {threads.length > 0 && <div style={{ fontSize: 12, color: T.s, marginTop: 8 }}>{threads.length} conversation{threads.length !== 1 ? "s" : ""} in {FOLDER_DEFS.find(f => f.id === folder)?.label || "inbox"}</div>}
+        {/* ── THREAD VIEW ── */}
+        {mainView === "thread" && selectedThread && (<>
+          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${T.b}`, background: T.card, display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={goBack} style={{ padding: "6px 12px", fontSize: 13, borderRadius: 8, background: "transparent", color: T.m, border: `1px solid ${T.b}`, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>← Back</button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedThread.subject || "(no subject)"}</span>
+                {selectedThread.heat_level && <HeatPill level={selectedThread.heat_level} />}
+                {selectedThread.lead_id && <Pill bg={T.greenDim} color={T.green}>Linked Lead</Pill>}
+              </div>
+              <div style={{ fontSize: 12, color: T.m, marginTop: 1 }}>
+                {selectedThread.contact_name || selectedThread.from_email}
+                {selectedThread.interest_score > 0 && <span style={{ marginLeft: 8, color: T.warm }}>Score: {selectedThread.interest_score}</span>}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Thread View */}
-        {selectedThread && !composeNew && (<>
-          <div style={{ padding: "14px 24px", borderBottom: `1px solid ${T.b}`, background: T.card }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedThread.subject || "(no subject)"}</span>
-                  {selectedThread.heat_level && <HeatPill level={selectedThread.heat_level} />}
-                  {selectedThread.lead_id && <Pill bg={T.greenDim} color={T.green}>Linked Lead</Pill>}
-                </div>
-                <div style={{ fontSize: 13, color: T.m }}>
-                  {selectedThread.contact_name || selectedThread.from_email}
-                  {selectedThread.interest_score > 0 && <span style={{ marginLeft: 8, color: T.warm }}>Score: {selectedThread.interest_score}</span>}
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 4 }}>
-                <IconBtn onClick={() => toggleStar(selectedThread.thread_id)} active={starred.has(selectedThread.thread_id)} title="Star">⭐</IconBtn>
-                <IconBtn onClick={() => toggleArchive(selectedThread.thread_id)} title="Archive">📦</IconBtn>
-                <IconBtn onClick={() => deleteThread(selectedThread.thread_id)} danger title="Delete">🗑</IconBtn>
-              </div>
+            <div style={{ display: "flex", gap: 4 }}>
+              <IconBtn onClick={() => toggleStar(selectedThread.thread_id)} active={starred.has(selectedThread.thread_id)} title="Star">⭐</IconBtn>
+              <IconBtn onClick={() => toggleArchive(selectedThread.thread_id)} title="Archive">📦</IconBtn>
+              <IconBtn onClick={() => deleteThread(selectedThread.thread_id)} danger title="Delete">🗑</IconBtn>
             </div>
           </div>
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
@@ -444,6 +391,44 @@ RULES:
             )}
           </div>
         </>)}
+
+        {/* ── COMPOSE VIEW ── */}
+        {mainView === "compose" && (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "12px 20px", borderBottom: `1px solid ${T.b}`, background: T.card, display: "flex", alignItems: "center", gap: 12 }}>
+              <button onClick={goBack} style={{ padding: "6px 12px", fontSize: 13, borderRadius: 8, background: "transparent", color: T.m, border: `1px solid ${T.b}`, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>← Back</button>
+              <span style={{ fontSize: 15, fontWeight: 700, color: T.t }}>✏️ New Message</span>
+            </div>
+            <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
+              <div style={{ marginBottom: 14, position: "relative" }}>
+                <label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>To</label>
+                <input value={newTo} onChange={e => { setNewTo(e.target.value); searchContacts(e.target.value); }} placeholder="Type a name or email..." style={inputStyle} onFocus={e => { e.target.style.borderColor = T.a; if (toSuggestions.length) setShowSuggestions(true); }} onBlur={e => { e.target.style.borderColor = T.b; setTimeout(() => setShowSuggestions(false), 200); }} />
+                {showSuggestions && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, marginTop: 4, zIndex: 10, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                    {toSuggestions.map(s => (
+                      <div key={s.id} onClick={() => { setNewTo(s.email); setShowSuggestions(false); if (!newSubject) setNewSubject(s.brokerage_name ? `Quick question about ${s.brokerage_name}` : `${s.first_name}, quick thought`); }} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${T.b}10`, display: "flex", justifyContent: "space-between", alignItems: "center" }} onMouseEnter={e => e.currentTarget.style.background = T.cardHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: T.t }}>{s.first_name} {s.last_name}</div>
+                          <div style={{ fontSize: 11, color: T.m }}>{s.email}</div>
+                        </div>
+                        <div style={{ fontSize: 11, color: T.s }}>{s.brokerage_name || ""}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ marginBottom: 14 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Subject</label><input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Subject..." style={inputStyle} onFocus={focusHandler} onBlur={blurHandler} /></div>
+              <div><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Message</label><textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Write your email..." rows={14} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={focusHandler} onBlur={blurHandler} /></div>
+            </div>
+            <div style={{ padding: "12px 24px", borderTop: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button onClick={askRueCompose} disabled={rueLoading || !newTo.trim()} style={{ padding: "10px 16px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)", fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={goBack} style={{ padding: "10px 20px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
+                <button onClick={sendNew} disabled={sending || !newTo.trim() || !newBody.trim()} style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !newTo.trim() || !newBody.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "Sending..." : "Send ✉️"}</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } } @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } } input::placeholder, textarea::placeholder { color: ${T.s}; }`}</style>
