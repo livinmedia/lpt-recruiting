@@ -1,7 +1,7 @@
 // RKRT.in Dashboard Feature
 // Extracted from App.jsx for scalable architecture
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
@@ -21,12 +21,6 @@ export default function Dash({
   onNavigate = () => {},
   onSelectLead = () => {},
   askRueInline = () => {},
-  inlineResponse = "",
-  inlineLoading = false,
-  inlineChatHistory = [],
-  onRueChatReply = () => {},
-  onCloseInline = () => {},
-  isPro = false,
   chartsReady = false,
   BarChart,
   Bar,
@@ -35,69 +29,7 @@ export default function Dash({
   ResponsiveContainer,
   Cell,
 }) {
-  const [chatInput, setChatInput] = useState("");
   const [scoreAlerts, setScoreAlerts] = useState([]);
-  const [copySaved, setCopySaved] = useState(false);
-  const messagesRef = useRef(null);
-
-  useEffect(() => {
-    if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-  }, [inlineChatHistory, inlineLoading]);
-
-  const copyResponse = () => {
-    if (!inlineResponse) return;
-    navigator.clipboard.writeText(inlineResponse).catch(() => {});
-    setCopySaved(true);
-    setTimeout(() => setCopySaved(false), 2000);
-  };
-
-  // Render response text with **bold**, line breaks, and clickable lead names
-  const renderResponse = (text) => {
-    if (!text) return null;
-    const lines = text.split("\n");
-    return lines.map((line, li) => {
-      // Find lead name matches in this line
-      const segments = [];
-      let remaining = line;
-      const matchedLeads = leads.filter(l => {
-        const name = `${l.first_name} ${l.last_name}`.trim();
-        return name.length > 3 && remaining.includes(name);
-      });
-      // Sort by position so we process left-to-right
-      matchedLeads.sort((a, b) => remaining.indexOf(`${a.first_name} ${a.last_name}`) - remaining.indexOf(`${b.first_name} ${b.last_name}`));
-
-      const renderBold = (str, keyPrefix) => {
-        const parts = str.split(/\*\*(.+?)\*\*/g);
-        return parts.map((p, i) => i % 2 === 1 ? <strong key={`${keyPrefix}-b${i}`}>{p}</strong> : p);
-      };
-
-      let idx = 0;
-      const usedLeads = [];
-      for (const lead of matchedLeads) {
-        const name = `${lead.first_name} ${lead.last_name}`;
-        const pos = remaining.indexOf(name);
-        if (pos === -1) continue;
-        if (pos > 0) segments.push(<span key={`${li}-${idx++}`}>{renderBold(remaining.slice(0, pos), `${li}-${idx}`)}</span>);
-        segments.push(
-          <span
-            key={`${li}-lead-${lead.id}`}
-            onClick={() => { onSelectLead(lead); onNavigate("lead"); }}
-            style={{ color: T.a, cursor: "pointer", textDecoration: "underline", fontWeight: 700 }}
-          >{name}</span>
-        );
-        remaining = remaining.slice(pos + name.length);
-        usedLeads.push(lead);
-      }
-      if (remaining) segments.push(<span key={`${li}-tail`}>{renderBold(remaining, `${li}-tail`)}</span>);
-
-      return (
-        <span key={li}>
-          {segments.length > 0 ? segments : renderBold(line, `${li}`)}
-          {li < lines.length - 1 && <br />}
-        </span>
-      );
-    });
-  };
 
   useEffect(() => {
     if (!userId) return;
@@ -283,89 +215,6 @@ export default function Dash({
           </div>
         ))}
       </div>
-
-      {/* Rue Conversation Card */}
-      {(inlineLoading || inlineResponse || inlineChatHistory.length > 0) && (
-        <div style={{ marginBottom: 20, borderRadius: 12, background: T.card, border: `1px solid ${T.a}30`, overflow: "hidden", maxHeight: 400, display: "flex", flexDirection: "column" }}>
-          {/* Header */}
-          <div style={{ padding: "10px 16px", borderBottom: `1px solid ${T.b}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: inlineLoading ? T.a : "#22c55e", animation: inlineLoading ? "pulse 1s infinite" : "none", flexShrink: 0 }} />
-            <span style={{ fontSize: 11, color: T.a, fontWeight: 700, letterSpacing: 1.5, flex: 1 }}>🤖 RUE AI ASSISTANT</span>
-            <div
-              onClick={copyResponse}
-              style={{ padding: "4px 10px", borderRadius: 6, background: T.d, border: `1px solid ${T.b}`, color: copySaved ? T.a : T.s, fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0, transition: "color 0.2s" }}
-            >
-              {copySaved ? "✓ Copied" : "💾 Save"}
-            </div>
-            <div
-              onClick={onCloseInline}
-              style={{ width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: T.s, fontSize: 14, background: T.d, border: `1px solid ${T.b}`, flexShrink: 0 }}
-            >✕</div>
-          </div>
-
-          {/* Scrollable messages */}
-          <div ref={messagesRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "14px 18px" }}>
-            {inlineChatHistory.filter(m => m.role !== "system").map((msg, i) => (
-              <div key={i} style={{ marginBottom: 12, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
-                <div style={{ fontSize: 9, color: T.m, marginBottom: 3, fontWeight: 700, letterSpacing: 1 }}>{msg.role === "user" ? "YOU" : "RUE"}</div>
-                <div style={{
-                  maxWidth: "92%",
-                  padding: "10px 14px",
-                  borderRadius: msg.role === "user" ? "10px 10px 2px 10px" : "2px 10px 10px 10px",
-                  background: msg.role === "user" ? T.a + "15" : T.d,
-                  border: `1px solid ${msg.role === "user" ? T.a + "25" : T.b}`,
-                  fontSize: 13,
-                  color: T.t,
-                  lineHeight: 1.7,
-                  fontFamily: "inherit",
-                }}>
-                  {msg.role === "assistant" ? renderResponse(msg.content) : msg.content}
-                </div>
-              </div>
-            ))}
-            {inlineLoading && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 0" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.a, animation: "pulse 0.8s infinite" }} />
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.a, animation: "pulse 0.8s 0.2s infinite" }} />
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.a, animation: "pulse 0.8s 0.4s infinite" }} />
-                <span style={{ fontSize: 12, color: T.m, marginLeft: 4 }}>Rue is thinking...</span>
-              </div>
-            )}
-          </div>
-
-          {/* Follow-up input pinned at bottom */}
-          {inlineResponse && !inlineLoading && (
-            isPro ? (
-              <div style={{ padding: "10px 14px", borderTop: `1px solid ${T.b}`, display: "flex", gap: 8, flexShrink: 0 }}>
-                <input
-                  value={chatInput}
-                  onChange={e => setChatInput(e.target.value)}
-                  onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();onRueChatReply(chatInput);setChatInput("");} }}
-                  placeholder="Ask Rue a follow-up..."
-                  style={{ flex: 1, background: T.d, border: `1px solid ${T.b}`, borderRadius: 7, padding: "8px 12px", fontSize: 13, color: T.t, outline: "none" }}
-                />
-                <div
-                  onClick={() => { if(chatInput.trim()){onRueChatReply(chatInput);setChatInput("");} }}
-                  style={{ padding: "8px 16px", borderRadius: 7, background: T.a, color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", whiteSpace: "nowrap", flexShrink: 0 }}
-                >
-                  Send →
-                </div>
-              </div>
-            ) : (
-              <div style={{ padding: "10px 16px", borderTop: `1px solid ${T.b}`, background: "#F59E0B08", flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                  <div style={{ fontSize: 12, color: T.s }}>
-                    <span style={{ fontWeight: 700, color: "#F59E0B" }}>🔒 Pro</span> — upgrade to continue the conversation
-                  </div>
-                  <div onClick={() => onNavigate("profile")} style={{ padding: "6px 14px", borderRadius: 7, background: "#F59E0B", color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
-                    Upgrade →
-                  </div>
-                </div>
-              </div>
-            )
-          )}
-        </div>
-      )}
 
       {/* Brokerage Banner */}
       {profile?.brokerage && profile.brokerage !== "LPT Realty" && (

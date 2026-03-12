@@ -18,8 +18,6 @@ export default function CRM({
   onSelectLead,
   onNavigate,
   askRueInline,
-  inlineResponse,
-  inlineLoading,
   userId = null,
   onBulkDelete = () => {},
 }) {
@@ -259,22 +257,6 @@ export default function CRM({
           </div>
         ))}
       </div>
-
-      {/* Inline Response */}
-      {inlineLoading && (
-        <div style={{ marginBottom: 20, padding: "16px 20px", borderRadius: 10, background: T.card, border: `1px solid ${T.b}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.a, animation: "pulse 1s infinite" }} />
-            <span style={{ fontSize: 14, color: T.s }}>RUE is thinking...</span>
-          </div>
-        </div>
-      )}
-      {inlineResponse && !inlineLoading && (
-        <div style={{ marginBottom: 20, padding: "20px 24px", borderRadius: 10, background: T.as, border: `1px solid ${T.a}20` }}>
-          <span style={{ fontSize: 12, color: T.a, fontWeight: 700 }}>🤖 RUE RESPONSE</span>
-          <pre style={{ fontSize: 14, color: T.t, lineHeight: 1.7, whiteSpace: "pre-wrap", fontFamily: "inherit", margin: "8px 0 0", maxHeight: 400, overflow: "auto" }}>{inlineResponse}</pre>
-        </div>
-      )}
 
       {/* Toolbar */}
       <div className="crm-toolbar" style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>

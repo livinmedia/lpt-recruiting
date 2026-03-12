@@ -133,6 +133,9 @@ export default function App(){
   const [inlineLoading,setInlineLoading]=useState(false);
   const [inlineChatHistory,setInlineChatHistory]=useState([]);
   const [rueConvId,setRueConvId]=useState(null);
+  const [rueChatInput,setRueChatInput]=useState("");
+  const [rueCopySaved,setRueCopySaved]=useState(false);
+  const rueMessagesRef=useRef(null);
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [profileMenuOpen,setProfileMenuOpen]=useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -524,6 +527,38 @@ export default function App(){
       setInlineChatHistory([...newHistory,{role:"assistant",content:reply}]);
     }catch(e){setInlineResponse("Connection error: "+e.message);}
     setInlineLoading(false);
+  };
+
+  useEffect(()=>{if(rueMessagesRef.current) rueMessagesRef.current.scrollTop=rueMessagesRef.current.scrollHeight;},[inlineChatHistory,inlineLoading]);
+
+  const copyRueResponse=()=>{
+    if(!inlineResponse) return;
+    navigator.clipboard.writeText(inlineResponse).catch(()=>{});
+    setRueCopySaved(true);
+    setTimeout(()=>setRueCopySaved(false),2000);
+  };
+
+  const renderRueResponse=(text)=>{
+    if(!text) return null;
+    const lines=text.split("\n");
+    const renderBold=(str,kp)=>str.split(/\*\*(.+?)\*\*/g).map((p,i)=>i%2===1?<strong key={`${kp}-b${i}`}>{p}</strong>:p);
+    return lines.map((line,li)=>{
+      const segments=[];
+      let remaining=line;
+      const matched=leads.filter(l=>{const n=`${l.first_name} ${l.last_name}`.trim();return n.length>3&&remaining.includes(n);});
+      matched.sort((a,b)=>remaining.indexOf(`${a.first_name} ${a.last_name}`)-remaining.indexOf(`${b.first_name} ${b.last_name}`));
+      let idx=0;
+      for(const lead of matched){
+        const name=`${lead.first_name} ${lead.last_name}`;
+        const pos=remaining.indexOf(name);
+        if(pos===-1) continue;
+        if(pos>0) segments.push(<span key={`${li}-${idx++}`}>{renderBold(remaining.slice(0,pos),`${li}-${idx}`)}</span>);
+        segments.push(<span key={`${li}-lead-${lead.id}`} onClick={()=>{handleSelectLead(lead);setViewWithHistory("lead");}} style={{color:T.a,cursor:"pointer",textDecoration:"underline",fontWeight:700}}>{name}</span>);
+        remaining=remaining.slice(pos+name.length);
+      }
+      if(remaining) segments.push(<span key={`${li}-tail`}>{renderBold(remaining,`${li}-tail`)}</span>);
+      return(<span key={li}>{segments.length>0?segments:renderBold(line,`${li}`)}{li<lines.length-1&&<br/>}</span>);
+    });
   };
 
   const setViewWithHistory=(v)=>{
@@ -1674,10 +1709,46 @@ select option{background:${T.card};color:${T.t}}
             </div>
           )}
         </div>}
+        {/* ── Global Rue Inline Chat Card — renders on any view ── */}
+        {(inlineLoading||inlineResponse||inlineChatHistory.length>0)&&(
+          <div style={{marginBottom:20,borderRadius:12,background:T.card,border:`1px solid ${T.a}30`,overflow:"hidden",maxHeight:400,display:"flex",flexDirection:"column"}}>
+            <div style={{padding:"10px 16px",borderBottom:`1px solid ${T.b}`,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+              <div style={{width:7,height:7,borderRadius:"50%",background:inlineLoading?T.a:"#22c55e",animation:inlineLoading?"pulse 1s infinite":"none",flexShrink:0}}/>
+              <span style={{fontSize:11,color:T.a,fontWeight:700,letterSpacing:1.5,flex:1}}>🤖 RUE AI ASSISTANT</span>
+              <div onClick={copyRueResponse} style={{padding:"4px 10px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:rueCopySaved?T.a:T.s,fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0,transition:"color 0.2s"}}>{rueCopySaved?"✓ Copied":"💾 Save"}</div>
+              <div onClick={()=>{setInlineResponse(null);setInlineChatHistory([]);setRueConvId(null);}} style={{width:24,height:24,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.s,fontSize:14,background:T.d,border:`1px solid ${T.b}`,flexShrink:0}}>✕</div>
+            </div>
+            <div ref={rueMessagesRef} style={{flex:1,overflowY:"auto",minHeight:0,padding:"14px 18px"}}>
+              {inlineChatHistory.filter(m=>m.role!=="system").map((msg,i)=>(
+                <div key={i} style={{marginBottom:12,display:"flex",flexDirection:"column",alignItems:msg.role==="user"?"flex-end":"flex-start"}}>
+                  <div style={{fontSize:9,color:T.m,marginBottom:3,fontWeight:700,letterSpacing:1}}>{msg.role==="user"?"YOU":"RUE"}</div>
+                  <div style={{maxWidth:"92%",padding:"10px 14px",borderRadius:msg.role==="user"?"10px 10px 2px 10px":"2px 10px 10px 10px",background:msg.role==="user"?T.a+"15":T.d,border:`1px solid ${msg.role==="user"?T.a+"25":T.b}`,fontSize:13,color:T.t,lineHeight:1.7,fontFamily:"inherit"}}>
+                    {msg.role==="assistant"?renderRueResponse(msg.content):msg.content}
+                  </div>
+                </div>
+              ))}
+              {inlineLoading&&(<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0"}}><div style={{width:6,height:6,borderRadius:"50%",background:T.a,animation:"pulse 0.8s infinite"}}/><div style={{width:6,height:6,borderRadius:"50%",background:T.a,animation:"pulse 0.8s 0.2s infinite"}}/><div style={{width:6,height:6,borderRadius:"50%",background:T.a,animation:"pulse 0.8s 0.4s infinite"}}/><span style={{fontSize:12,color:T.m,marginLeft:4}}>Rue is thinking...</span></div>)}
+            </div>
+            {inlineResponse&&!inlineLoading&&(isPro?(
+              <div style={{padding:"10px 14px",borderTop:`1px solid ${T.b}`,display:"flex",gap:8,flexShrink:0}}>
+                <input value={rueChatInput} onChange={e=>setRueChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendRueChatReply(rueChatInput);setRueChatInput("");}}} placeholder="Ask Rue a follow-up..." style={{flex:1,background:T.d,border:`1px solid ${T.b}`,borderRadius:7,padding:"8px 12px",fontSize:13,color:T.t,outline:"none"}}/>
+                <div onClick={()=>{if(rueChatInput.trim()){sendRueChatReply(rueChatInput);setRueChatInput("");}}} style={{padding:"8px 16px",borderRadius:7,background:T.a,color:"#000",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",whiteSpace:"nowrap",flexShrink:0}}>Send →</div>
+              </div>
+            ):(
+              <div style={{padding:"10px 16px",borderTop:`1px solid ${T.b}`,background:"#F59E0B08",flexShrink:0}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                  <div style={{fontSize:12,color:T.s}}><span style={{fontWeight:700,color:"#F59E0B"}}>🔒 Pro</span> — upgrade to continue the conversation</div>
+                  <div onClick={()=>setViewWithHistory("profile")} style={{padding:"6px 14px",borderRadius:7,background:"#F59E0B",color:"#000",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Upgrade →</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {view==="home"&&<>
-<Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0,5)} userId={effectiveUserId} onNavigate={setViewWithHistory} onSelectLead={handleSelectLead} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} inlineChatHistory={inlineChatHistory} onRueChatReply={sendRueChatReply} onCloseInline={()=>{setInlineResponse(null);setInlineChatHistory([]);setRueConvId(null);}} isPro={isPro} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
-        {view==="pipeline"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} search={search} setSearch={setSearch}/></>}
-        {view==="crm"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onBulkDelete={(ids)=>setLeads(p=>p.filter(l=>!ids.includes(l.id)))}/></>}
+<Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0,5)} userId={effectiveUserId} onNavigate={setViewWithHistory} onSelectLead={handleSelectLead} askRueInline={askRueInline} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
+        {view==="pipeline"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} search={search} setSearch={setSearch}/></>}
+        {view==="crm"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} userId={effectiveUserId} onBulkDelete={(ids)=>setLeads(p=>p.filter(l=>!ids.includes(l.id)))}/></>}
         {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}}/></ProGate>}
         {view==="content"&&<ContentTab userId={effectiveUserId} userProfile={effectiveProfile}/>}
         {view==="community"&&<RKRTCommunity userId={effectiveUserId} profile={effectiveProfile} supabase={supabase}/>}
