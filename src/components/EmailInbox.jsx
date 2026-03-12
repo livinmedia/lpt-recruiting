@@ -242,50 +242,88 @@ RULES:
   const focusHandler = (e) => e.target.style.borderColor = T.a;
   const blurHandler = (e) => e.target.style.borderColor = T.b;
 
+  const avatarColors = ["#22d3ee","#10b981","#a78bfa","#f59e0b","#f43f5e","#fb923c","#60a5fa","#34d399"];
+  const getAvatarColor = (name) => avatarColors[(name || "?").charCodeAt(0) % avatarColors.length];
+  const FOLDER_DEFS = [
+    { id: "all", icon: "📥", label: "Inbox", count: threads.filter(t => !archived.has(t.thread_id)).length },
+    { id: "unread", icon: "🔵", label: "Unread", count: threads.filter(t => t.unread_count > 0).length },
+    { id: "hot", icon: "🔥", label: "Hot Leads", count: threads.filter(t => ["hot","on_fire"].includes(t.heat_level)).length },
+    { id: "starred", icon: "⭐", label: "Starred", count: threads.filter(t => starred.has(t.thread_id)).length },
+    { id: "sent", icon: "↑", label: "Sent", count: threads.filter(t => t.direction === "outbound" && !archived.has(t.thread_id)).length },
+    { id: "archived", icon: "📦", label: "Archived", count: threads.filter(t => archived.has(t.thread_id)).length },
+  ];
+
   return (
     <div style={{ display: "flex", height: "calc(100vh - 100px)", background: T.bg, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.b}` }}>
 
-      {/* FOLDER SIDEBAR */}
-      <div style={{ width: 56, background: T.d, borderRight: `1px solid ${T.b}`, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 12, gap: 2 }}>
-        {FOLDERS.map(f => (
-          <button key={f.id} onClick={() => { setFolder(f.id); setSelectedIds(new Set()); }} title={f.label} style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: folder === f.id ? T.aDim : "transparent", border: folder === f.id ? `1px solid ${T.a}33` : "1px solid transparent", cursor: "pointer", fontSize: 16, transition: "all 0.15s", position: "relative" }}>
-            {f.icon}
-            {f.id === "unread" && unreadCount > 0 && (<span style={{ position: "absolute", top: 2, right: 2, width: 14, height: 14, borderRadius: "50%", background: T.a, color: "#000", fontSize: 8, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadCount > 9 ? "9+" : unreadCount}</span>)}
-          </button>
-        ))}
-        <div style={{ flex: 1 }} />
-        <button onClick={() => { setComposeNew(true); setSelectedThread(null); }} title="Compose" style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg, ${T.a}, ${T.green})`, border: "none", cursor: "pointer", fontSize: 18, marginBottom: 12, boxShadow: `0 2px 12px ${T.aGlow}` }}>✏️</button>
-      </div>
+      {/* LEFT PANEL */}
+      <div style={{ width: 320, background: T.d, borderRight: `1px solid ${T.b}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
 
-      {/* THREAD LIST */}
-      <div style={{ width: 340, borderRight: `1px solid ${T.b}`, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.b}`, background: T.card }}>
-          <div style={{ display: "flex", gap: 6, marginBottom: selectedIds.size > 0 ? 8 : 0 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." style={{ flex: 1, padding: "8px 12px", fontSize: 13, borderRadius: 8, background: T.d, color: T.t, border: `1px solid ${T.b}`, outline: "none", fontFamily: "'JetBrains Mono', monospace" }} onFocus={focusHandler} onBlur={blurHandler} />
+        {/* Compose Button */}
+        <div style={{ padding: "16px 12px 8px" }}>
+          <button onClick={() => { setComposeNew(true); setSelectedThread(null); }} style={{ width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 700, borderRadius: 16, background: `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, justifyContent: "center", boxShadow: `0 2px 16px ${T.aGlow}`, transition: "opacity 0.15s" }} onMouseEnter={e => e.currentTarget.style.opacity = "0.88"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>✏️ Compose</button>
+        </div>
+
+        {/* Folders */}
+        <div style={{ padding: "4px 0 8px" }}>
+          {FOLDER_DEFS.map(f => {
+            const isActive = folder === f.id;
+            return (
+              <button key={f.id} onClick={() => { setFolder(f.id); setSelectedIds(new Set()); }} style={{ width: "calc(100% - 12px)", marginLeft: 12, padding: "10px 16px", fontSize: 14, fontWeight: isActive ? 700 : 500, borderRadius: "0 24px 24px 0", background: isActive ? T.aDim : "transparent", color: isActive ? T.a : T.m, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.12s" }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = T.card; }} onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
+                <span style={{ fontSize: 15 }}>{f.icon}</span>
+                <span style={{ flex: 1, textAlign: "left" }}>{f.label}</span>
+                {f.count > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? T.a : T.s, fontFamily: "'JetBrains Mono', monospace" }}>{f.count}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: T.b, margin: "0 12px 8px" }} />
+
+        {/* Search + Bulk Actions */}
+        <div style={{ padding: "0 12px 8px" }}>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search conversations..." style={{ flex: 1, padding: "8px 12px", fontSize: 13, borderRadius: 8, background: T.card, color: T.t, border: `1px solid ${T.b}`, outline: "none" }} onFocus={e => e.target.style.borderColor = T.a} onBlur={e => e.target.style.borderColor = T.b} />
             <IconBtn onClick={loadInbox} title="Refresh">↻</IconBtn>
           </div>
-          {selectedIds.size > 0 && (<div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 11, color: T.m }}><span style={{ color: T.a, fontWeight: 700 }}>{selectedIds.size} selected</span><IconBtn onClick={bulkDelete} title="Delete" danger>🗑</IconBtn><IconBtn onClick={() => setSelectedIds(new Set())} title="Deselect">✕</IconBtn></div>)}
+          {selectedIds.size > 0 && (<div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 11, color: T.m, marginTop: 6 }}><span style={{ color: T.a, fontWeight: 700 }}>{selectedIds.size} selected</span><IconBtn onClick={bulkDelete} title="Delete selected" danger>🗑</IconBtn><IconBtn onClick={() => setSelectedIds(new Set())} title="Deselect">✕</IconBtn></div>)}
         </div>
+
+        {/* Conversation List */}
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {loading ? (<div style={{ padding: 40, textAlign: "center", color: T.m }}><div style={{ fontSize: 20, animation: "pulse 1.5s infinite" }}>📬</div><div style={{ fontSize: 12, marginTop: 8 }}>Loading...</div></div>)
-          : filtered.length === 0 ? (<div style={{ padding: 40, textAlign: "center", color: T.m }}><div style={{ fontSize: 36, marginBottom: 8 }}>📭</div><div style={{ fontSize: 13, fontWeight: 600 }}>No messages</div><div style={{ fontSize: 11, marginTop: 4, color: T.s }}>{folder === "all" ? "Replies to outreach appear here" : `No messages in ${folder}`}</div></div>)
-          : filtered.map(t => {
+          {loading ? (
+            <div style={{ padding: 40, textAlign: "center", color: T.m }}><div style={{ fontSize: 20, animation: "pulse 1.5s infinite" }}>📬</div><div style={{ fontSize: 12, marginTop: 8 }}>Loading...</div></div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: T.m }}><div style={{ fontSize: 36, marginBottom: 8 }}>📭</div><div style={{ fontSize: 13, fontWeight: 600 }}>No messages</div><div style={{ fontSize: 11, marginTop: 4, color: T.s }}>{folder === "all" ? "Replies to outreach appear here" : `No messages in ${FOLDER_DEFS.find(f => f.id === folder)?.label || folder}`}</div></div>
+          ) : filtered.map(t => {
             const isHot = ["hot", "on_fire"].includes(t.heat_level);
             const isSel = selectedIds.has(t.thread_id);
             const isAct = selectedThread?.thread_id === t.thread_id;
+            const name = t.contact_name || t.from_email || "?";
+            const initials = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+            const avatarBg = getAvatarColor(name);
             return (
-              <div key={t.thread_id} onClick={() => openThread(t)} style={{ padding: "12px 14px", cursor: "pointer", borderBottom: `1px solid ${T.b}08`, borderLeft: isHot ? `3px solid ${T.hot}` : isAct ? `3px solid ${T.a}` : "3px solid transparent", background: isAct ? T.cardActive : isSel ? T.aDim : "transparent", transition: "all 0.12s" }}
+              <div key={t.thread_id} onClick={() => openThread(t)} style={{ padding: "10px 12px", cursor: "pointer", borderBottom: `1px solid ${T.b}18`, borderLeft: isHot ? `3px solid ${T.hot}` : isAct ? `3px solid ${T.a}` : "3px solid transparent", background: isAct ? T.cardActive : isSel ? T.aDim : "transparent", transition: "background 0.12s", display: "flex", gap: 10, alignItems: "flex-start" }}
                 onMouseEnter={e => { if (!isAct) e.currentTarget.style.background = T.cardHover; }} onMouseLeave={e => { if (!isAct && !isSel) e.currentTarget.style.background = "transparent"; }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                  <input type="checkbox" checked={isSel} onChange={e => toggleSelect(t.thread_id, e)} style={{ accentColor: T.a, cursor: "pointer", width: 14, height: 14 }} />
-                  {t.unread_count > 0 && <UnreadDot />}
-                  <span style={{ fontSize: 14, fontWeight: t.unread_count > 0 ? 700 : 500, color: T.t, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.contact_name || t.from_email}</span>
-                  <div style={{ display: "flex", gap: 3 }}>{t.heat_level && <HeatPill level={t.heat_level} />}<DirPill dir={t.direction} /></div>
+                <div onClick={e => toggleSelect(t.thread_id, e)} style={{ width: 36, height: 36, borderRadius: "50%", background: isSel ? T.aDim : avatarBg, border: isSel ? `2px solid ${T.a}` : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: isSel ? T.a : "#000", flexShrink: 0, cursor: "pointer", marginTop: 1 }}>
+                  {isSel ? "✓" : initials}
                 </div>
-                <div style={{ fontSize: 13, fontWeight: t.unread_count > 0 ? 600 : 400, color: t.unread_count > 0 ? T.t : T.m, marginLeft: 20, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{t.subject || "(no subject)"}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginLeft: 20 }}>
-                  <span style={{ fontSize: 11, color: T.s, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "55%" }}>{trunc(strip(t.body_text), 40)}</span>
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}><span style={{ fontSize: 11, color: T.s }}>{timeAgo(t.last_message_at)}</span>{t.message_count > 1 && <span style={{ fontSize: 9, color: T.m, background: T.aDim, padding: "1px 5px", borderRadius: 4 }}>{t.message_count}</span>}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                    <span style={{ fontSize: 14, fontWeight: t.unread_count > 0 ? 700 : 500, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{name}</span>
+                    <span style={{ fontSize: 11, color: T.s, fontFamily: "'JetBrains Mono', monospace", flexShrink: 0, marginLeft: 6 }}>{timeAgo(t.last_message_at)}</span>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: t.unread_count > 0 ? 600 : 400, color: t.unread_count > 0 ? T.t : T.m, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{t.subject || "(no subject)"}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 11, color: T.s, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{trunc(strip(t.body_text), 50)}</span>
+                    <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+                      {t.unread_count > 0 && <UnreadDot />}
+                      {t.heat_level && <HeatPill level={t.heat_level} />}
+                      {t.message_count > 1 && <span style={{ fontSize: 10, color: T.m, background: T.aDim, padding: "1px 5px", borderRadius: 4, fontFamily: "'JetBrains Mono', monospace" }}>{t.message_count}</span>}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -293,78 +331,117 @@ RULES:
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", background: T.d }}>
-        {composeNew && !selectedThread && (<div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 16, fontWeight: 700, color: T.t }}>✏️ New Message</span><IconBtn onClick={() => setComposeNew(false)}>✕</IconBtn></div>
-          <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
-            <div style={{ marginBottom: 12, position: "relative" }}>
-              <label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>To</label>
-              <input value={newTo} onChange={e => { setNewTo(e.target.value); searchContacts(e.target.value); }} placeholder="Type a name or email..." style={inputStyle} onFocus={e => { e.target.style.borderColor = T.a; if (toSuggestions.length) setShowSuggestions(true); }} onBlur={e => { e.target.style.borderColor = T.b; setTimeout(() => setShowSuggestions(false), 200); }} />
-              {showSuggestions && (
-                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, marginTop: 4, zIndex: 10, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
-                  {toSuggestions.map(s => (
-                    <div key={s.id} onClick={() => { setNewTo(s.email); setShowSuggestions(false); if (!newSubject) setNewSubject(s.brokerage_name ? `Quick question about ${s.brokerage_name}` : `${s.first_name}, quick thought`); }} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${T.b}10`, display: "flex", justifyContent: "space-between", alignItems: "center" }} onMouseEnter={e => e.currentTarget.style.background = T.cardHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: T.t }}>{s.first_name} {s.last_name}</div>
-                        <div style={{ fontSize: 11, color: T.m }}>{s.email}</div>
+      {/* RIGHT PANEL */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", background: T.bg, minWidth: 0 }}>
+
+        {/* Compose New */}
+        {composeNew && !selectedThread && (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: T.t }}>✏️ New Message</span>
+              <IconBtn onClick={() => setComposeNew(false)}>✕</IconBtn>
+            </div>
+            <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
+              <div style={{ marginBottom: 12, position: "relative" }}>
+                <label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>To</label>
+                <input value={newTo} onChange={e => { setNewTo(e.target.value); searchContacts(e.target.value); }} placeholder="Type a name or email..." style={inputStyle} onFocus={e => { e.target.style.borderColor = T.a; if (toSuggestions.length) setShowSuggestions(true); }} onBlur={e => { e.target.style.borderColor = T.b; setTimeout(() => setShowSuggestions(false), 200); }} />
+                {showSuggestions && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, marginTop: 4, zIndex: 10, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                    {toSuggestions.map(s => (
+                      <div key={s.id} onClick={() => { setNewTo(s.email); setShowSuggestions(false); if (!newSubject) setNewSubject(s.brokerage_name ? `Quick question about ${s.brokerage_name}` : `${s.first_name}, quick thought`); }} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${T.b}10`, display: "flex", justifyContent: "space-between", alignItems: "center" }} onMouseEnter={e => e.currentTarget.style.background = T.cardHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: T.t }}>{s.first_name} {s.last_name}</div>
+                          <div style={{ fontSize: 11, color: T.m }}>{s.email}</div>
+                        </div>
+                        <div style={{ fontSize: 11, color: T.s }}>{s.brokerage_name || ""}</div>
                       </div>
-                      <div style={{ fontSize: 11, color: T.s }}>{s.brokerage_name || ""}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Subject</label><input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Subject..." style={inputStyle} onFocus={focusHandler} onBlur={blurHandler} /></div>
+              <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Message</label><textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Write your email..." rows={12} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={focusHandler} onBlur={blurHandler} /></div>
             </div>
-            <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Subject</label><input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Subject..." style={inputStyle} onFocus={focusHandler} onBlur={blurHandler} /></div>
-            <div style={{ marginBottom: 12 }}><label style={{ fontSize: 10, color: T.m, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Message</label><textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Write your email..." rows={10} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={focusHandler} onBlur={blurHandler} /></div>
-          </div>
-          <div style={{ padding: "12px 24px", borderTop: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <button onClick={askRueCompose} disabled={rueLoading || !newTo.trim()} style={{ padding: "10px 16px", fontSize: 12, borderRadius: 8, cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)", fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setComposeNew(false)} style={{ padding: "10px 20px", fontSize: 12, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
-              <button onClick={sendNew} disabled={sending || !newTo.trim() || !newBody.trim()} style={{ padding: "10px 24px", fontSize: 12, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !newTo.trim() || !newBody.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "Sending..." : "Send ✉️"}</button>
+            <div style={{ padding: "12px 24px", borderTop: `1px solid ${T.b}`, background: T.card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button onClick={askRueCompose} disabled={rueLoading || !newTo.trim()} style={{ padding: "10px 16px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)", fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setComposeNew(false)} style={{ padding: "10px 20px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
+                <button onClick={sendNew} disabled={sending || !newTo.trim() || !newBody.trim()} style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !newTo.trim() || !newBody.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "Sending..." : "Send ✉️"}</button>
+              </div>
             </div>
           </div>
-        </div>)}
+        )}
 
-        {!selectedThread && !composeNew && (<div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ textAlign: "center", color: T.m }}><div style={{ fontSize: 56, marginBottom: 16, opacity: 0.5 }}>📧</div><div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Select a conversation</div><div style={{ fontSize: 12, color: T.s }}>or compose a new message</div></div></div>)}
+        {/* Empty State */}
+        {!selectedThread && !composeNew && (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ textAlign: "center", color: T.m }}>
+              <div style={{ fontSize: 56, marginBottom: 16, opacity: 0.4 }}>📧</div>
+              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: T.t }}>Select a conversation</div>
+              <div style={{ fontSize: 13, color: T.s }}>or compose a new message</div>
+              {threads.length > 0 && <div style={{ fontSize: 12, color: T.s, marginTop: 8 }}>{threads.length} conversation{threads.length !== 1 ? "s" : ""} in {FOLDER_DEFS.find(f => f.id === folder)?.label || "inbox"}</div>}
+            </div>
+          </div>
+        )}
 
+        {/* Thread View */}
         {selectedThread && !composeNew && (<>
           <div style={{ padding: "14px 24px", borderBottom: `1px solid ${T.b}`, background: T.card }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 16, fontWeight: 700, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedThread.subject || "(no subject)"}</span>{selectedThread.heat_level && <HeatPill level={selectedThread.heat_level} />}{selectedThread.lead_id && <Pill bg={T.greenDim} color={T.green}>Linked Lead</Pill>}</div>
-                <div style={{ fontSize: 13, color: T.m, marginTop: 2 }}>{selectedThread.contact_name || selectedThread.from_email}{selectedThread.interest_score > 0 && <span style={{ marginLeft: 8, color: T.warm }}>Score: {selectedThread.interest_score}</span>}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedThread.subject || "(no subject)"}</span>
+                  {selectedThread.heat_level && <HeatPill level={selectedThread.heat_level} />}
+                  {selectedThread.lead_id && <Pill bg={T.greenDim} color={T.green}>Linked Lead</Pill>}
+                </div>
+                <div style={{ fontSize: 13, color: T.m }}>
+                  {selectedThread.contact_name || selectedThread.from_email}
+                  {selectedThread.interest_score > 0 && <span style={{ marginLeft: 8, color: T.warm }}>Score: {selectedThread.interest_score}</span>}
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 4 }}><IconBtn onClick={() => toggleStar(selectedThread.thread_id)} active={starred.has(selectedThread.thread_id)} title="Star">⭐</IconBtn><IconBtn onClick={() => toggleArchive(selectedThread.thread_id)} title="Archive">📦</IconBtn><IconBtn onClick={() => deleteThread(selectedThread.thread_id)} danger title="Delete">🗑</IconBtn></div>
+              <div style={{ display: "flex", gap: 4 }}>
+                <IconBtn onClick={() => toggleStar(selectedThread.thread_id)} active={starred.has(selectedThread.thread_id)} title="Star">⭐</IconBtn>
+                <IconBtn onClick={() => toggleArchive(selectedThread.thread_id)} title="Archive">📦</IconBtn>
+                <IconBtn onClick={() => deleteThread(selectedThread.thread_id)} danger title="Delete">🗑</IconBtn>
+              </div>
             </div>
           </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
-            {threadLoading ? (<div style={{ textAlign: "center", color: T.m, padding: 40 }}>Loading...</div>) : messages.map((msg, i) => (
-              <div key={msg.id} style={{ marginBottom: 12, padding: "14px 16px", borderRadius: 12, background: msg.direction === "inbound" ? T.card : T.aDim, border: `1px solid ${msg.direction === "inbound" ? T.b : T.a + "18"}`, maxWidth: "80%", marginLeft: msg.direction === "outbound" ? "auto" : 0, animation: `fadeIn 0.2s ease ${i * 0.05}s both` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}><DirPill dir={msg.direction} /><span style={{ fontSize: 13, fontWeight: 600, color: T.t }}>{msg.direction === "inbound" ? (msg.from_name || msg.from_email) : "You"}</span><span style={{ fontSize: 9, color: T.s, marginLeft: "auto" }}>{timeAgo(msg.created_at)}</span></div>
-                <div style={{ fontSize: 14, color: T.t, lineHeight: 1.65, wordBreak: "break-word" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+            {threadLoading ? (
+              <div style={{ textAlign: "center", color: T.m, padding: 40 }}>Loading...</div>
+            ) : messages.map((msg, i) => (
+              <div key={msg.id} style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 12, background: msg.direction === "inbound" ? T.card : T.aDim, border: `1px solid ${msg.direction === "inbound" ? T.b : T.a + "18"}`, maxWidth: "82%", marginLeft: msg.direction === "outbound" ? "auto" : 0, animation: `fadeIn 0.2s ease ${i * 0.05}s both` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <DirPill dir={msg.direction} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: T.t }}>{msg.direction === "inbound" ? (msg.from_name || msg.from_email) : "You"}</span>
+                  <span style={{ fontSize: 11, color: T.s, marginLeft: "auto", fontFamily: "'JetBrains Mono', monospace" }}>{timeAgo(msg.created_at)}</span>
+                </div>
+                <div style={{ fontSize: 14, color: T.t, lineHeight: 1.7, wordBreak: "break-word" }}>
                   {msg.body_html && msg.body_html.length > 10 ? <div dangerouslySetInnerHTML={{ __html: msg.body_html }} style={{ maxHeight: 400, overflow: "auto" }} /> : <div style={{ whiteSpace: "pre-wrap" }}>{msg.body_text || strip(msg.body_html) || "(empty)"}</div>}
                 </div>
-                {msg.has_attachments && <div style={{ marginTop: 8, fontSize: 10, color: T.m }}>📎 {msg.attachment_count} attachment{msg.attachment_count !== 1 ? "s" : ""}</div>}
+                {msg.has_attachments && <div style={{ marginTop: 8, fontSize: 11, color: T.m }}>📎 {msg.attachment_count} attachment{msg.attachment_count !== 1 ? "s" : ""}</div>}
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <div style={{ borderTop: `1px solid ${T.b}`, padding: "10px 24px", background: T.card }}>
-            {composing ? (<div>
-              <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Type your reply..." rows={4} style={{ width: "100%", background: T.d, color: T.t, border: `1px solid ${T.b}`, borderRadius: 10, padding: 12, fontSize: 14, resize: "vertical", outline: "none", lineHeight: 1.6, boxSizing: "border-box" }} onFocus={focusHandler} onBlur={blurHandler} autoFocus />
-              <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "space-between" }}>
-                <button onClick={askRueDraft} disabled={rueLoading} style={{ padding: "8px 14px", fontSize: 11, borderRadius: 6, cursor: "pointer", background: T.purpleDim, color: T.purple, border: `1px solid ${T.purple}33`, fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => { setComposing(false); setReplyText(""); }} style={{ padding: "8px 16px", fontSize: 12, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
-                  <button onClick={sendReply} disabled={sending || !replyText.trim()} style={{ padding: "8px 20px", fontSize: 12, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !replyText.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "..." : "Send ✉️"}</button>
+          <div style={{ borderTop: `1px solid ${T.b}`, padding: "12px 24px", background: T.card }}>
+            {composing ? (
+              <div>
+                <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Type your reply..." rows={4} style={{ width: "100%", background: T.d, color: T.t, border: `1px solid ${T.b}`, borderRadius: 10, padding: 12, fontSize: 14, resize: "vertical", outline: "none", lineHeight: 1.6, boxSizing: "border-box" }} onFocus={focusHandler} onBlur={blurHandler} autoFocus />
+                <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "space-between" }}>
+                  <button onClick={askRueDraft} disabled={rueLoading} style={{ padding: "8px 14px", fontSize: 12, borderRadius: 6, cursor: "pointer", background: T.purpleDim, color: T.purple, border: `1px solid ${T.purple}33`, fontWeight: 600 }}>{rueLoading ? "✨ Drafting..." : "🤖 Ask Rue"}</button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { setComposing(false); setReplyText(""); }} style={{ padding: "8px 16px", fontSize: 13, borderRadius: 8, cursor: "pointer", background: "transparent", color: T.m, border: `1px solid ${T.b}` }}>Cancel</button>
+                    <button onClick={sendReply} disabled={sending || !replyText.trim()} style={{ padding: "8px 20px", fontSize: 13, fontWeight: 700, borderRadius: 8, cursor: "pointer", background: sending ? T.s : `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", opacity: sending || !replyText.trim() ? 0.4 : 1, boxShadow: `0 2px 12px ${T.aGlow}` }}>{sending ? "..." : "Send ✉️"}</button>
+                  </div>
                 </div>
               </div>
-            </div>) : (<div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setComposing(true)} style={{ flex: 1, padding: "12px 16px", fontSize: 12, textAlign: "left", background: T.d, color: T.m, border: `1px solid ${T.b}`, borderRadius: 10, cursor: "pointer", transition: "border 0.15s" }} onMouseEnter={e => e.currentTarget.style.borderColor = T.a} onMouseLeave={e => e.currentTarget.style.borderColor = T.b}>↩ Reply...</button>
-              <button onClick={askRueDraft} disabled={rueLoading} style={{ padding: "12px 14px", fontSize: 11, borderRadius: 10, cursor: "pointer", background: T.purpleDim, color: T.purple, border: `1px solid ${T.purple}33`, fontWeight: 700, whiteSpace: "nowrap" }}>{rueLoading ? "✨..." : "🤖 Rue"}</button>
-            </div>)}
+            ) : (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setComposing(true)} style={{ flex: 1, padding: "12px 16px", fontSize: 13, textAlign: "left", background: T.d, color: T.m, border: `1px solid ${T.b}`, borderRadius: 10, cursor: "pointer", transition: "border 0.15s" }} onMouseEnter={e => e.currentTarget.style.borderColor = T.a} onMouseLeave={e => e.currentTarget.style.borderColor = T.b}>↩ Reply...</button>
+                <button onClick={askRueDraft} disabled={rueLoading} style={{ padding: "12px 14px", fontSize: 12, borderRadius: 10, cursor: "pointer", background: T.purpleDim, color: T.purple, border: `1px solid ${T.purple}33`, fontWeight: 700, whiteSpace: "nowrap" }}>{rueLoading ? "✨..." : "🤖 Rue"}</button>
+              </div>
+            )}
           </div>
         </>)}
       </div>
