@@ -1756,6 +1756,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="admin"&&!impersonating&&profile?.role==="owner"&&<AdminView/>}
         {view==="beta"&&isBeta&&<BetaHubView/>}
         {view==="profile"&&<ProfilePage profile={effectiveProfile} userId={effectiveUserId} leads={leads} onProfileUpdate={loadProfile}/>}
+        {view==="lead"&&!selLead&&<div style={{padding:40,textAlign:"center"}}><p style={{color:"#8B949E"}}>No lead selected.</p><div onClick={()=>setViewWithHistory("pipeline")} style={{color:"#00B386",cursor:"pointer",marginTop:8}}>← Back to Pipeline</div></div>}
         {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onDelete={handleDeleteLead} userProfile={effectiveProfile}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
