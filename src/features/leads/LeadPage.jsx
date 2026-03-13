@@ -84,6 +84,8 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   const [emailHistoryLoading, setEmailHistoryLoading] = useState(false);
 
   const [events, setEvents] = useState([]);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichDone, setEnrichDone] = useState(false);
 
   useEffect(() => {
     if (lead?.id) {
@@ -114,6 +116,30 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   const completeTask = async (taskId) => {
     await supabase.from('lead_tasks').update({ completed_at: new Date().toISOString() }).eq('id', taskId);
     loadTasks();
+  };
+
+  const handleEnrich = async () => {
+    setEnriching(true);
+    setEnrichDone(false);
+    try {
+      const res = await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/enrich-agent-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lead_id: lead.id, user_id: userId }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        // Refresh lead data in place so sections update
+        const { data: updated } = await supabase.from("leads").select("*").eq("id", lead.id).single();
+        if (updated) Object.assign(lead, updated);
+        setEnrichDone(true);
+        setTimeout(() => setEnrichDone(false), 3000);
+        logActivity(userId, "enrich_lead", { lead_id: lead.id });
+      }
+    } catch (err) {
+      console.error("Enrich error:", err);
+    }
+    setEnriching(false);
   };
 
   const interestLevel = (score) => {
@@ -363,7 +389,17 @@ Write the email body. Be specific to this person — reference their brokerage, 
 
       {/* Rue Quick Actions */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
-        {ruePrompts.map(([icon, label, q], i) => (
+        {/* Enrich Contact — replaces Research */}
+        <div
+          onClick={enriching ? undefined : handleEnrich}
+          style={{ background: enrichDone ? "rgba(16,185,129,0.1)" : T.card, border: `1px solid ${enrichDone ? "#10b981" : enriching ? T.a : T.b}`, borderRadius: 8, padding: "14px 16px", cursor: enriching ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 10, opacity: enriching ? 0.6 : 1, transition: "all 0.2s" }}
+        >
+          <span style={{ fontSize: 20 }}>{enrichDone ? "✅" : "🔍"}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: enrichDone ? "#10b981" : T.t }}>
+            {enrichDone ? "Enriched!" : enriching ? "Enriching..." : "Enrich Contact"}
+          </span>
+        </div>
+        {ruePrompts.slice(1).map(([icon, label, q], i) => (
           <div
             key={i}
             onClick={() => onAskInline(q)}
