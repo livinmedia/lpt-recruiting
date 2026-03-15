@@ -255,10 +255,9 @@ export default function ContentTab({ userId, userProfile }) {
 
   const getPageUrl = (path) => `https://rkrt.in/${path}?ref=${userId || ''}&target=${encodeURIComponent(selectedBrokerage)}`;
 
-  const getBlogUrl = () => {
-    const brokSlug = selectedBrokerage.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-    return `https://rkrt.in/${brokSlug}?ref=${userId || ''}&target=${encodeURIComponent(selectedBrokerage)}`;
-  };
+  const userBrokerage = userProfile?.brokerage || "LPT Realty";
+  const userBrokSlug = userBrokerage.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+  const userBlogUrl = `https://rkrt.in/${userBrokSlug}?ref=${userId || ''}`;
 
   return (
     <div>
@@ -339,16 +338,16 @@ export default function ContentTab({ userId, userProfile }) {
 
           {/* Blog Link */}
           <div>
-            <div style={{ fontSize: 14, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>BROKERAGE BLOG</div>
+            <div style={{ fontSize: 14, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>YOUR BROKERAGE BLOG</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: T.d, borderRadius: 8 }}>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{selectedBrokerage} Blog</div>
-                <div style={{ fontSize: 13, color: T.s }}>AI-generated recruiting articles for {selectedBrokerage}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{userBrokerage} Blog</div>
+                <div style={{ fontSize: 13, color: T.s }}>AI-generated recruiting articles for your brokerage</div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{getBlogUrl()}</span>
-                <CopyButton text={getBlogUrl()} label="Copy" />
-                <a href={getBlogUrl()} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>View →</a>
+                <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{userBlogUrl}</span>
+                <CopyButton text={userBlogUrl} label="Copy" />
+                <a href={userBlogUrl} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>View →</a>
               </div>
             </div>
           </div>
