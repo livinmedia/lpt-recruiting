@@ -225,6 +225,16 @@ export default function ContentTab({ userId, userProfile }) {
 
   const themeColor = (theme) => THEME_COLORS[theme] || THEME_COLORS.default;
 
+  const downloadImage = async (url, filename) => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   // Landing page URLs
   const landingPages = [
     { name: "Main Join Page", path: "join", desc: "Primary recruiting landing page", icon: "🤝", label: "Join", gradient: "linear-gradient(135deg, #059669, #10B981)" },
@@ -407,9 +417,14 @@ export default function ContentTab({ userId, userProfile }) {
                           <div style={{ fontSize: 12, color: T.bl, marginBottom: 12 }}>{hashtags}</div>
                         )}
 
-                        {/* Copy button */}
-                        <div style={{ marginTop: "auto" }}>
-                          <CopyButton text={personalizeLinks(content + (hashtags ? '\n\n' + hashtags : ''))} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, width: "100%", textAlign: "center" }} />
+                        {/* Action buttons */}
+                        <div style={{ marginTop: "auto", display: "flex", gap: 8 }}>
+                          <CopyButton text={personalizeLinks(content + (hashtags ? '\n\n' + hashtags : ''))} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center" }} />
+                          {item.image_url && (
+                            <div onClick={() => downloadImage(item.image_url, `rkrt-post-${item.content_date || new Date().toISOString().split('T')[0]}.png`)} style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center", background: T.bl + "18", color: T.bl, border: `1px solid ${T.bl}40`, cursor: "pointer" }}>
+                              ⬇ Download Image
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
