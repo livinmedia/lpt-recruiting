@@ -1,29 +1,13 @@
 {
-  "headers": [
-    {
-      "source": "/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)(.*)",
-      "headers": [
-        { "key": "Content-Type", "value": "text/html; charset=utf-8" }
-      ]
-    }
-  ],
   "rewrites": [
-    { "source": "/listing-power-teams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams" },
-    { "source": "/listing-power-teams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams&post=:post" },
-    { "source": "/lpt-realty", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=lpt-realty" },
-    { "source": "/lpt-realty/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=lpt-realty&post=:post" },
-    { "source": "/exp-realty", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=exp-realty" },
-    { "source": "/exp-realty/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=exp-realty&post=:post" },
-    { "source": "/keller-williams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=keller-williams" },
-    { "source": "/keller-williams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=keller-williams&post=:post" },
-    { "source": "/remax", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=remax" },
-    { "source": "/remax/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=remax&post=:post" },
-    { "source": "/real-brokerage", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=real-brokerage" },
-    { "source": "/real-brokerage/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=real-brokerage&post=:post" },
-    { "source": "/epique", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=epique" },
-    { "source": "/epique/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=epique&post=:post" },
-    { "source": "/realty-of-america", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=realty-of-america" },
-    { "source": "/realty-of-america/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=realty-of-america&post=:post" },
+    { "source": "/listing-power-teams/:post*", "destination": "/api/blog/listing-power-teams/:post*" },
+    { "source": "/lpt-realty/:post*", "destination": "/api/blog/lpt-realty/:post*" },
+    { "source": "/exp-realty/:post*", "destination": "/api/blog/exp-realty/:post*" },
+    { "source": "/keller-williams/:post*", "destination": "/api/blog/keller-williams/:post*" },
+    { "source": "/remax/:post*", "destination": "/api/blog/remax/:post*" },
+    { "source": "/real-brokerage/:post*", "destination": "/api/blog/real-brokerage/:post*" },
+    { "source": "/epique/:post*", "destination": "/api/blog/epique/:post*" },
+    { "source": "/realty-of-america/:post*", "destination": "/api/blog/realty-of-america/:post*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
