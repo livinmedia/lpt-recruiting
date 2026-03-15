@@ -78,9 +78,10 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
   const [social, setSocial] = useState({});
   const [rkrt, setRkrt] = useState({});
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [calUrl, setCalUrl] = useState("");
-  const [calSaving, setCalSaving] = useState(false);
-  const [calCopied, setCalCopied] = useState(false);
+  const [bookingAvail, setBookingAvail] = useState(null);
+  const [bookingSaving, setBookingSaving] = useState(false);
+  const [bookingCopied, setBookingCopied] = useState(false);
+  const [bookingLoaded, setBookingLoaded] = useState(false);
 
   // Seed form state from profile prop
   useEffect(() => {
@@ -118,21 +119,20 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
       facebook:  sl.facebook || "",
       youtube:   sl.youtube || "",
       tiktok:    sl.tiktok || "",
-      cal_booking_url: profile.cal_booking_url || "",
     });
-    setCalUrl(profile.cal_booking_url || "");
     setRkrt({
       rkrt_phone: profile.rkrt_phone || "",
       rkrt_email: profile.rkrt_email || "",
     });
   }, [profile]);
 
-  // Fetch rue conversation count
+  // Fetch rue conversation count + booking availability
   useEffect(() => {
     if (!userId) return;
     supabase.from('conversations').select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .then(({ count }) => { if (count !== null) setRueConvCount(count); });
+    loadBookingAvail();
   }, [userId]);
 
   const showToast = (msg, isError = false) => {
@@ -192,7 +192,6 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
             youtube:   social.youtube,
             tiktok:    social.tiktok,
           },
-          cal_booking_url: social.cal_booking_url,
         };
       } else if (sectionId === "rkrt") {
         payload = {
@@ -220,24 +219,65 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
   };
   const removeTag = (tag) => setProfessional(p => ({ ...p, specialties: p.specialties.filter(s => s !== tag) }));
 
-  const saveCalUrl = async () => {
+  const loadBookingAvail = async () => {
     if (!userId) return;
-    setCalSaving(true);
+    const { data } = await supabase.from('booking_availability').select('*').eq('user_id', userId).maybeSingle();
+    if (data) {
+      setBookingAvail(data);
+    } else {
+      // Default values for new booking availability
+      setBookingAvail({
+        user_id: userId,
+        slug: profile?.booking_slug || '',
+        display_name: profile?.full_name || '',
+        is_active: false,
+        slot_duration: 30,
+        available_days: [1, 2, 3, 4, 5],
+        start_hour: 9,
+        end_hour: 17,
+        timezone: 'America/Chicago',
+        meeting_type: 'video',
+        meeting_link: '',
+        confirmation_message: '',
+      });
+    }
+    setBookingLoaded(true);
+  };
+
+  const saveBookingAvail = async () => {
+    if (!userId || !bookingAvail) return;
+    setBookingSaving(true);
     try {
-      const { error } = await supabase.from('profiles').update({ cal_booking_url: calUrl, updated_at: new Date().toISOString() }).eq('id', userId);
+      const { error } = await supabase.from('booking_availability').upsert({
+        ...bookingAvail,
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
       if (error) throw error;
-      showToast("Cal.com URL saved!");
-      onProfileUpdate();
+      showToast("Booking settings saved!");
     } catch (err) {
       showToast(err?.message || "Save failed.", true);
     }
-    setCalSaving(false);
+    setBookingSaving(false);
   };
 
-  const copyWebhookUrl = () => {
-    navigator.clipboard.writeText("https://usknntguurefeyzusbdh.supabase.co/functions/v1/cal-webhook");
-    setCalCopied(true);
-    setTimeout(() => setCalCopied(false), 2000);
+  const toggleBookingActive = async () => {
+    if (!bookingAvail) return;
+    const newVal = !bookingAvail.is_active;
+    setBookingAvail(b => ({ ...b, is_active: newVal }));
+    await supabase.from('booking_availability').upsert({
+      ...bookingAvail,
+      is_active: newVal,
+      user_id: userId,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+    showToast(newVal ? "Bookings enabled!" : "Bookings paused.");
+  };
+
+  const copyBookingUrl = () => {
+    navigator.clipboard.writeText(`https://rkrt.in/book/${profile?.booking_slug || ''}`);
+    setBookingCopied(true);
+    setTimeout(() => setBookingCopied(false), 2000);
   };
 
   // Derived stats
@@ -445,13 +485,9 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
               { label: "FACEBOOK URL",        key: "facebook",  prefix: "facebook.com/",    isUrl: true  },
               { label: "YOUTUBE",             key: "youtube",   prefix: "youtube.com/",     isUrl: true  },
               { label: "TIKTOK",              key: "tiktok",    prefix: "@",                isUrl: false },
-              { label: "CAL.COM BOOKING URL", key: "cal_booking_url", prefix: "cal.com/",   isUrl: true  },
             ].map(({ label, key, prefix, isUrl }) => {
-              const val = key === "cal_booking_url" ? social.cal_booking_url : social[key];
-              const setSocField = (v) => {
-                if (key === "cal_booking_url") setSocial(s => ({ ...s, cal_booking_url: v }));
-                else setSocial(s => ({ ...s, [key]: v }));
-              };
+              const val = social[key];
+              const setSocField = (v) => setSocial(s => ({ ...s, [key]: v }));
               const displayHref = isUrl && val
                 ? (val.startsWith("http") ? val : `https://${prefix}${val}`)
                 : null;
@@ -496,56 +532,149 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
         )}
       </SectionCard>
 
-      {/* ── Section 5: Cal.com Integration ── */}
+      {/* ── Section 5: Recruiting Calendar ── */}
       <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px", marginBottom: 16 }}>
         {(!profile?.plan || profile.plan === 'free') ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: T.m }}>📅 Cal.com Integration</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: T.m }}>📅 Recruiting Calendar</span>
               <span style={{ padding: "3px 10px", borderRadius: 20, background: T.m + "20", fontSize: 10, fontWeight: 700, color: T.m, letterSpacing: 0.5 }}>LOCKED</span>
             </div>
             <div style={{ fontSize: 13, color: T.s, lineHeight: 1.7, marginBottom: 16 }}>
-              Book meetings directly from your recruiting emails. Available on Recruiter plan and above.
+              Give agents a direct way to book a call with you. Included on Recruiter plan and above.
             </div>
             <div style={{ padding: "10px 20px", borderRadius: 8, background: T.bl + "20", border: `1px solid ${T.bl}40`, color: T.bl, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-block" }}>
               Upgrade to Enable →
             </div>
           </>
-        ) : (
+        ) : bookingLoaded && bookingAvail ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: T.t }}>📅 Cal.com Integration</span>
-              {calUrl && <span style={{ padding: "3px 10px", borderRadius: 20, background: T.a + "20", border: `1px solid ${T.a}40`, fontSize: 10, fontWeight: 700, color: T.a }}>✅ Connected</span>}
+              <span style={{ fontSize: 16, fontWeight: 700, color: T.t }}>📅 Recruiting Calendar</span>
+              {bookingAvail.is_active && <span style={{ padding: "3px 10px", borderRadius: 20, background: T.a + "20", border: `1px solid ${T.a}40`, fontSize: 10, fontWeight: 700, color: T.a }}>✅ Active</span>}
             </div>
 
+            {/* Booking link */}
+            {profile?.booking_slug && (
+              <div style={{ marginBottom: 20 }}>
+                <label style={lbl}>YOUR BOOKING LINK</label>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <code style={{ flex: 1, fontSize: 13, color: T.bl, background: "#0D1117", border: `1px solid ${T.b}`, borderRadius: 8, padding: "10px 14px", wordBreak: "break-all", fontFamily: "monospace" }}>
+                    https://rkrt.in/book/{profile.booking_slug}
+                  </code>
+                  <div onClick={copyBookingUrl} style={{ padding: "8px 14px", borderRadius: 6, background: bookingCopied ? T.a + "20" : "transparent", border: `1px solid ${bookingCopied ? T.a : T.b}`, color: bookingCopied ? T.a : T.s, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                    {bookingCopied ? "✓ Copied" : "📋 Copy"}
+                  </div>
+                  <a href={`https://rkrt.in/book/${profile.booking_slug}`} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: T.bl, textDecoration: "none", fontWeight: 600, whiteSpace: "nowrap" }}>Preview →</a>
+                </div>
+              </div>
+            )}
+
+            {/* Accept bookings toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, padding: "12px 16px", background: T.bg, border: `1px solid ${T.b}`, borderRadius: 8 }}>
+              <span style={{ fontSize: 14, color: T.t, fontWeight: 600 }}>Accept bookings</span>
+              <div onClick={toggleBookingActive} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <span style={{ fontSize: 12, color: bookingAvail.is_active ? T.a : T.s }}>{bookingAvail.is_active ? "On" : "Off"}</span>
+                <div style={{ width: 40, height: 22, borderRadius: 11, background: bookingAvail.is_active ? T.a : "#374151", position: "relative", transition: "background 0.2s" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: bookingAvail.is_active ? 20 : 2, transition: "left 0.2s" }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Availability settings */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 28px", marginBottom: 20 }}>
+              {/* Slot duration */}
+              <div>
+                <label style={lbl}>SLOT DURATION</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[15, 30, 60].map(d => (
+                    <div key={d} onClick={() => setBookingAvail(b => ({ ...b, slot_duration: d }))} style={{ padding: "8px 16px", borderRadius: 8, background: bookingAvail.slot_duration === d ? T.a + "20" : "transparent", border: `1px solid ${bookingAvail.slot_duration === d ? T.a : T.b}`, color: bookingAvail.slot_duration === d ? T.a : T.s, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                      {d} min
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Timezone */}
+              <div>
+                <label style={lbl}>TIMEZONE</label>
+                <select value={bookingAvail.timezone} onChange={e => setBookingAvail(b => ({ ...b, timezone: e.target.value }))} style={inp}>
+                  {US_TIMEZONES.map(tz => <option key={tz} value={tz} style={{ background: T.card }}>{tz.replace("America/", "").replace("Pacific/", "").replace(/_/g, " ")}</option>)}
+                </select>
+              </div>
+
+              {/* Start time */}
+              <div>
+                <label style={lbl}>START TIME</label>
+                <select value={bookingAvail.start_hour} onChange={e => setBookingAvail(b => ({ ...b, start_hour: parseInt(e.target.value) }))} style={inp}>
+                  {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
+                    <option key={h} value={h} style={{ background: T.card }}>{h > 12 ? `${h - 12}:00 PM` : h === 12 ? "12:00 PM" : `${h}:00 AM`}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* End time */}
+              <div>
+                <label style={lbl}>END TIME</label>
+                <select value={bookingAvail.end_hour} onChange={e => setBookingAvail(b => ({ ...b, end_hour: parseInt(e.target.value) }))} style={inp}>
+                  {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
+                    <option key={h} value={h} style={{ background: T.card }}>{h > 12 ? `${h - 12}:00 PM` : h === 12 ? "12:00 PM" : `${h}:00 AM`}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Meeting type */}
+              <div>
+                <label style={lbl}>MEETING TYPE</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[{ v: "video", l: "Video Call" }, { v: "phone", l: "Phone" }, { v: "in_person", l: "In Person" }].map(({ v, l }) => (
+                    <div key={v} onClick={() => setBookingAvail(b => ({ ...b, meeting_type: v }))} style={{ padding: "8px 14px", borderRadius: 8, background: bookingAvail.meeting_type === v ? T.a + "20" : "transparent", border: `1px solid ${bookingAvail.meeting_type === v ? T.a : T.b}`, color: bookingAvail.meeting_type === v ? T.a : T.s, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      {l}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Meeting link (only for video) */}
+              {bookingAvail.meeting_type === "video" && (
+                <div>
+                  <label style={lbl}>MEETING LINK</label>
+                  <input value={bookingAvail.meeting_link || ""} onChange={e => setBookingAvail(b => ({ ...b, meeting_link: e.target.value }))} placeholder="Zoom or Google Meet URL" style={inp} />
+                </div>
+              )}
+            </div>
+
+            {/* Available days */}
             <div style={{ marginBottom: 20 }}>
-              <label style={lbl}>YOUR CAL.COM BOOKING URL</label>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input value={calUrl} onChange={e => setCalUrl(e.target.value)} placeholder="https://cal.com/your-username" style={{ ...inp, flex: 1 }} />
-                <div onClick={saveCalUrl} style={{ padding: "10px 20px", borderRadius: 8, background: T.a, color: "#000", fontSize: 13, fontWeight: 700, cursor: calSaving ? "wait" : "pointer", opacity: calSaving ? 0.7 : 1, whiteSpace: "nowrap" }}>
-                  {calSaving ? "Saving..." : "Save"}
-                </div>
+              <label style={lbl}>AVAILABLE DAYS</label>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[{ d: 1, l: "Mon" }, { d: 2, l: "Tue" }, { d: 3, l: "Wed" }, { d: 4, l: "Thu" }, { d: 5, l: "Fri" }, { d: 6, l: "Sat" }, { d: 0, l: "Sun" }].map(({ d, l }) => {
+                  const active = (bookingAvail.available_days || []).includes(d);
+                  return (
+                    <div key={d} onClick={() => setBookingAvail(b => ({ ...b, available_days: active ? b.available_days.filter(x => x !== d) : [...(b.available_days || []), d] }))} style={{ padding: "8px 14px", borderRadius: 8, background: active ? T.a + "20" : "transparent", border: `1px solid ${active ? T.a : T.b}`, color: active ? T.a : T.s, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      {l}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            <div style={{ background: T.bg, border: `1px solid ${T.b}`, borderRadius: 8, padding: "14px 16px" }}>
-              <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>WEBHOOK SETUP</div>
-              <div style={{ fontSize: 12, color: T.s, lineHeight: 1.7, marginBottom: 10 }}>
-                Add this webhook URL in Cal.com → Settings → Developer → Webhooks:
+            {/* Confirmation message */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={lbl}>CONFIRMATION MESSAGE</label>
+              <textarea value={bookingAvail.confirmation_message || ""} onChange={e => setBookingAvail(b => ({ ...b, confirmation_message: e.target.value }))} placeholder="Message shown after booking (optional)" rows={3} style={{ ...inp, resize: "vertical" }} />
+            </div>
+
+            {/* Save button */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div onClick={saveBookingAvail} style={{ padding: "10px 24px", borderRadius: 8, background: T.a, color: "#000", fontSize: 13, fontWeight: 700, cursor: bookingSaving ? "wait" : "pointer", opacity: bookingSaving ? 0.7 : 1 }}>
+                {bookingSaving ? "Saving..." : "Save Settings"}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <code style={{ flex: 1, fontSize: 11, color: T.bl, background: "#0D1117", border: `1px solid ${T.b}`, borderRadius: 6, padding: "8px 12px", wordBreak: "break-all", fontFamily: "monospace" }}>
-                  https://usknntguurefeyzusbdh.supabase.co/functions/v1/cal-webhook
-                </code>
-                <div onClick={copyWebhookUrl} style={{ padding: "8px 14px", borderRadius: 6, background: calCopied ? T.a + "20" : "transparent", border: `1px solid ${calCopied ? T.a : T.b}`, color: calCopied ? T.a : T.s, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
-                  {calCopied ? "✓ Copied" : "📋 Copy"}
-                </div>
-              </div>
-              <div style={{ fontSize: 12, color: T.m, lineHeight: 1.7 }}>
-                Select triggers: <span style={{ color: T.s, fontWeight: 600 }}>BOOKING_CREATED</span>, <span style={{ color: T.s, fontWeight: 600 }}>BOOKING_CONFIRMED</span>, <span style={{ color: T.s, fontWeight: 600 }}>BOOKING_CANCELLED</span>, <span style={{ color: T.s, fontWeight: 600 }}>BOOKING_COMPLETED</span>
-              </div>
+              <div style={{ fontSize: 12, color: T.m, fontStyle: "italic" }}>✨ Rue automatically includes your booking link in recruiting emails</div>
             </div>
           </>
+        ) : (
+          <div style={{ textAlign: "center", padding: 20, color: T.s, fontSize: 13 }}>Loading booking settings...</div>
         )}
       </div>
     </div>
