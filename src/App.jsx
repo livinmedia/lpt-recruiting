@@ -32,6 +32,7 @@ import RueDrawer from "./components/RueDrawer";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import EmailInbox from "./components/EmailInbox";
 import AgentEnrichment from "./components/AgentEnrichment";
+import BookingPage from "./pages/BookingPage";
 import { useState, useEffect, useCallback, useRef } from "react";
 let BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell;
 const rechartsReady = import("recharts").then(m => {
@@ -1693,6 +1694,11 @@ export default function App(){
 
 
   // ━━━ RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // Public routes — no auth required
+  const bookingMatch = window.location.pathname.match(/^\/book\/([^/]+)/);
+  if (bookingMatch) return <BookingPage slug={bookingMatch[1]} />;
+
   if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.s,fontSize:18,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>Authenticating…</div>;
   if(!authUser){window.location.href="/login";return null;}
 
