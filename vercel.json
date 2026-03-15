@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/listing-power-teams/:post*",
-      "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-team-blog?team=listing-power-teams&post=:post*"
-    },
-    {
       "source": "/((?!listing-power-teams).*)",
       "destination": "/index.html"
     }
