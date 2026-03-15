@@ -506,7 +506,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
                 </div>
               )}
 
-              {lead.raw_dossier && (
+              {lead?.raw_dossier && (
                 <div style={{ marginTop: 16, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', borderRadius: 10, padding: '16px 18px' }}>
                   <div style={{ color: '#00E5A0', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>🎯 RUE RECRUITING DOSSIER</div>
                   {lead.raw_dossier.split('##').filter(s => s.trim()).map((section, i) => {
