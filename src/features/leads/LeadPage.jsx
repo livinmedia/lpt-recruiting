@@ -90,7 +90,12 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   // Drip sequence
   const [dripEmails, setDripEmails] = useState([]);
   const [dripEnabled, setDripEnabled] = useState(lead.drip_enabled ?? false);
-  const [dripToggling, setDripToggling] = useState(false);
+  const [dripGenerating, setDripGenerating] = useState(false);
+  const [dripExpandedId, setDripExpandedId] = useState(null);
+  const [dripEditingId, setDripEditingId] = useState(null);
+  const [dripEditSubject, setDripEditSubject] = useState("");
+  const [dripEditBody, setDripEditBody] = useState("");
+  const [dripActivateMsg, setDripActivateMsg] = useState("");
 
   useEffect(() => {
     if (lead?.id) {
@@ -101,23 +106,50 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   }, [lead?.id]);
 
   const loadDripEmails = async () => {
-    const { data } = await supabase.from("lead_drip_emails").select("*").eq("lead_id", lead.id).order("scheduled_for", { ascending: true });
+    const { data } = await supabase.from("lead_drip_emails").select("*").eq("lead_id", lead.id).eq("rue_generated", true).order("scheduled_for", { ascending: true });
     setDripEmails(data || []);
   };
 
-  const toggleDrip = async () => {
-    setDripToggling(true);
-    const newVal = !dripEnabled;
-    await supabase.from("leads").update({ drip_enabled: newVal }).eq("id", lead.id);
-    lead.drip_enabled = newVal;
-    setDripEnabled(newVal);
-    logActivity(userId, newVal ? 'drip_enabled' : 'drip_disabled', { lead_id: lead.id });
-    setDripToggling(false);
+  const generateDrip = async (regenerate = false) => {
+    setDripGenerating(true);
+    setDripActivateMsg("");
+    try {
+      await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-drip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lead_id: lead.id, regenerate }),
+      });
+      await loadDripEmails();
+    } catch (err) {
+      console.error("Generate drip error:", err);
+    }
+    setDripGenerating(false);
+  };
+
+  const approveDripEmail = async (emailId) => {
+    await supabase.from("lead_drip_emails").update({ approved: true }).eq("id", emailId);
+    loadDripEmails();
   };
 
   const cancelDripEmail = async (emailId) => {
     await supabase.from("lead_drip_emails").update({ status: "cancelled" }).eq("id", emailId);
     loadDripEmails();
+  };
+
+  const saveDripEdit = async (emailId) => {
+    await supabase.from("lead_drip_emails").update({ subject: dripEditSubject, body: dripEditBody }).eq("id", emailId);
+    setDripEditingId(null);
+    loadDripEmails();
+  };
+
+  const activateDripSequence = async () => {
+    await supabase.from("leads").update({ drip_enabled: true }).eq("id", lead.id);
+    lead.drip_enabled = true;
+    setDripEnabled(true);
+    const approvedCount = dripEmails.filter(e => e.approved).length;
+    setDripActivateMsg(`Sequence activated! ${approvedCount} email${approvedCount !== 1 ? 's' : ''} will send on schedule.`);
+    logActivity(userId, 'drip_enabled', { lead_id: lead.id });
+    setTimeout(() => setDripActivateMsg(""), 4000);
   };
 
   const loadTasks = async () => {
@@ -524,43 +556,92 @@ Write the email body. Be specific to this person — reference their brokerage, 
               )}
 
               {/* Drip Sequence */}
-              {(dripEmails.length > 0 || dripEnabled) && (
-                <div style={{ marginTop: 16, background: '#111827', border: '1px solid #1a2540', borderRadius: 10, padding: '16px 18px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                    <div style={{ color: '#22d3ee', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>💧 DRIP SEQUENCE</div>
-                    <div onClick={toggleDrip} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', opacity: dripToggling ? 0.5 : 1 }}>
-                      <span style={{ fontSize: 11, color: dripEnabled ? T.a : T.s }}>{dripEnabled ? 'Active' : 'Paused'}</span>
-                      <div style={{ width: 36, height: 20, borderRadius: 10, background: dripEnabled ? T.a : '#374151', position: 'relative', transition: 'background 0.2s' }}>
-                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: dripEnabled ? 18 : 2, transition: 'left 0.2s' }} />
-                      </div>
-                    </div>
+              <div style={{ marginTop: 16, background: '#111827', border: '1px solid #1a2540', borderRadius: 10, padding: '16px 18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div style={{ color: '#22d3ee', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>💧 DRIP SEQUENCE {dripEnabled && <span style={{ color: T.a, marginLeft: 8 }}>● Active</span>}</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {dripEmails.length > 0 && (
+                      <button onClick={() => generateDrip(true)} disabled={dripGenerating} style={{ fontSize: 11, background: 'transparent', border: `1px solid ${T.b}`, color: T.s, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>♻️ Regenerate</button>
+                    )}
                   </div>
-                  {dripEmails.length === 0 ? (
-                    <div style={{ fontSize: 13, color: T.s }}>No drip emails scheduled yet.</div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {dripEmails.map(e => {
-                        const statusColors = { scheduled: '#FBBF24', sent: '#10b981', cancelled: '#6b7280', failed: '#EF4444' };
-                        const color = statusColors[e.status] || T.s;
-                        return (
-                          <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid #1a2540' }}>
+                </div>
+
+                {dripGenerating && (
+                  <div style={{ textAlign: 'center', padding: '24px 0', color: T.a, fontSize: 13 }}>
+                    <div style={{ fontSize: 20, marginBottom: 8, animation: 'spin 1s linear infinite' }}>✨</div>
+                    Rue is writing your sequence...
+                  </div>
+                )}
+
+                {!dripGenerating && dripEmails.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <div style={{ fontSize: 13, color: T.s, marginBottom: 12 }}>No drip emails yet. Let Rue craft a personalized sequence.</div>
+                    <button onClick={() => generateDrip(true)} style={{ background: T.a, color: '#000', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✨ Generate with Rue</button>
+                  </div>
+                )}
+
+                {!dripGenerating && dripEmails.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {dripEmails.map(e => {
+                      const statusColors = { scheduled: '#FBBF24', sent: '#10b981', cancelled: '#6b7280', failed: '#EF4444' };
+                      const color = statusColors[e.status] || T.s;
+                      const isExpanded = dripExpandedId === e.id;
+                      const isEditing = dripEditingId === e.id;
+                      return (
+                        <div key={e.id} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: `1px solid ${e.approved ? 'rgba(0,229,160,0.3)' : '#1a2540'}`, overflow: 'hidden' }}>
+                          <div onClick={() => { if (!isEditing) setDripExpandedId(isExpanded ? null : e.id); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', cursor: 'pointer' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, color: T.t, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.subject || 'Untitled'}</div>
+                              {isEditing ? (
+                                <input value={dripEditSubject} onChange={ev => setDripEditSubject(ev.target.value)} style={{ width: '100%', background: '#0d1117', border: `1px solid ${T.b}`, color: T.t, borderRadius: 4, padding: '4px 8px', fontSize: 13, fontWeight: 600 }} onClick={ev => ev.stopPropagation()} />
+                              ) : (
+                                <div style={{ fontSize: 13, color: T.t, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.subject || 'Untitled'}</div>
+                              )}
                               <div style={{ fontSize: 11, color: T.s, marginTop: 2 }}>{e.scheduled_for ? new Date(e.scheduled_for).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                              {e.approved && <span style={{ fontSize: 10, fontWeight: 700, color: T.a, background: T.a + '20', padding: '3px 8px', borderRadius: 6 }}>APPROVED</span>}
                               <span style={{ fontSize: 10, fontWeight: 700, color, background: color + '20', padding: '3px 8px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{e.status}</span>
-                              {e.status === 'scheduled' && (
-                                <span onClick={() => cancelDripEmail(e.id)} style={{ fontSize: 11, color: '#EF4444', cursor: 'pointer', fontWeight: 600 }}>Cancel</span>
-                              )}
+                              <span style={{ fontSize: 12, color: T.s, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                             </div>
                           </div>
-                        );
-                      })}
+                          {isExpanded && (
+                            <div style={{ padding: '0 12px 12px', borderTop: `1px solid ${T.b}` }}>
+                              {isEditing ? (
+                                <textarea value={dripEditBody} onChange={ev => setDripEditBody(ev.target.value)} style={{ width: '100%', minHeight: 120, background: '#0d1117', border: `1px solid ${T.b}`, color: T.t, borderRadius: 4, padding: 8, fontSize: 12, lineHeight: 1.6, marginTop: 10, resize: 'vertical', fontFamily: 'inherit' }} />
+                              ) : (
+                                <div style={{ fontSize: 12, color: '#c9d1d9', lineHeight: 1.7, whiteSpace: 'pre-wrap', marginTop: 10 }}>{e.body || 'No body content.'}</div>
+                              )}
+                              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                                {isEditing ? (
+                                  <>
+                                    <button onClick={() => saveDripEdit(e.id)} style={{ fontSize: 11, background: T.a, color: '#000', border: 'none', borderRadius: 6, padding: '5px 12px', fontWeight: 700, cursor: 'pointer' }}>💾 Save</button>
+                                    <button onClick={() => setDripEditingId(null)} style={{ fontSize: 11, background: 'transparent', border: `1px solid ${T.b}`, color: T.s, borderRadius: 6, padding: '5px 12px', cursor: 'pointer' }}>Cancel</button>
+                                  </>
+                                ) : (
+                                  <>
+                                    {!e.approved && <button onClick={() => approveDripEmail(e.id)} style={{ fontSize: 11, background: 'rgba(0,229,160,0.15)', color: T.a, border: `1px solid rgba(0,229,160,0.3)`, borderRadius: 6, padding: '5px 12px', fontWeight: 600, cursor: 'pointer' }}>✅ Approve</button>}
+                                    <button onClick={() => { setDripEditingId(e.id); setDripEditSubject(e.subject || ''); setDripEditBody(e.body || ''); }} style={{ fontSize: 11, background: 'transparent', border: `1px solid ${T.b}`, color: T.s, borderRadius: 6, padding: '5px 12px', cursor: 'pointer' }}>✏️ Edit</button>
+                                    {e.status === 'scheduled' && <button onClick={() => cancelDripEmail(e.id)} style={{ fontSize: 11, background: 'transparent', border: '1px solid #EF444440', color: '#EF4444', borderRadius: 6, padding: '5px 12px', cursor: 'pointer' }}>🗑 Cancel</button>}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Bottom action bar */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, padding: '10px 0 0', borderTop: `1px solid ${T.b}` }}>
+                      <span style={{ fontSize: 12, color: T.s }}>{dripEmails.filter(e => e.approved).length} of {dripEmails.length} approved</span>
+                      {!dripEnabled && (
+                        <button onClick={activateDripSequence} disabled={dripEmails.filter(e => e.approved).length === 0} style={{ fontSize: 12, background: dripEmails.filter(e => e.approved).length > 0 ? T.a : '#374151', color: dripEmails.filter(e => e.approved).length > 0 ? '#000' : T.s, border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, cursor: dripEmails.filter(e => e.approved).length > 0 ? 'pointer' : 'default', opacity: dripEmails.filter(e => e.approved).length > 0 ? 1 : 0.5 }}>🚀 Activate Sequence</button>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+                    {dripActivateMsg && <div style={{ fontSize: 12, color: T.a, textAlign: 'center', marginTop: 6, fontWeight: 600 }}>{dripActivateMsg}</div>}
+                  </div>
+                )}
+              </div>
 
               {/* Online Presence */}
               {(lead.website_url || lead.zillow_url || lead.realtor_url) && (
