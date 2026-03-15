@@ -1,4 +1,5 @@
 {
+  "buildCommand": "npm run build",
   "rewrites": [
     { "source": "/listing-power-teams/:post*", "destination": "/api/blog/listing-power-teams/:post*" },
     { "source": "/lpt-realty/:post*", "destination": "/api/blog/lpt-realty/:post*" },

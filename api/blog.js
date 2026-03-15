@@ -18,3 +18,4 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, max-age=300');
   res.status(response.status).send(html);
 }
+// cache bust 1773554489
