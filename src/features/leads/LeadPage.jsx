@@ -129,6 +129,12 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
       });
       const json = await res.json();
       if (res.ok) {
+        if (json.quality === 0 || json.no_credit_charged) {
+          setEnrichDone(false);
+          setEnriching(false);
+          alert("No data found — no credit charged.");
+          return;
+        }
         // Refresh lead data in place so sections update
         const { data: updated } = await supabase.from("leads").select("*").eq("id", lead.id).single();
         if (updated) Object.assign(lead, updated);
@@ -471,6 +477,23 @@ Write the email body. Be specific to this person — reference their brokerage, 
                 <div style={{ marginTop: 20, padding: "16px", borderRadius: 8, background: T.d }}>
                   <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>OUTREACH ANGLE</div>
                   <div style={{ fontSize: 14, color: T.t, lineHeight: 1.6 }}>{lead.outreach_angle}</div>
+                </div>
+              )}
+
+              {lead.raw_dossier && (
+                <div style={{ marginTop: 16, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', borderRadius: 10, padding: '16px 18px' }}>
+                  <div style={{ color: '#00E5A0', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>🎯 RUE RECRUITING DOSSIER</div>
+                  {lead.raw_dossier.split('##').filter(s => s.trim()).map((section, i) => {
+                    const lines = section.trim().split('\n').filter(Boolean);
+                    const title = lines[0]?.trim();
+                    const body = lines.slice(1).join('\n').trim();
+                    return (
+                      <div key={i} style={{ marginBottom: i < 2 ? 14 : 0 }}>
+                        <div style={{ color: '#7B8BA3', fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>{title}</div>
+                        <div style={{ color: '#E4E8F1', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{body}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
