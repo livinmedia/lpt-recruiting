@@ -39,7 +39,7 @@ export default function ContentTab({ userId, userProfile }) {
   const isAdmin = userProfile?.role === "owner" || userProfile?.role === "admin";
 
   const [teamSlug, setTeamSlug] = useState("");
-  const [blogTab, setBlogTab] = useState(isAdmin ? "needs_approval" : "published");
+  const [blogTab, setBlogTab] = useState("published");
   const [editingPost, setEditingPost] = useState(null);
   const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
@@ -94,9 +94,10 @@ export default function ContentTab({ userId, userProfile }) {
     if (!file || !userProfile?.team_id) return;
     setImageUploading(true);
     const ext = file.name.split('.').pop();
-    const path = `team-posts/${userProfile.team_id}/${Date.now()}.${ext}`;
+    const slug = teamSlug || userProfile.team_id;
+    const path = `teams/${slug}/manual_${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from('content-images').upload(path, file, { upsert: true });
-    if (error) { setImageUploading(false); return; }
+    if (error) { console.error('Image upload error:', error); setImageUploading(false); return; }
     const { data: { publicUrl } } = supabase.storage.from('content-images').getPublicUrl(path);
     setImageUrl(publicUrl);
     setImageUploading(false);

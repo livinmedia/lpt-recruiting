@@ -775,6 +775,12 @@ export default function App(){
     const [contentPrefs,setContentPrefs]=useState({success_stories:false,culture:false,training:false,commission_info:false,recruiting_tips:false});
     const [teamSaving,setTeamSaving]=useState(false);
     const [teamSaved,setTeamSaved]=useState(false);
+    const [inviteOpen,setInviteOpen]=useState(false);
+    const [inviteEmail,setInviteEmail]=useState("");
+    const [inviteRole,setInviteRole]=useState("member");
+    const [inviteSending,setInviteSending]=useState(false);
+    const [inviteMsg,setInviteMsg]=useState("");
+    const [pendingInvites,setPendingInvites]=useState([]);
     useEffect(()=>{
       if(!prof?.team_id) return;
       (async()=>{
@@ -793,10 +799,34 @@ export default function App(){
           if(data.team_info?.content_preferences){
             setContentPrefs(prev=>({...prev,...data.team_info.content_preferences}));
           }
+          // Load pending invites
+          const {data:invites}=await supabase.from('team_invites').select('*').eq('team_id',data.id).eq('status','pending');
+          setPendingInvites(invites||[]);
         }
         setTeamLoading(false);
       })();
     },[prof?.team_id]);
+    const sendInvite=async()=>{
+      if(!inviteEmail.trim()||!teamData) return;
+      setInviteSending(true);
+      setInviteMsg("");
+      try{
+        const {error}=await supabase.from('team_invites').insert({team_id:teamData.id,invited_by:uid,email:inviteEmail.trim().toLowerCase(),role:inviteRole,status:'pending'});
+        if(error) throw error;
+        setInviteMsg(`Invite sent to ${inviteEmail.trim()}`);
+        setInviteEmail("");setInviteRole("member");
+        const {data:invites}=await supabase.from('team_invites').select('*').eq('team_id',teamData.id).eq('status','pending');
+        setPendingInvites(invites||[]);
+        setTimeout(()=>{setInviteMsg("");setInviteOpen(false);},2000);
+      }catch(err){
+        setInviteMsg("Failed to send invite. "+((err)?.message||""));
+      }
+      setInviteSending(false);
+    };
+    const cancelInvite=async(inviteId)=>{
+      await supabase.from('team_invites').delete().eq('id',inviteId);
+      setPendingInvites(prev=>prev.filter(i=>i.id!==inviteId));
+    };
     const saveTeamInfo=async()=>{
       if(!teamData) return;
       setTeamSaving(true);
@@ -859,7 +889,7 @@ export default function App(){
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:24}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
             <div style={{fontSize:16,fontWeight:700,color:T.t}}>Members</div>
-            <div style={{padding:"8px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.m,fontSize:13,fontWeight:600,cursor:"not-allowed",opacity:0.5}}>Invite Member</div>
+            <div onClick={()=>setInviteOpen(true)} style={{padding:"8px 16px",borderRadius:8,background:T.a+"18",border:`1px solid ${T.a}40`,color:T.a,fontSize:13,fontWeight:600,cursor:"pointer"}}>Invite Member</div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {members.map((m,i)=>(
@@ -874,9 +904,48 @@ export default function App(){
                 </div>
               </div>
             ))}
-            {members.length===0&&<div style={{textAlign:"center",padding:20,color:T.m,fontSize:13}}>No members yet</div>}
+            {/* Pending invites */}
+            {pendingInvites.map(inv=>(
+              <div key={inv.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:T.d,borderRadius:8,border:"1px dashed #F59E0B40"}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:600,color:T.t}}>{inv.email}</div>
+                  <div style={{fontSize:12,color:T.m}}>Invited {new Date(inv.created_at).toLocaleDateString()}</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{padding:"4px 10px",borderRadius:6,background:"#F59E0B18",color:"#F59E0B",fontSize:11,fontWeight:700}}>Pending</span>
+                  <span onClick={()=>cancelInvite(inv.id)} style={{fontSize:11,color:"#F85149",cursor:"pointer",fontWeight:600}}>Cancel</span>
+                </div>
+              </div>
+            ))}
+            {members.length===0&&pendingInvites.length===0&&<div style={{textAlign:"center",padding:20,color:T.m,fontSize:13}}>No members yet</div>}
           </div>
         </div>
+
+        {/* Invite Modal */}
+        {inviteOpen&&(
+          <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setInviteOpen(false)}>
+            <div style={{width:"100%",maxWidth:420,background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:24}} onClick={e=>e.stopPropagation()}>
+              <div style={{fontSize:16,fontWeight:700,color:T.t,marginBottom:16}}>Invite Team Member</div>
+              <div style={{marginBottom:14}}>
+                <div style={{fontSize:11,color:T.m,fontWeight:700,letterSpacing:1,marginBottom:6}}>EMAIL</div>
+                <input value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="colleague@email.com" style={{width:"100%",padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+              </div>
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:11,color:T.m,fontWeight:700,letterSpacing:1,marginBottom:6}}>ROLE</div>
+                <div style={{display:"flex",gap:8}}>
+                  {["member","admin"].map(r=>(
+                    <div key={r} onClick={()=>setInviteRole(r)} style={{padding:"8px 18px",borderRadius:8,background:inviteRole===r?T.a+"20":"transparent",border:`1px solid ${inviteRole===r?T.a:T.b}`,color:inviteRole===r?T.a:T.s,fontSize:13,fontWeight:600,cursor:"pointer",textTransform:"capitalize"}}>{r}</div>
+                  ))}
+                </div>
+              </div>
+              {inviteMsg&&<div style={{fontSize:13,color:inviteMsg.startsWith("Failed")?T.r:T.a,marginBottom:12,fontWeight:600}}>{inviteMsg}</div>}
+              <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                <div onClick={()=>setInviteOpen(false)} style={{padding:"10px 18px",borderRadius:8,background:T.d,color:T.s,fontSize:13,fontWeight:700,cursor:"pointer"}}>Cancel</div>
+                <div onClick={sendInvite} style={{padding:"10px 18px",borderRadius:8,background:inviteEmail.trim()&&!inviteSending?T.a:"#333",color:inviteEmail.trim()&&!inviteSending?"#000":T.m,fontSize:13,fontWeight:700,cursor:inviteEmail.trim()&&!inviteSending?"pointer":"default"}}>{inviteSending?"Sending...":"Send Invite"}</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
