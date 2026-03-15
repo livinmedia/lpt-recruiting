@@ -78,6 +78,9 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
   const [social, setSocial] = useState({});
   const [rkrt, setRkrt] = useState({});
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [calUrl, setCalUrl] = useState("");
+  const [calSaving, setCalSaving] = useState(false);
+  const [calCopied, setCalCopied] = useState(false);
 
   // Seed form state from profile prop
   useEffect(() => {
@@ -117,6 +120,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
       tiktok:    sl.tiktok || "",
       cal_booking_url: profile.cal_booking_url || "",
     });
+    setCalUrl(profile.cal_booking_url || "");
     setRkrt({
       rkrt_phone: profile.rkrt_phone || "",
       rkrt_email: profile.rkrt_email || "",
@@ -215,6 +219,26 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
     setTagInput("");
   };
   const removeTag = (tag) => setProfessional(p => ({ ...p, specialties: p.specialties.filter(s => s !== tag) }));
+
+  const saveCalUrl = async () => {
+    if (!userId) return;
+    setCalSaving(true);
+    try {
+      const { error } = await supabase.from('profiles').update({ cal_booking_url: calUrl, updated_at: new Date().toISOString() }).eq('id', userId);
+      if (error) throw error;
+      showToast("Cal.com URL saved!");
+      onProfileUpdate();
+    } catch (err) {
+      showToast(err?.message || "Save failed.", true);
+    }
+    setCalSaving(false);
+  };
+
+  const copyWebhookUrl = () => {
+    navigator.clipboard.writeText("https://usknntguurefeyzusbdh.supabase.co/functions/v1/cal-webhook");
+    setCalCopied(true);
+    setTimeout(() => setCalCopied(false), 2000);
+  };
 
   // Derived stats
   const hottest = [...leads].sort((a, b) => (b.interest_score || 0) - (a.interest_score || 0))[0];
@@ -471,6 +495,59 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
           </div>
         )}
       </SectionCard>
+
+      {/* ── Section 5: Cal.com Integration ── */}
+      <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px", marginBottom: 16 }}>
+        {(!profile?.plan || profile.plan === 'free') ? (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: T.m }}>📅 Cal.com Integration</span>
+              <span style={{ padding: "3px 10px", borderRadius: 20, background: T.m + "20", fontSize: 10, fontWeight: 700, color: T.m, letterSpacing: 0.5 }}>LOCKED</span>
+            </div>
+            <div style={{ fontSize: 13, color: T.s, lineHeight: 1.7, marginBottom: 16 }}>
+              Book meetings directly from your recruiting emails. Available on Recruiter plan and above.
+            </div>
+            <div style={{ padding: "10px 20px", borderRadius: 8, background: T.bl + "20", border: `1px solid ${T.bl}40`, color: T.bl, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-block" }}>
+              Upgrade to Enable →
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: T.t }}>📅 Cal.com Integration</span>
+              {calUrl && <span style={{ padding: "3px 10px", borderRadius: 20, background: T.a + "20", border: `1px solid ${T.a}40`, fontSize: 10, fontWeight: 700, color: T.a }}>✅ Connected</span>}
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={lbl}>YOUR CAL.COM BOOKING URL</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={calUrl} onChange={e => setCalUrl(e.target.value)} placeholder="https://cal.com/your-username" style={{ ...inp, flex: 1 }} />
+                <div onClick={saveCalUrl} style={{ padding: "10px 20px", borderRadius: 8, background: T.a, color: "#000", fontSize: 13, fontWeight: 700, cursor: calSaving ? "wait" : "pointer", opacity: calSaving ? 0.7 : 1, whiteSpace: "nowrap" }}>
+                  {calSaving ? "Saving..." : "Save"}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: T.bg, border: `1px solid ${T.b}`, borderRadius: 8, padding: "14px 16px" }}>
+              <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>WEBHOOK SETUP</div>
+              <div style={{ fontSize: 12, color: T.s, lineHeight: 1.7, marginBottom: 10 }}>
+                Add this webhook URL in Cal.com → Settings → Developer → Webhooks:
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <code style={{ flex: 1, fontSize: 11, color: T.bl, background: "#0D1117", border: `1px solid ${T.b}`, borderRadius: 6, padding: "8px 12px", wordBreak: "break-all", fontFamily: "monospace" }}>
+                  https://usknntguurefeyzusbdh.supabase.co/functions/v1/cal-webhook
+                </code>
+                <div onClick={copyWebhookUrl} style={{ padding: "8px 14px", borderRadius: 6, background: calCopied ? T.a + "20" : "transparent", border: `1px solid ${calCopied ? T.a : T.b}`, color: calCopied ? T.a : T.s, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  {calCopied ? "✓ Copied" : "📋 Copy"}
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: T.m, lineHeight: 1.7 }}>
+                Select triggers: <span style={{ color: T.s, fontWeight: 600 }}>BOOKING_CREATED</span>, <span style={{ color: T.s, fontWeight: 600 }}>BOOKING_CONFIRMED</span>, <span style={{ color: T.s, fontWeight: 600 }}>BOOKING_CANCELLED</span>, <span style={{ color: T.s, fontWeight: 600 }}>BOOKING_COMPLETED</span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
