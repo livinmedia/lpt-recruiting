@@ -1,4 +1,12 @@
 {
+  "headers": [
+    {
+      "source": "/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)(.*)",
+      "headers": [
+        { "key": "Content-Type", "value": "text/html; charset=utf-8" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/listing-power-teams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams" },
     { "source": "/listing-power-teams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams&post=:post" },
