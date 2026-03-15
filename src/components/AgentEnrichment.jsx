@@ -21,7 +21,6 @@ const T = {
 
 function formatName(raw) {
   if (!raw) return "";
-  // Handle "LAST, FIRST" format
   if (raw.includes(",")) {
     const [last, first] = raw.split(",").map(s => s.trim());
     return [first, last]
@@ -117,7 +116,7 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
   const [leadNotes, setLeadNotes] = useState("");
   const [leadAdded, setLeadAdded] = useState(null);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
-  const [emailVerified, setEmailVerified] = useState(null); // null | "pending" | "delivered" | "bounced"
+  const [emailVerified, setEmailVerified] = useState(null);
   const [selectedEmail, setSelectedEmail] = useState("");
   const [usage, setUsage] = useState(null);
 
@@ -155,6 +154,11 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
       }
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Enrichment failed."); setEnriching(false); return; }
+      if (json.quality === 0 || json.no_credit_charged) {
+        setError("No data found — no credit charged.");
+        setEnriching(false);
+        return;
+      }
       const d = json.data || {};
       setEnrichResult({ ...d, quality: json.quality, sources: json.sources, status: json.status, pattern_guess: d.email_confidence === "pattern_guess" });
       setSelectedEmail(d.email || "");
@@ -226,7 +230,6 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
             setEmailVerified("bounced");
             clearInterval(pollRef.current);
             setVerifyingEmail(false);
-            // Auto-select next candidate
             const candidates = enrichResult?.email_candidates || [];
             const idx = candidates.indexOf(selectedEmail);
             if (idx >= 0 && idx < candidates.length - 1) setSelectedEmail(candidates[idx + 1]);
@@ -235,7 +238,7 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
         if (elapsed >= 30) {
           clearInterval(pollRef.current);
           setVerifyingEmail(false);
-          if (emailVerified === "pending") setEmailVerified("pending"); // stays pending
+          if (emailVerified === "pending") setEmailVerified("pending");
         }
       }, 3000);
     } catch {
@@ -301,7 +304,6 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
               )}
             </div>
 
-            {/* Agent details */}
             <div style={{ background: T.bg, borderRadius: 12, padding: 16, marginBottom: 24, border: `1px solid ${T.b}` }}>
               {[
                 ["License", agent.license_type && agent.license_number ? `${agent.license_type} #${agent.license_number}` : agent.license_type || agent.license_number || "—"],
@@ -315,7 +317,6 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
               ))}
             </div>
 
-            {/* Credits bar */}
             {usage && (
               <div style={{ background: T.bg, borderRadius: 12, padding: 16, marginBottom: 28, border: `1px solid ${T.b}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, marginBottom: 6 }}>
@@ -407,7 +408,6 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                         </span>
                       </div>
 
-                      {/* Candidates dropdown */}
                       {enrichResult.pattern_guess && enrichResult.email_candidates?.length > 1 && (
                         <div style={{ marginTop: 8, background: T.bg, borderRadius: 8, border: `1px solid ${T.b}`, overflow: "hidden" }}>
                           {enrichResult.email_candidates.map(email => (
@@ -430,7 +430,6 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                         </div>
                       )}
 
-                      {/* Verify button */}
                       <div style={{ marginTop: 8, display: "flex", alignItems: "center" }}>
                         <button
                           onClick={handleVerifyEmail}
@@ -504,6 +503,17 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                   )}
                 </div>
 
+                {/* Realtor.com */}
+                {enrichResult.realtor_url && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: T.s, marginBottom: 4 }}>🏡 Realtor.com</div>
+                    <a href={enrichResult.realtor_url} target="_blank" rel="noreferrer"
+                      style={{ color: T.a, fontSize: 13, textDecoration: "none", wordBreak: "break-all" }}>
+                      View profile
+                    </a>
+                  </div>
+                )}
+
                 {/* Facebook */}
                 {enrichResult.facebook && (
                   <div style={{ marginBottom: 14 }}>
@@ -552,17 +562,6 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                   </div>
                 )}
 
-                {/* Realtor.com */}
-                {enrichResult.realtor_url && (
-                  <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 12, color: T.s, marginBottom: 4 }}>🏡 Realtor.com</div>
-                    <a href={enrichResult.realtor_url} target="_blank" rel="noreferrer"
-                      style={{ color: T.a, fontSize: 13, textDecoration: "none", wordBreak: "break-all" }}>
-                      View profile
-                    </a>
-                  </div>
-                )}
-
                 {/* Recent Sales */}
                 {enrichResult.recent_sales != null && (
                   <div style={{ marginBottom: 14 }}>
@@ -588,6 +587,58 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                 </div>
               </div>
             </div>
+
+            {/* ── RUE RECRUITING DOSSIER — full width ── */}
+            {enrichResult?.rue_dossier && (
+              <div style={{ padding: "0 28px 20px" }}>
+                <div style={{
+                  background: 'rgba(0,229,160,0.06)',
+                  border: '1px solid rgba(0,229,160,0.2)',
+                  borderRadius: 10,
+                  padding: '16px 18px',
+                }}>
+                  <div style={{ color: '#00E5A0', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>
+                    🎯 RUE RECRUITING DOSSIER
+                  </div>
+                  {enrichResult.rue_dossier.split('##').filter(s => s.trim()).map((section, i) => {
+                    const lines = section.trim().split('\n').filter(Boolean);
+                    const title = lines[0]?.trim();
+                    const body = lines.slice(1).join('\n').trim();
+                    return (
+                      <div key={i} style={{ marginBottom: i < 2 ? 14 : 0 }}>
+                        <div style={{ color: '#7B8BA3', fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
+                          {title}
+                        </div>
+                        <div style={{ color: '#E4E8F1', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                          {body}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Profile Stats Pills */}
+                {enrichResult?.profile_stats?.rating && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    {[
+                      { label: 'Rating', value: `⭐ ${enrichResult.profile_stats.rating}` },
+                      { label: 'Reviews', value: `${enrichResult.profile_stats.review_count ?? '?'} reviews` },
+                      { label: 'Sales 12mo', value: enrichResult.profile_stats.recent_sales ?? '?' },
+                      { label: 'Avg Price', value: enrichResult.profile_stats.avg_sale_price ? '$' + Number(enrichResult.profile_stats.avg_sale_price).toLocaleString() : '?' },
+                    ].map(stat => (
+                      <div key={stat.label} style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 8, padding: '5px 14px', textAlign: 'center',
+                      }}>
+                        <div style={{ color: '#7B8BA3', fontSize: 10, marginBottom: 2 }}>{stat.label}</div>
+                        <div style={{ color: '#E4E8F1', fontSize: 13, fontWeight: 600 }}>{stat.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Notes */}
             <div style={{ padding: "0 28px 20px" }}>
