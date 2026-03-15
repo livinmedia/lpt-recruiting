@@ -87,12 +87,38 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   const [enriching, setEnriching] = useState(false);
   const [enrichDone, setEnrichDone] = useState(false);
 
+  // Drip sequence
+  const [dripEmails, setDripEmails] = useState([]);
+  const [dripEnabled, setDripEnabled] = useState(lead.drip_enabled ?? false);
+  const [dripToggling, setDripToggling] = useState(false);
+
   useEffect(() => {
     if (lead?.id) {
       loadTasks();
       supabase.from("lead_events").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(10).then(({ data }) => setEvents(data || []));
+      loadDripEmails();
     }
   }, [lead?.id]);
+
+  const loadDripEmails = async () => {
+    const { data } = await supabase.from("lead_drip_emails").select("*").eq("lead_id", lead.id).order("scheduled_for", { ascending: true });
+    setDripEmails(data || []);
+  };
+
+  const toggleDrip = async () => {
+    setDripToggling(true);
+    const newVal = !dripEnabled;
+    await supabase.from("leads").update({ drip_enabled: newVal }).eq("id", lead.id);
+    lead.drip_enabled = newVal;
+    setDripEnabled(newVal);
+    logActivity(userId, newVal ? 'drip_enabled' : 'drip_disabled', { lead_id: lead.id });
+    setDripToggling(false);
+  };
+
+  const cancelDripEmail = async (emailId) => {
+    await supabase.from("lead_drip_emails").update({ status: "cancelled" }).eq("id", emailId);
+    loadDripEmails();
+  };
 
   const loadTasks = async () => {
     const { data, error } = await supabase.from('lead_tasks').select('*').eq('lead_id', lead.id).order('created_at', { ascending: true });
@@ -494,6 +520,45 @@ Write the email body. Be specific to this person — reference their brokerage, 
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Drip Sequence */}
+              {(dripEmails.length > 0 || dripEnabled) && (
+                <div style={{ marginTop: 16, background: '#111827', border: '1px solid #1a2540', borderRadius: 10, padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                    <div style={{ color: '#22d3ee', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>💧 DRIP SEQUENCE</div>
+                    <div onClick={toggleDrip} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', opacity: dripToggling ? 0.5 : 1 }}>
+                      <span style={{ fontSize: 11, color: dripEnabled ? T.a : T.s }}>{dripEnabled ? 'Active' : 'Paused'}</span>
+                      <div style={{ width: 36, height: 20, borderRadius: 10, background: dripEnabled ? T.a : '#374151', position: 'relative', transition: 'background 0.2s' }}>
+                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: dripEnabled ? 18 : 2, transition: 'left 0.2s' }} />
+                      </div>
+                    </div>
+                  </div>
+                  {dripEmails.length === 0 ? (
+                    <div style={{ fontSize: 13, color: T.s }}>No drip emails scheduled yet.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {dripEmails.map(e => {
+                        const statusColors = { scheduled: '#FBBF24', sent: '#10b981', cancelled: '#6b7280', failed: '#EF4444' };
+                        const color = statusColors[e.status] || T.s;
+                        return (
+                          <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid #1a2540' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, color: T.t, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.subject || 'Untitled'}</div>
+                              <div style={{ fontSize: 11, color: T.s, marginTop: 2 }}>{e.scheduled_for ? new Date(e.scheduled_for).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color, background: color + '20', padding: '3px 8px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{e.status}</span>
+                              {e.status === 'scheduled' && (
+                                <span onClick={() => cancelDripEmail(e.id)} style={{ fontSize: 11, color: '#EF4444', cursor: 'pointer', fontWeight: 600 }}>Cancel</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
