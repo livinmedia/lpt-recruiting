@@ -1,23 +1,21 @@
 {
-  "redirects": [
-    { "source": "/listing-power-teams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams", "permanent": false },
-    { "source": "/listing-power-teams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams&post=:post", "permanent": false },
-    { "source": "/lpt-realty", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=lpt-realty", "permanent": false },
-    { "source": "/lpt-realty/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=lpt-realty&post=:post", "permanent": false },
-    { "source": "/exp-realty", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=exp-realty", "permanent": false },
-    { "source": "/exp-realty/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=exp-realty&post=:post", "permanent": false },
-    { "source": "/keller-williams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=keller-williams", "permanent": false },
-    { "source": "/keller-williams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=keller-williams&post=:post", "permanent": false },
-    { "source": "/remax", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=remax", "permanent": false },
-    { "source": "/remax/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=remax&post=:post", "permanent": false },
-    { "source": "/real-brokerage", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=real-brokerage", "permanent": false },
-    { "source": "/real-brokerage/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=real-brokerage&post=:post", "permanent": false },
-    { "source": "/epique", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=epique", "permanent": false },
-    { "source": "/epique/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=epique&post=:post", "permanent": false },
-    { "source": "/realty-of-america", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=realty-of-america", "permanent": false },
-    { "source": "/realty-of-america/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=realty-of-america&post=:post", "permanent": false }
-  ],
   "rewrites": [
+    { "source": "/listing-power-teams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams" },
+    { "source": "/listing-power-teams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams&post=:post" },
+    { "source": "/lpt-realty", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=lpt-realty" },
+    { "source": "/lpt-realty/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=lpt-realty&post=:post" },
+    { "source": "/exp-realty", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=exp-realty" },
+    { "source": "/exp-realty/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=exp-realty&post=:post" },
+    { "source": "/keller-williams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=keller-williams" },
+    { "source": "/keller-williams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=keller-williams&post=:post" },
+    { "source": "/remax", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=remax" },
+    { "source": "/remax/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=remax&post=:post" },
+    { "source": "/real-brokerage", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=real-brokerage" },
+    { "source": "/real-brokerage/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=real-brokerage&post=:post" },
+    { "source": "/epique", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=epique" },
+    { "source": "/epique/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=epique&post=:post" },
+    { "source": "/realty-of-america", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=realty-of-america" },
+    { "source": "/realty-of-america/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=realty-of-america&post=:post" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
