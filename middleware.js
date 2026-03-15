@@ -28,3 +28,4 @@ export default async function middleware(request) {
 export const config = {
   matcher: ['/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*']
 };
+// 1773555408
