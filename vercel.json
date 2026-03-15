@@ -1,14 +1,23 @@
 {
-  "buildCommand": "npm run build",
+  "redirects": [
+    { "source": "/listing-power-teams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams", "statusCode": 302 },
+    { "source": "/listing-power-teams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=listing-power-teams&post=:post", "statusCode": 302 },
+    { "source": "/lpt-realty", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=lpt-realty", "statusCode": 302 },
+    { "source": "/lpt-realty/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=lpt-realty&post=:post", "statusCode": 302 },
+    { "source": "/exp-realty", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=exp-realty", "statusCode": 302 },
+    { "source": "/exp-realty/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=exp-realty&post=:post", "statusCode": 302 },
+    { "source": "/keller-williams", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=keller-williams", "statusCode": 302 },
+    { "source": "/keller-williams/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=keller-williams&post=:post", "statusCode": 302 },
+    { "source": "/remax", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=remax", "statusCode": 302 },
+    { "source": "/remax/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=remax&post=:post", "statusCode": 302 },
+    { "source": "/real-brokerage", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=real-brokerage", "statusCode": 302 },
+    { "source": "/real-brokerage/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=real-brokerage&post=:post", "statusCode": 302 },
+    { "source": "/epique", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=epique", "statusCode": 302 },
+    { "source": "/epique/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=epique&post=:post", "statusCode": 302 },
+    { "source": "/realty-of-america", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=realty-of-america", "statusCode": 302 },
+    { "source": "/realty-of-america/:post", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?section=realty-of-america&post=:post", "statusCode": 302 }
+  ],
   "rewrites": [
-    { "source": "/listing-power-teams/:post*", "destination": "/api/blog/listing-power-teams/:post*" },
-    { "source": "/lpt-realty/:post*", "destination": "/api/blog/lpt-realty/:post*" },
-    { "source": "/exp-realty/:post*", "destination": "/api/blog/exp-realty/:post*" },
-    { "source": "/keller-williams/:post*", "destination": "/api/blog/keller-williams/:post*" },
-    { "source": "/remax/:post*", "destination": "/api/blog/remax/:post*" },
-    { "source": "/real-brokerage/:post*", "destination": "/api/blog/real-brokerage/:post*" },
-    { "source": "/epique/:post*", "destination": "/api/blog/epique/:post*" },
-    { "source": "/realty-of-america/:post*", "destination": "/api/blog/realty-of-america/:post*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
