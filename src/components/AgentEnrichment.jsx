@@ -188,14 +188,6 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
       const lead = json.lead || json;
       setLeadAdded(lead);
       if (onLeadAdded) onLeadAdded(lead);
-
-      const leadId = lead.lead_id || lead.id;
-      if (leadId) {
-        setTimeout(() => {
-          onClose();
-          window.location.href = `/leads/${leadId}`;
-        }, 800);
-      }
     } catch (err) {
       setError("Network error — please try again.");
     }
@@ -716,4 +708,4 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
       </div>
     </div>
   );
-}https://vercel.com/livinmedias-projects/lpt-recruiting/J8ZZiBnfWiQonTrqtJWuooEH6Ux9
+}
