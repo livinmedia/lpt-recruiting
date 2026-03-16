@@ -1237,10 +1237,13 @@ export default function App(){
                 <div style={{fontSize:18,fontWeight:700,color:T.t}}>🏢 Brokerage Blogs</div>
                 <div style={{fontSize:12,color:T.m,marginTop:2}}>AI-generated recruiting content for affiliated brokerages</div>
               </div>
-              <select value={bpFilter} onChange={e=>setBpFilter(e.target.value)} style={{padding:"8px 12px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:13,fontFamily:"inherit"}}>
-                <option value="all">All Brokerages</option>
-                {brokerages.map(b=><option key={b} value={b}>{b}</option>)}
-              </select>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <div onClick={async()=>{if(!confirm("Generate fresh blog posts for all brokerages? This takes 2-3 minutes."))return;try{const res=await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-brokerage-content",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});const d=await res.json();alert("Generated "+(d.total_posts||"new")+" posts!");const bpRes2=await supabase.from("brokerage_posts").select("*").order("created_at",{ascending:false}).limit(100);setBrokeragePosts(bpRes2.data||[]);}catch(e){alert("Error: "+e.message);}}} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#1E293B",color:T.a,fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>🔄 Generate Fresh Posts</div>
+                <select value={bpFilter} onChange={e=>setBpFilter(e.target.value)} style={{padding:"8px 12px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:13,fontFamily:"inherit"}}>
+                  <option value="all">All Brokerages</option>
+                  {brokerages.map(b=><option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
             </div>
             {/* Stats row */}
             <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
