@@ -27,6 +27,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
   const [enriching, setEnriching] = useState(false);
   const [enrichedData, setEnrichedData] = useState(null);
   const [usage, setUsage] = useState(null);
+  const [availableStates, setAvailableStates] = useState(US_STATES);
   const didInit = useRef(false);
 
   const LIMIT = 50;
@@ -60,6 +61,18 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
     }
     setTimeout(() => search(true), 100);
     fetchUsage();
+    // Fetch distinct states dynamically from agent_directory
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_distinct_agent_states');
+        if (!error && data && data.length > 0) {
+          const states = data.map(r => r.state).filter(Boolean);
+          if (states.length > 0) setAvailableStates(states);
+        }
+      } catch {
+        // RPC not available — fall back to hardcoded US_STATES (already the default)
+      }
+    })();
   }, [userProfile]);
 
   async function fetchUsage() {
@@ -177,7 +190,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
           <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 6 }}>STATE</div>
           <select value={filters.state} onChange={e => setFilters(f => ({ ...f, state: e.target.value }))} style={inp}>
             <option value="">All States</option>
-            {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>

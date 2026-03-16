@@ -15,7 +15,7 @@ import ProfilePage from './features/profile/ProfilePage';
 import T from './lib/theme';
 import { STAGES, BROKERAGES, TARGET_BROKERAGES } from './lib/constants';
 import { ago, formatDate, truncate, isPro, getPlanLimits, copyToClipboard } from './lib/utils';
-import { supabase, SUPABASE_URL, RUE_SUPA, RUE_KEY, logActivity, agentSearch } from './lib/supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY, RUE_SUPA, RUE_KEY, logActivity, agentSearch } from './lib/supabase';
 
 // UI Components
 import { Pill, UPill, TPill, Dot } from './components/ui';
@@ -667,6 +667,10 @@ export default function App(){
   const [adminUserLeadStats, setAdminUserLeadStats] = useState({});
   const [leaderboard,setLeaderboard]=useState([]);
   const [lbRefreshing,setLbRefreshing]=useState(false);
+  const [socialAccounts,setSocialAccounts]=useState([]);
+  const [socialPosts,setSocialPosts]=useState([]);
+  const [socialLoading,setSocialLoading]=useState(false);
+  const [socialPostingAll,setSocialPostingAll]=useState(false);
   const [blogTab,setBlogTab]=useState("brokerage");
   const [dailyContent,setDailyContent]=useState([]);
   const [dcExpanded,setDcExpanded]=useState({});
@@ -956,7 +960,7 @@ export default function App(){
     return(<>
       {/* Tab bar */}
       <div style={{display:"flex",gap:8,marginBottom:24,background:T.card,padding:"8px",borderRadius:24,border:`1px solid ${T.b}`,width:"fit-content"}}>
-        {[["users","👥 Users"],["content","📰 Content"],["system","⚡ System"],["analytics","📊 Analytics"]].map(([id,label])=>
+        {[["users","👥 Users"],["content","📰 Content"],["social","📱 Social"],["system","⚡ System"],["analytics","📊 Analytics"]].map(([id,label])=>
           <button key={id} onClick={()=>setAdminTab(id)} style={tabStyle(id)}>{label}</button>
         )}
       </div>
@@ -1345,6 +1349,108 @@ export default function App(){
           </div>
         ):<div style={{textAlign:"center",padding:"24px",color:T.m}}>No content published yet</div>}
       </div>
+      </>}
+
+      {adminTab==="social"&&<>
+      {(()=>{
+        const loadSocial=async()=>{
+          setSocialLoading(true);
+          const [accts,posts]=await Promise.all([
+            supabase.from("social_accounts").select("id,page_name,page_id,platform,is_active,auto_post,follower_count,last_synced_at,created_at").order("created_at"),
+            supabase.from("daily_content").select("id,headline,platform,posted_at,engagement").eq("is_posted",true).order("posted_at",{ascending:false}).limit(20)
+          ]);
+          setSocialAccounts(accts.data||[]);
+          setSocialPosts(posts.data||[]);
+          setSocialLoading(false);
+        };
+        if(socialAccounts.length===0&&!socialLoading)loadSocial();
+        const testToken=async(pageId)=>{
+          try{
+            const res=await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=test&page_id=${pageId}`,{headers:{'Authorization':`Bearer ${SUPABASE_ANON_KEY}`}});
+            const d=await res.json();
+            alert(d.error?"Token error: "+d.error:"Token valid for: "+(d.page_name||pageId));
+          }catch(e){alert("Test failed: "+e.message);}
+        };
+        const toggleAutoPost=async(id,val)=>{
+          await supabase.from("social_accounts").update({auto_post:val}).eq("id",id);
+          setSocialAccounts(prev=>prev.map(a=>a.id===id?{...a,auto_post:val}:a));
+        };
+        const postAllUnposted=async()=>{
+          setSocialPostingAll(true);
+          try{
+            const res=await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=auto`,{headers:{'Authorization':`Bearer ${SUPABASE_ANON_KEY}`}});
+            const d=await res.json();
+            alert(d.error?"Error: "+d.error:JSON.stringify(d,null,2));
+            const posts2=await supabase.from("daily_content").select("id,headline,platform,posted_at,engagement").eq("is_posted",true).order("posted_at",{ascending:false}).limit(20);
+            setSocialPosts(posts2.data||[]);
+          }catch(e){alert("Error: "+e.message);}
+          setSocialPostingAll(false);
+        };
+        return(<>
+          {/* Connected Pages */}
+          <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div style={{fontSize:18,fontWeight:700,color:T.t}}>Connected Pages</div>
+              <div onClick={postAllUnposted} style={{padding:"8px 16px",borderRadius:8,background:socialPostingAll?T.m+"18":"#1877F218",color:socialPostingAll?T.m:"#1877F2",fontSize:13,fontWeight:700,cursor:socialPostingAll?"wait":"pointer",border:`1px solid ${socialPostingAll?T.m:"#1877F2"}40`}}>
+                {socialPostingAll?"Posting...":"Post All Unposted"}
+              </div>
+            </div>
+            {socialLoading?<div style={{textAlign:"center",padding:"40px",color:T.m}}>Loading...</div>:
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+              {socialAccounts.map(a=>(
+                <div key={a.id} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"18px 20px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                    <span style={{fontSize:20}}>📘</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:15,fontWeight:700,color:T.t}}>{a.page_name}</div>
+                      <div style={{fontSize:11,color:T.m,fontFamily:"monospace"}}>{a.page_id}</div>
+                    </div>
+                    <span style={{width:8,height:8,borderRadius:4,background:a.is_active?T.a:T.m}}/>
+                    <span style={{fontSize:12,color:a.is_active?T.a:T.m,fontWeight:600}}>{a.is_active?"Active":"Inactive"}</span>
+                  </div>
+                  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                    <div onClick={()=>toggleAutoPost(a.id,!a.auto_post)} style={{padding:"6px 14px",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",background:a.auto_post?T.a+"18":T.d,color:a.auto_post?T.a:T.m,border:`1px solid ${a.auto_post?T.a+"40":T.b}`}}>
+                      Auto-post: {a.auto_post?"ON":"OFF"}
+                    </div>
+                    <div onClick={()=>testToken(a.page_id)} style={{padding:"6px 14px",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",background:T.bl+"18",color:T.bl,border:`1px solid ${T.bl}40`}}>
+                      Test Token
+                    </div>
+                    {a.last_synced_at&&<span style={{fontSize:11,color:T.m,marginLeft:"auto"}}>Synced {ago(a.last_synced_at)}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>}
+          </div>
+
+          {/* Recent Posts Log */}
+          <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px"}}>
+            <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>Recent FB Posts</div>
+            {socialPosts.length===0?<div style={{textAlign:"center",padding:"40px",color:T.m}}>No posts yet</div>:
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead>
+                  <tr>
+                    {["Date","Headline","Pages","Status"].map(h=><th key={h} style={{textAlign:"left",padding:"10px 14px",fontSize:11,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`}}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {socialPosts.map(p=>{
+                    const results=p.engagement?.fb_results||[];
+                    return(
+                      <tr key={p.id} style={{borderBottom:`1px solid ${T.b}`}}>
+                        <td style={{padding:"10px 14px",fontSize:13,color:T.s}}>{p.posted_at?new Date(p.posted_at).toLocaleDateString():"—"}</td>
+                        <td style={{padding:"10px 14px",fontSize:13,color:T.t,fontWeight:600,maxWidth:250,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.headline||"—"}</td>
+                        <td style={{padding:"10px 14px",fontSize:12,color:T.s}}>{results.length>0?results.map(r=>r.page).join(", "):"—"}</td>
+                        <td style={{padding:"10px 14px"}}><span style={{fontSize:11,padding:"3px 8px",borderRadius:4,background:T.a+"18",color:T.a,fontWeight:700}}>Posted</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>}
+          </div>
+        </>);
+      })()}
       </>}
 
       {adminTab==="system"&&<>

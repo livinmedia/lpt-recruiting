@@ -4,7 +4,8 @@
 import { useState, useEffect } from 'react';
 import T from '../../lib/theme';
 import { BROKERAGES, TARGET_BROKERAGES } from '../../lib/constants';
-import { supabase, logActivity } from '../../lib/supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY, logActivity } from '../../lib/supabase';
+import { ago } from '../../lib/utils';
 import { CopyButton } from '../../components/ui/CopyButton';
 
 const THEME_COLORS = {
@@ -45,6 +46,15 @@ export default function ContentTab({ userId, userProfile }) {
   const [declineReason, setDeclineReason] = useState("");
   const [decliningPost, setDecliningPost] = useState(null);
   const [postToast, setPostToast] = useState("");
+  const [postingToFb, setPostingToFb] = useState(null); // content id currently posting
+  const [fbDetailId, setFbDetailId] = useState(null); // content id showing FB details
+  const [boostItem, setBoostItem] = useState(null); // content item for boost modal
+  const [boostAudience, setBoostAudience] = useState("competing_agents");
+  const [boostBudget, setBoostBudget] = useState(2500);
+  const [boostZip, setBoostZip] = useState("");
+  const [boostRadius, setBoostRadius] = useState(25);
+  const [boostAudiences, setBoostAudiences] = useState([]);
+  const [boostSubmitting, setBoostSubmitting] = useState(false);
 
   useEffect(() => {
     loadContent();
@@ -210,6 +220,58 @@ export default function ContentTab({ userId, userProfile }) {
     setDecliningPost(null);
     loadTeamPosts();
   };
+
+  const postToFacebook = async (item) => {
+    setPostingToFb(item.id);
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/functions/v1/post-to-facebook?mode=post&id=${item.id}`,
+        { headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
+      );
+      const data = await res.json();
+      if (res.ok && !data.error) {
+        setDailyContent(prev => prev.map(c => c.id === item.id ? { ...c, is_posted: true, posted_at: new Date().toISOString(), engagement: data.engagement || data } : c));
+        showToast("Posted to 2 pages!");
+      } else {
+        showToast("Error: " + (data.error || "Post failed"));
+      }
+    } catch (e) {
+      showToast("Error: " + e.message);
+    }
+    setPostingToFb(null);
+  };
+
+  const submitBoost = async () => {
+    if (!boostItem) return;
+    setBoostSubmitting(true);
+    try {
+      const { error } = await supabase.from('boost_requests').insert({
+        user_id: userId,
+        content_id: boostItem.id,
+        audience_type: boostAudience,
+        target_zip: boostZip,
+        target_radius_miles: boostRadius,
+        user_paid_amount: boostBudget,
+        ad_spend_amount: Math.round(boostBudget * 0.70),
+        platform_fee: Math.round(boostBudget * 0.30),
+        status: 'pending_payment'
+      });
+      if (error) throw error;
+      showToast("Boost request submitted!");
+      setBoostItem(null);
+    } catch (e) {
+      showToast("Error: " + e.message);
+    }
+    setBoostSubmitting(false);
+  };
+
+  useEffect(() => {
+    if (boostItem) {
+      supabase.from('boost_audiences').select('*').neq('audience_type', '_config').order('audience_type').then(({ data }) => {
+        if (data?.length) setBoostAudiences(data);
+      });
+    }
+  }, [boostItem]);
 
   const buildContent = (item) => {
     let text = '';
@@ -390,14 +452,32 @@ export default function ContentTab({ userId, userProfile }) {
                     <div key={item.id || i} style={{ background: T.card, borderRadius: 10, border: `1px solid ${T.b}`, borderLeft: `4px solid ${color}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                       <div style={{ padding: "20px", flex: 1, display: "flex", flexDirection: "column" }}>
                         {/* Header */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: T.t }}>Post {i + 1}</span>
                           {item.theme && (
                             <span style={{ padding: "3px 10px", borderRadius: 20, background: color + "18", color: color, fontSize: 11, fontWeight: 700, textTransform: "capitalize" }}>
                               {item.theme.replace(/_/g, ' ')}
                             </span>
                           )}
+                          {item.is_posted ? (
+                            <span onClick={() => setFbDetailId(fbDetailId === item.id ? null : item.id)} style={{ padding: "3px 10px", borderRadius: 20, background: T.a + "18", color: T.a, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                              Posted to FB · {ago(item.posted_at)}
+                            </span>
+                          ) : (
+                            <span style={{ padding: "3px 10px", borderRadius: 20, background: T.m + "18", color: T.m, fontSize: 11, fontWeight: 600 }}>Not posted</span>
+                          )}
                         </div>
+                        {/* FB post details */}
+                        {fbDetailId === item.id && item.engagement?.fb_results && (
+                          <div style={{ background: T.d, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12 }}>
+                            {item.engagement.fb_results.map((r, ri) => (
+                              <div key={ri} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", color: r.status === "posted" ? T.a : T.r }}>
+                                <span style={{ fontWeight: 600 }}>{r.page}</span>
+                                <span style={{ fontSize: 11, color: T.m }}>{r.status === "posted" ? "Posted" : r.status}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
                         {/* Image (above content, like a social media preview) */}
                         {item.image_url && (
@@ -417,11 +497,21 @@ export default function ContentTab({ userId, userProfile }) {
                         )}
 
                         {/* Action buttons */}
-                        <div style={{ marginTop: "auto", display: "flex", gap: 8 }}>
-                          <CopyButton text={personalizeLinks(content + (hashtags ? '\n\n' + hashtags : ''))} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center" }} />
+                        <div style={{ marginTop: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          <CopyButton text={(() => { const shareUrl = `https://rkrt.in/share?id=${item.id}&ref=${userId || ''}`; const withShare = content.replace(/https:\/\/rkrt\.in\/[^\s)]+/g, shareUrl); const final = withShare.includes(shareUrl) ? withShare : withShare + '\n\n' + shareUrl; return final + (hashtags ? '\n\n' + hashtags : ''); })()} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center" }} />
                           {item.image_url && (
                             <div onClick={() => downloadImage(item.image_url, `rkrt-post-${item.content_date || new Date().toISOString().split('T')[0]}.png`)} style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center", background: T.bl + "18", color: T.bl, border: `1px solid ${T.bl}40`, cursor: "pointer" }}>
                               ⬇ Download Image
+                            </div>
+                          )}
+                          {item.platform === 'facebook' && !item.is_posted && isAdmin && (
+                            <div onClick={() => postingToFb !== item.id && postToFacebook(item)} style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center", background: postingToFb === item.id ? T.m + "18" : "#1877F218", color: postingToFb === item.id ? T.m : "#1877F2", border: `1px solid ${postingToFb === item.id ? T.m : "#1877F2"}40`, cursor: postingToFb === item.id ? "wait" : "pointer" }}>
+                              {postingToFb === item.id ? "Posting..." : "Post to FB"}
+                            </div>
+                          )}
+                          {item.is_posted && isAdmin && (
+                            <div onClick={() => setBoostItem(item)} style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center", background: "#F9731818", color: "#F97318", border: "1px solid #F9731840", cursor: "pointer" }}>
+                              Boost
                             </div>
                           )}
                         </div>
@@ -743,6 +833,83 @@ export default function ContentTab({ userId, userProfile }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+      {/* Boost Modal */}
+      {boostItem && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setBoostItem(null)}>
+          <div style={{ width: "100%", maxWidth: 500, background: T.card, border: `1px solid ${T.b}`, borderRadius: 16, padding: 24 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>Boost Post</div>
+              <div onClick={() => setBoostItem(null)} style={{ cursor: "pointer", color: T.m, fontSize: 18 }}>✕</div>
+            </div>
+
+            {/* Preview */}
+            <div style={{ display: "flex", gap: 12, padding: 14, background: T.d, borderRadius: 10, marginBottom: 20 }}>
+              {boostItem.image_url && <img src={boostItem.image_url} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover" }} />}
+              <div style={{ fontSize: 13, color: T.t, fontWeight: 600, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>{boostItem.headline || boostItem.body?.substring(0, 100)}</div>
+            </div>
+
+            {/* Audience */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 8 }}>TARGET AUDIENCE</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {(boostAudiences.length > 0 ? boostAudiences : [
+                  { audience_type: "competing_agents", label: "Competing Agents" },
+                  { audience_type: "new_agents", label: "New Agents" },
+                  { audience_type: "team_builders", label: "Team Builders" },
+                ]).map(a => (
+                  <div key={a.audience_type} onClick={() => setBoostAudience(a.audience_type)} style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: boostAudience === a.audience_type ? T.a + "18" : T.d, color: boostAudience === a.audience_type ? T.a : T.s, border: `1px solid ${boostAudience === a.audience_type ? T.a + "40" : T.b}` }}>
+                    {a.label || a.audience_type.replace(/_/g, ' ')}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Budget */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 8 }}>BUDGET</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {[{ amount: 2500, label: "$25", days: "3 days" }, { amount: 5000, label: "$50", days: "5 days" }, { amount: 10000, label: "$100", days: "7 days" }, { amount: 25000, label: "$250", days: "14 days" }].map(b => (
+                  <div key={b.amount} onClick={() => setBoostBudget(b.amount)} style={{ padding: "12px 16px", borderRadius: 8, cursor: "pointer", background: boostBudget === b.amount ? T.a + "18" : T.d, border: `1px solid ${boostBudget === b.amount ? T.a + "40" : T.b}`, textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: boostBudget === b.amount ? T.a : T.t }}>{b.label}</div>
+                    <div style={{ fontSize: 11, color: T.m }}>{b.days}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Targeting */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
+              <div>
+                <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>TARGET ZIP</div>
+                <input value={boostZip} onChange={e => setBoostZip(e.target.value)} placeholder="e.g. 33139" style={{ width: "100%", padding: "10px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>RADIUS</div>
+                <select value={boostRadius} onChange={e => setBoostRadius(Number(e.target.value))} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 14, outline: "none", fontFamily: "inherit" }}>
+                  <option value={10}>10 miles</option>
+                  <option value={25}>25 miles</option>
+                  <option value={50}>50 miles</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Submit */}
+            <div style={{ position: "relative" }}>
+              <div onClick={submitBoost} style={{ padding: "14px", borderRadius: 10, background: boostSubmitting ? T.m : "#F97318", color: "#fff", fontSize: 15, fontWeight: 700, cursor: boostSubmitting ? "wait" : "pointer", textAlign: "center", opacity: 0.5 }}>
+                {boostSubmitting ? "Submitting..." : "Boost This Post — Coming Soon"}
+              </div>
+              <div style={{ fontSize: 11, color: T.m, textAlign: "center", marginTop: 8 }}>Meta Ads integration coming soon. Request will be saved.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {postToast && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "12px 24px", borderRadius: 10, background: postToast.startsWith("Error") ? "#F85149" : T.a, color: postToast.startsWith("Error") ? "#fff" : "#000", fontSize: 14, fontWeight: 700, zIndex: 10000, boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
+          {postToast}
         </div>
       )}
     </div>

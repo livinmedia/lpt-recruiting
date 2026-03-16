@@ -2,8 +2,18 @@ const BLOG_SECTIONS = ['listing-power-teams','lpt-realty','exp-realty','keller-w
 
 export default async function middleware(request) {
   const url = new URL(request.url);
-  const parts = url.pathname.split('/').filter(Boolean);
-  
+  const pathname = url.pathname;
+  const parts = pathname.split('/').filter(Boolean);
+
+  if (pathname === '/share' || pathname.startsWith('/share?')) {
+    const shareUrl = 'https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-share' + url.search;
+    const res = await fetch(shareUrl);
+    return new Response(res.body, {
+      status: res.status,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
+  }
+
   if (parts.length > 0 && BLOG_SECTIONS.includes(parts[0])) {
     const section = parts[0];
     const post = parts[1] || '';
@@ -26,6 +36,6 @@ export default async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*']
+  matcher: ['/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share']
 };
 // 1773555408
