@@ -1,6 +1,5 @@
 {
-  "cleanUrls": true,
   "rewrites": [
-    { "source": "/((?!login|signup|beta-signup|home|join|calculator|new-agent|why-switch|revenue-share|admin-blog|brokerage-blog|blog-post).*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

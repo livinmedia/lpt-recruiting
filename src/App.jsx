@@ -1806,7 +1806,7 @@ export default function App(){
   if (bookingMatch) return <BookingPage slug={bookingMatch[1]} />;
 
   if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.s,fontSize:18,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>Authenticating…</div>;
-  if(!authUser){window.location.href="/login";return null;}
+  if(!authUser) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:20,fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}><div style={{fontSize:24,fontWeight:800,color:T.t}}>rkrt<span style={{color:T.a}}>.in</span></div><a href="/login.html" style={{padding:"14px 32px",borderRadius:10,background:T.a,color:"#000",fontSize:16,fontWeight:700,textDecoration:"none"}}>Log In</a><a href="/signup.html" style={{fontSize:14,color:T.s,textDecoration:"none"}}>Don't have an account? Sign up</a></div>;
 
   // Show beta intake for beta testers
   if(showBetaIntake && authUser) {
