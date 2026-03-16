@@ -693,6 +693,10 @@ export default function ContentTab({ userId, userProfile }) {
                         </>)}
                         {blogTab === "published" && (<>
                           {teamSlug && <a href={`https://rkrt.in/${teamSlug}/${post.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "18", color: T.bl, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>👁️ View</a>}
+                          {!post.is_posted_fb && isAdmin && (
+                            <div onClick={async () => { try { const res = await fetch(`https://usknntguurefeyzusbdh.supabase.co/functions/v1/post-to-facebook?mode=post&id=${post.id}&source=team`); const d = await res.json(); if (d.success || !d.error) { setTeamPosts(prev => prev.map(x => x.id === post.id ? { ...x, is_posted_fb: true, posted_fb_at: new Date().toISOString() } : x)); showToast("Posted to FB!"); } else { showToast("Error: " + (d.error || "Unknown")); } } catch (e) { showToast("Error: " + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#22C55E", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #22C55E" }}>📘 Post to FB</div>
+                          )}
+                          {post.is_posted_fb && <span style={{ padding: "6px 12px", fontSize: 11, color: "#22C55E", fontWeight: 700 }}>✅ Posted to FB</span>}
                           <div onClick={() => openEditPost(post)} style={{ padding: "6px 12px", borderRadius: 6, background: T.d, color: T.s, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✏️ Edit</div>
                           <div onClick={() => unpublishPost(post)} style={{ padding: "6px 12px", borderRadius: 6, background: T.d, color: T.m, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>🗑️ Unpublish</div>
                         </>)}
