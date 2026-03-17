@@ -2,7 +2,6 @@
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/r/:slug*", "destination": "https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-recruiting-page?slug=r/:slug*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
