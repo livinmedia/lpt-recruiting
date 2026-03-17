@@ -247,9 +247,9 @@ export default function ContentTab({ userId, userProfile }) {
     if (!boostItem) return;
     setBoostSubmitting(true);
     try {
-      const { error } = await supabase.from('boost_requests').insert({
+      const row = {
         user_id: userId,
-        content_id: boostItem.id,
+        content_id: boostItem.id || null,
         audience_type: boostAudience,
         target_zip: boostZip,
         target_radius_miles: boostRadius,
@@ -257,7 +257,9 @@ export default function ContentTab({ userId, userProfile }) {
         ad_spend_amount: Math.round(boostBudget * 0.70),
         platform_fee: Math.round(boostBudget * 0.30),
         status: 'pending_payment'
-      });
+      };
+      if (boostItem._boostUrl) row.notes = boostItem._boostUrl;
+      const { error } = await supabase.from('boost_requests').insert(row);
       if (error) throw error;
       showToast("Boost request submitted!");
       setBoostItem(null);
@@ -395,7 +397,8 @@ export default function ContentTab({ userId, userProfile }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{getPageUrl(lp.path)}</span>
                   <CopyButton text={getPageUrl(lp.path)} label="Copy" />
-                  <div onClick={() => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPageUrl(lp.path))}`, '_blank', 'width=600,height=400'); }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Share to FB</div>
+                  {isAdmin && <div onClick={async () => { if (!confirm('Post this link to RKRT Facebook pages?')) return; try { const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=link&url=${encodeURIComponent(getPageUrl(lp.path))}&title=${encodeURIComponent(lp.name)}&message=${encodeURIComponent('See what switching to LPT Realty means for your income.')}`); const d = await res.json(); if (d.success) { showToast('Posted to ' + (d.results?.length || 2) + ' FB pages!'); } else { showToast('Error: ' + (d.error || 'Unknown')); } } catch (e) { showToast('Error: ' + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Post to FB</div>}
+                  {isAdmin && <div onClick={() => setBoostItem({ id: null, headline: lp.name, image_url: null, _boostUrl: getPageUrl(lp.path) })} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#F59E0B", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #F59E0B40", whiteSpace: "nowrap" }}>Boost</div>}
                 </div>
               </div>
             ))}
