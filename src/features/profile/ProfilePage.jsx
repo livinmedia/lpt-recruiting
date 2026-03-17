@@ -67,6 +67,8 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
   const fileRef = useRef(null);
   const [editSection, setEditSection] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [planLoading, setPlanLoading] = useState(null);
   const [toast, setToast] = useState(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [rueConvCount, setRueConvCount] = useState(0);
@@ -532,7 +534,130 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
         )}
       </SectionCard>
 
-      {/* ── Section 5: Recruiting Calendar ── */}
+      {/* ── Section 5: Billing ── */}
+      {(() => {
+        const SUPABASE_URL = "https://usknntguurefeyzusbdh.supabase.co";
+        const currentPlan = profile?.plan || "free";
+        const creditsUsed = profile?.enrichment_credits_used || 0;
+        const creditsTotal = profile?.enrichment_credits || 0;
+        const creditsRemaining = Math.max(0, creditsTotal - creditsUsed);
+        const planLabel = PLAN_INFO[currentPlan]?.label || (currentPlan === "free" ? "Free" : currentPlan);
+        const planColor = PLAN_INFO[currentPlan]?.color || T.m;
+
+        const handleCheckout = async (body) => {
+          setPlanLoading(body.plan || body.credit_pack);
+          try {
+            const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: userId, email: profile?.email, ...body })
+            });
+            const data = await res.json();
+            if (data.url) window.location.href = data.url;
+            else alert("Error: " + (data.error || "Unknown"));
+          } catch (e) { alert(e.message); }
+          setPlanLoading(null);
+        };
+
+        const PLANS = [
+          { key: "recruiter", name: "Recruiter", price: "$97", period: "/mo", features: ["100 enrichment credits/mo", "AI content generation", "Rue AI assistant", "Commission calculator", "Lead scoring & drip emails", "Post to Facebook"], color: "#22C55E", popular: false },
+          { key: "team_leader", name: "Team Leader", price: "$297", period: "/mo", features: ["Everything in Recruiter", "5 team seats", "500 enrichment credits/mo", "Team blog", "Brokerage blog", "Priority support"], color: "#F59E0B", popular: true },
+          { key: "regional_operator", name: "Regional Operator", price: "$997", period: "/mo", features: ["Everything in Team Leader", "10 team seats", "1,000 enrichment credits/mo", "White label option", "Dedicated support", "Custom integrations"], color: "#8B5CF6", popular: false },
+        ];
+        const CREDIT_PACKS = [
+          { key: "50", credits: 50, price: "$25", perCredit: "$0.50" },
+          { key: "200", credits: 200, price: "$75", perCredit: "$0.38" },
+          { key: "500", credits: 500, price: "$150", perCredit: "$0.30" },
+        ];
+
+        return (<>
+          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px", marginBottom: 16 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: T.t, marginBottom: 20 }}>💳 Billing</div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+              <div style={{ background: T.bg, border: `1px solid ${T.b}`, borderRadius: 10, padding: "16px 18px" }}>
+                <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>CURRENT PLAN</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: planColor }}>{planLabel}</div>
+              </div>
+              <div style={{ background: T.bg, border: `1px solid ${T.b}`, borderRadius: 10, padding: "16px 18px" }}>
+                <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>CREDITS REMAINING</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: creditsRemaining > 20 ? T.a : creditsRemaining > 0 ? T.y : T.r }}>{creditsRemaining} <span style={{ fontSize: 13, fontWeight: 600, color: T.m }}>/ {creditsTotal}</span></div>
+              </div>
+              <div style={{ background: T.bg, border: `1px solid ${T.b}`, borderRadius: 10, padding: "16px 18px" }}>
+                <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>CREDITS USED</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: T.t }}>{creditsUsed}</div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <div onClick={() => setShowPlanModal(true)} style={{ padding: "10px 20px", borderRadius: 8, background: T.a + "18", border: `1px solid ${T.a}40`, color: T.a, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                {currentPlan === "free" ? "Get Started" : "Change Plan"}
+              </div>
+              <div onClick={() => setShowPlanModal(true)} style={{ padding: "10px 20px", borderRadius: 8, background: T.bl + "18", border: `1px solid ${T.bl}40`, color: T.bl, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                Buy More Credits
+              </div>
+            </div>
+          </div>
+
+          {/* Plan Selection Modal */}
+          {showPlanModal && (
+            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowPlanModal(false)}>
+              <div style={{ width: "100%", maxWidth: 900, maxHeight: "90vh", overflowY: "auto", background: T.card, border: `1px solid ${T.b}`, borderRadius: 16, padding: "32px" }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: T.t }}>Choose Your Plan</div>
+                  <div onClick={() => setShowPlanModal(false)} style={{ cursor: "pointer", color: T.m, fontSize: 20 }}>✕</div>
+                </div>
+
+                {/* Plans */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 32 }}>
+                  {PLANS.map(plan => {
+                    const isCurrent = currentPlan === plan.key;
+                    return (
+                      <div key={plan.key} style={{ background: T.bg, border: `2px solid ${isCurrent ? plan.color : T.b}`, borderRadius: 14, padding: "24px 20px", position: "relative", display: "flex", flexDirection: "column" }}>
+                        {plan.popular && <div style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", background: plan.color, color: "#000", fontSize: 10, fontWeight: 800, padding: "3px 12px", borderRadius: 20, letterSpacing: 0.5 }}>MOST POPULAR</div>}
+                        {isCurrent && <div style={{ position: "absolute", top: -10, right: 12, background: T.a, color: "#000", fontSize: 10, fontWeight: 800, padding: "3px 12px", borderRadius: 20 }}>CURRENT</div>}
+                        <div style={{ fontSize: 18, fontWeight: 700, color: plan.color, marginBottom: 4 }}>{plan.name}</div>
+                        <div style={{ marginBottom: 20 }}><span style={{ fontSize: 36, fontWeight: 900, color: T.t }}>{plan.price}</span><span style={{ fontSize: 14, color: T.m }}>{plan.period}</span></div>
+                        <div style={{ flex: 1, marginBottom: 20 }}>
+                          {plan.features.map(f => (
+                            <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.s, marginBottom: 8 }}>
+                              <span style={{ color: plan.color, fontSize: 14 }}>✓</span> {f}
+                            </div>
+                          ))}
+                        </div>
+                        {isCurrent ? (
+                          <div style={{ padding: "12px", borderRadius: 8, background: T.b, color: T.m, fontSize: 14, fontWeight: 700, textAlign: "center" }}>Current Plan</div>
+                        ) : (
+                          <div onClick={() => handleCheckout({ plan: plan.key })} style={{ padding: "12px", borderRadius: 8, background: plan.color, color: "#000", fontSize: 14, fontWeight: 700, textAlign: "center", cursor: planLoading === plan.key ? "wait" : "pointer", opacity: planLoading === plan.key ? 0.7 : 1 }}>
+                            {planLoading === plan.key ? "Loading..." : currentPlan === "free" ? "Get Started" : "Upgrade"}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Credit Packs */}
+                <div style={{ borderTop: `1px solid ${T.b}`, paddingTop: 24 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: T.t, marginBottom: 16 }}>Need More Credits?</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                    {CREDIT_PACKS.map(pack => (
+                      <div key={pack.key} style={{ background: T.bg, border: `1px solid ${T.b}`, borderRadius: 10, padding: "18px 16px", textAlign: "center" }}>
+                        <div style={{ fontSize: 28, fontWeight: 900, color: T.bl }}>{pack.credits}</div>
+                        <div style={{ fontSize: 12, color: T.m, marginBottom: 8 }}>credits · {pack.perCredit} each</div>
+                        <div onClick={() => handleCheckout({ credit_pack: pack.key })} style={{ padding: "10px", borderRadius: 8, background: T.bl + "18", border: `1px solid ${T.bl}40`, color: T.bl, fontSize: 13, fontWeight: 700, cursor: planLoading === pack.key ? "wait" : "pointer" }}>
+                          {planLoading === pack.key ? "Loading..." : `Buy for ${pack.price}`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>);
+      })()}
+
+      {/* ── Section 6: Recruiting Calendar ── */}
       <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px", marginBottom: 16 }}>
         {(!profile?.plan || profile.plan === 'free') ? (
           <>
