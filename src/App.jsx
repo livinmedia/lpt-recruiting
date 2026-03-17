@@ -1018,31 +1018,6 @@ export default function App(){
       </>}
 
       {adminTab==="users"&&<>
-      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
-        <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>👥 Users ({adminUsers.length})</div>
-        <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
-            <thead><tr>{["Name","Email","Brokerage","Role","Plan","Leads","Recruited","Meetings","Joined","Onboarded",""].map(h=>
-              <th key={h} style={{textAlign:"left",padding:"12px 14px",fontSize:12,fontWeight:700,color:T.m,letterSpacing:1.5,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
-            )}</tr></thead>
-            <tbody>{adminUsers.length>0?adminUsers.map((u,i)=>
-              <tr key={i} style={{borderBottom:`1px solid ${T.b}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-                <td style={{padding:"13px 14px",fontSize:15,fontWeight:600,color:T.t,whiteSpace:"nowrap"}}>{u.full_name||"—"}</td>
-                <td style={{padding:"13px 14px",fontSize:13,color:T.bl}}>{u.email||"—"}</td>
-                <td style={{padding:"13px 14px",fontSize:13,color:T.s}}>{u.brokerage||"—"}</td>
-                <td style={{padding:"13px 14px"}}><span style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:4,background:u.role==="owner"?T.r+"20":u.role==="admin"?T.p+"20":T.s+"20",color:u.role==="owner"?T.r:u.role==="admin"?T.p:T.s}}>{u.role||"user"}</span></td>
-                <td style={{padding:"13px 14px",fontSize:13,color:T.s}}>{u.plan||"free"}</td>
-                <td style={{padding:"13px 14px",fontSize:13,fontWeight:600,color:T.t}}>{adminUserLeadStats[u.id]?.total||0}</td>
-                <td style={{padding:"13px 14px",fontSize:13,fontWeight:700,color:adminUserLeadStats[u.id]?.recruited>0?T.a:T.m}}>{adminUserLeadStats[u.id]?.recruited||0}</td>
-                <td style={{padding:"13px 14px",fontSize:13,fontWeight:700,color:adminUserLeadStats[u.id]?.meeting>0?T.p:T.m}}>{adminUserLeadStats[u.id]?.meeting||0}</td>
-                <td style={{padding:"13px 14px",fontSize:13,color:T.m,whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</td>
-                <td style={{padding:"13px 14px"}}><span style={{fontSize:12,fontWeight:700,color:u.onboarded?T.a:T.y}}>{u.onboarded?"✓ Yes":"— No"}</span></td>
-                <td style={{padding:"13px 14px"}}>{u.role!=="owner"&&<span onClick={async()=>{setImpersonateLoading(u.id);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();if(data.error){alert(data.error);setImpersonateLoading(false);return;}setRealUser({authUser,profile});setImpersonating(data.impersonate||{id:u.id,full_name:u.full_name||u.email,email:u.email,plan:u.plan||'free',role:u.role||'user'});setViewWithHistory('home');}catch(e){console.error('Impersonate error:',e);alert('Failed to connect to impersonate service');}setImpersonateLoading(false);}} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${T.bl}30`,background:"transparent",color:T.bl,fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{impersonateLoading===u.id?"Loading...":"👁 View As"}</span>}</td>
-              </tr>
-            ):<tr><td colSpan={11} style={{textAlign:"center",padding:"40px",color:T.m,fontSize:15}}>No users found</td></tr>}</tbody>
-          </table>
-        </div>
-      </div>
 
       {(()=>{
         const now=new Date();
@@ -1099,42 +1074,6 @@ export default function App(){
               </div>);})}
           </div>}
 
-          {rest.length>0&&<div style={{overflowX:"auto",marginBottom:24}}>
-            <table style={{width:"100%",borderCollapse:"collapse",minWidth:900}}>
-              <thead><tr>{["Rank","User","Score","Leads","Tasks Done","Emails Sent","Pipeline Moves","Recruits","Days Active","Streak","Last Active"].map(h=>
-                <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:T.m,letterSpacing:1.2,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
-              )}</tr></thead>
-              <tbody>{rest.map((u,i)=>{const sc=u.accountability_score||0;const p=u.profiles||{};const la=u.last_active_at?new Date(u.last_active_at):null;return(
-                <tr key={u.id} style={{borderBottom:`1px solid ${T.b}`,borderLeft:`3px solid ${scoreBorder(sc)}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-                  <td style={{padding:"10px 12px",fontSize:14,fontWeight:700,color:T.m}}>#{i+4}</td>
-                  <td style={{padding:"10px 12px"}}><div style={{fontSize:13,fontWeight:600,color:T.t}}>{p.full_name||"—"}</div><div style={{fontSize:11,color:T.s}}>{p.email||""}</div></td>
-                  <td style={{padding:"10px 12px",fontSize:16,fontWeight:800,color:scoreBorder(sc)}}>{sc}</td>
-                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.leads_added||0}</td>
-                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.tasks_completed||0}</td>
-                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.emails_sent||0}</td>
-                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.pipeline_moves||0}</td>
-                  <td style={{padding:"10px 12px",fontSize:13,fontWeight:700,color:u.recruits_closed>0?T.a:T.m}}>{u.recruits_closed||0}</td>
-                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.days_active_last_30d||0}</td>
-                  <td style={{padding:"10px 12px",fontSize:13,color:u.streak_days>0?T.r:T.m,fontWeight:u.streak_days>0?700:400}}>{u.streak_days>0?`🔥 ${u.streak_days}`:"—"}</td>
-                  <td style={{padding:"10px 12px",fontSize:12,color:T.m,whiteSpace:"nowrap"}}>{la?la.toLocaleDateString():"—"}</td>
-                </tr>);})}</tbody>
-            </table>
-          </div>}
-
-          {atRisk.length>0&&<div style={{background:T.r+"08",borderRadius:12,padding:"20px 22px",border:`1px solid ${T.r}20`}}>
-            <div style={{fontSize:15,fontWeight:700,color:T.r,marginBottom:12}}>⚠️ At Risk ({atRisk.length} users)</div>
-            <div style={{fontSize:12,color:T.m,marginBottom:12}}>Score below 20, inactive 14+ days, or fewer than 3 active days in last 30</div>
-            {atRisk.map(u=>{const p=u.profiles||{};const sc=u.accountability_score||0;const la=u.last_active_at?new Date(u.last_active_at):null;const daysInactive=la?Math.floor((now-la)/(1000*60*60*24)):999;return(
-              <div key={u.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,marginBottom:6}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:T.t}}>{p.full_name||p.email||"—"}</div>
-                  <div style={{fontSize:11,color:T.s}}>{p.email||""}</div>
-                </div>
-                <span style={{fontSize:13,fontWeight:700,color:scoreBorder(sc)}}>{sc}</span>
-                {daysInactive>14&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,background:T.r+"20",color:T.r,fontWeight:700}}>{daysInactive}d inactive</span>}
-                {(u.days_active_last_30d!=null&&u.days_active_last_30d<3)&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,background:T.y+"20",color:T.y,fontWeight:700}}>{u.days_active_last_30d}d active/30</span>}
-              </div>);})}
-          </div>}
 
           {leaderboard.length===0&&!adminLoading&&<div style={{textAlign:"center",padding:"40px",color:T.m}}><div style={{fontSize:28,marginBottom:8}}>🏆</div><div style={{fontSize:14}}>No score data yet</div></div>}
         </div>);
