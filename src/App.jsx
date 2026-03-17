@@ -1074,6 +1074,27 @@ export default function App(){
               </div>);})}
           </div>}
 
+          {rest.length>0&&<div style={{overflowX:"auto",marginBottom:24}}>
+            <table style={{width:"100%",borderCollapse:"collapse",minWidth:900}}>
+              <thead><tr>{["Rank","User","Score","Leads","Tasks Done","Emails Sent","Pipeline Moves","Recruits","Days Active","Streak","Last Active"].map(h=>
+                <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:T.m,letterSpacing:1.2,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
+              )}</tr></thead>
+              <tbody>{rest.map((u,i)=>{const sc=u.accountability_score||0;const p=u.profiles||{};const la=u.last_active_at?new Date(u.last_active_at):null;return(
+                <tr key={u.id} style={{borderBottom:`1px solid ${T.b}`,borderLeft:`3px solid ${scoreBorder(sc)}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                  <td style={{padding:"10px 12px",fontSize:14,fontWeight:700,color:T.m}}>#{i+4}</td>
+                  <td style={{padding:"10px 12px"}}><div style={{fontSize:13,fontWeight:600,color:T.t}}>{p.full_name||"—"}</div><div style={{fontSize:11,color:T.s}}>{p.email||""}</div></td>
+                  <td style={{padding:"10px 12px",fontSize:16,fontWeight:800,color:scoreBorder(sc)}}>{sc}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.leads_added||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.tasks_completed||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.emails_sent||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.pipeline_moves||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,fontWeight:700,color:u.recruits_closed>0?T.a:T.m}}>{u.recruits_closed||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:T.t}}>{u.days_active_last_30d||0}</td>
+                  <td style={{padding:"10px 12px",fontSize:13,color:u.streak_days>0?T.r:T.m,fontWeight:u.streak_days>0?700:400}}>{u.streak_days>0?`🔥 ${u.streak_days}`:"—"}</td>
+                  <td style={{padding:"10px 12px",fontSize:12,color:T.m,whiteSpace:"nowrap"}}>{la?la.toLocaleDateString():"—"}</td>
+                </tr>);})}</tbody>
+            </table>
+          </div>}
 
           {leaderboard.length===0&&!adminLoading&&<div style={{textAlign:"center",padding:"40px",color:T.m}}><div style={{fontSize:28,marginBottom:8}}>🏆</div><div style={{fontSize:14}}>No score data yet</div></div>}
         </div>);
