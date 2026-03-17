@@ -303,11 +303,11 @@ export default function ContentTab({ userId, userProfile }) {
 
   // Landing page URLs
   const landingPages = [
-    { name: "Main Join Page", path: "join", desc: "Primary recruiting landing page", icon: "🤝", label: "Join", gradient: "linear-gradient(135deg, #059669, #10B981)" },
-    { name: "Commission Calculator", path: "calculator", desc: "Interactive commission comparison tool", icon: "🧮", label: "Calculator", gradient: "linear-gradient(135deg, #2563EB, #3B82F6)" },
-    { name: "New Agent Program", path: "new-agent", desc: "For newly licensed agents", icon: "🚀", label: "New Agent", gradient: "linear-gradient(135deg, #7C3AED, #8B5CF6)" },
-    { name: "Revenue Share", path: "revenue-share", desc: "Passive income opportunity", icon: "💰", label: "Revenue", gradient: "linear-gradient(135deg, #D97706, #F59E0B)" },
-    { name: "Why Switch", path: "why-switch", desc: "For agents considering a move", icon: "🔄", label: "Switch", gradient: "linear-gradient(135deg, #DC2626, #F97316)" },
+    { name: "Main Join Page", path: "join", desc: "Primary recruiting landing page", icon: "🤝", label: "Join", gradient: "linear-gradient(135deg, #059669, #10B981)", fbTitle: "Why Top Agents Are Switching to LPT Realty" },
+    { name: "Commission Calculator", path: "calculator", desc: "Interactive commission comparison tool", icon: "🧮", label: "Calculator", gradient: "linear-gradient(135deg, #2563EB, #3B82F6)", fbTitle: "How Much More Could You Earn? Free Calculator" },
+    { name: "New Agent Program", path: "new-agent", desc: "For newly licensed agents", icon: "🚀", label: "New Agent", gradient: "linear-gradient(135deg, #7C3AED, #8B5CF6)", fbTitle: "Launch Your Real Estate Career the Right Way" },
+    { name: "Revenue Share", path: "revenue-share", desc: "Passive income opportunity", icon: "💰", label: "Revenue", gradient: "linear-gradient(135deg, #D97706, #F59E0B)", fbTitle: "Build Passive Income Up to 7 Tiers Deep" },
+    { name: "Why Switch", path: "why-switch", desc: "For agents considering a move", icon: "🔄", label: "Switch", gradient: "linear-gradient(135deg, #DC2626, #F97316)", fbTitle: "The Real Numbers: Your Brokerage vs LPT Realty" },
   ];
 
   const personalizeLinks = (text) => {
@@ -397,7 +397,7 @@ export default function ContentTab({ userId, userProfile }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{getPageUrl(lp.path)}</span>
                   <CopyButton text={getPageUrl(lp.path)} label="Copy" />
-                  {isAdmin && <div onClick={async () => { if (!confirm('Post this link to RKRT Facebook pages?')) return; try { const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=link&url=${encodeURIComponent(getPageUrl(lp.path))}&title=${encodeURIComponent(lp.name)}&message=${encodeURIComponent('See what switching to LPT Realty means for your income.')}&user_id=${userId}`); const d = await res.json(); if (d.success) { showToast('Posted to ' + (d.results?.length || 2) + ' FB pages!'); } else { showToast('Error: ' + (d.error || 'Unknown')); } } catch (e) { showToast('Error: ' + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Post to FB</div>}
+                  {isAdmin && <div onClick={async () => { if (!confirm('Post this link to RKRT Facebook pages?')) return; try { const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=link&url=${encodeURIComponent(getPageUrl(lp.path))}&title=${encodeURIComponent(lp.fbTitle || lp.name)}&message=${encodeURIComponent(selectedBrokerage ? `Are you leaving money on the table at ${selectedBrokerage}? Find out now.` : 'Are you leaving money on the table at your brokerage? Find out now.')}&user_id=${userId}`); const d = await res.json(); if (d.success) { showToast('Posted to ' + (d.results?.length || 2) + ' FB pages!'); } else { showToast('Error: ' + (d.error || 'Unknown')); } } catch (e) { showToast('Error: ' + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Post to FB</div>}
                   {isAdmin && <div onClick={() => setBoostItem({ id: null, headline: lp.name, image_url: null, _boostUrl: getPageUrl(lp.path) })} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#F59E0B", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #F59E0B40", whiteSpace: "nowrap" }}>Boost</div>}
                 </div>
               </div>
