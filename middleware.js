@@ -5,17 +5,6 @@ export default async function middleware(request) {
   const pathname = url.pathname;
   const parts = pathname.split('/').filter(Boolean);
 
-  if (pathname === '/') {
-    const existingParams = url.searchParams.toString();
-    const connector = existingParams ? '&' : '';
-    const lpUrl = `https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-landing?page=join${connector}${existingParams}`;
-    const res = await fetch(lpUrl);
-    return new Response(res.body, {
-      status: res.status,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' }
-    });
-  }
-
   if (pathname === '/share' || pathname.startsWith('/share?')) {
     const shareUrl = 'https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-share' + url.search;
     const res = await fetch(shareUrl);
@@ -71,6 +60,6 @@ export default async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
+  matcher: ['/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
 };
 // 1773555408
