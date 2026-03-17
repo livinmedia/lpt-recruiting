@@ -46,6 +46,8 @@ export default function ContentTab({ userId, userProfile }) {
   const [declineReason, setDeclineReason] = useState("");
   const [decliningPost, setDecliningPost] = useState(null);
   const [postToast, setPostToast] = useState("");
+  const [contentDate, setContentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [platformFilter, setPlatformFilter] = useState('all');
   const [postingToFb, setPostingToFb] = useState(null); // content id currently posting
   const [fbDetailId, setFbDetailId] = useState(null); // content id showing FB details
   const [boostItem, setBoostItem] = useState(null); // content item for boost modal
@@ -57,23 +59,23 @@ export default function ContentTab({ userId, userProfile }) {
   const [boostSubmitting, setBoostSubmitting] = useState(false);
 
   useEffect(() => {
-    loadContent();
+    loadContent(contentDate);
     if (isTeamLeader) loadTeamPosts();
-  }, []);
+  }, [contentDate]);
 
-  const loadContent = async () => {
+  const loadContent = async (date) => {
     setLoading(true);
-    const today = new Date().toISOString().split('T')[0];
-    const [contentRes] = await Promise.all([
-      supabase.from('daily_content').select('*').eq('content_date', today).order('created_at', { ascending: false }),
-    ]);
-    let dailyData = contentRes.data || [];
-    if (dailyData.length === 0) {
+    const d = date || new Date().toISOString().split('T')[0];
+    const { data } = await supabase.from('daily_content').select('*').eq('content_date', d).order('created_at', { ascending: false });
+    let dailyData = data || [];
+    if (dailyData.length === 0 && d === new Date().toISOString().split('T')[0]) {
       const recentRes = await supabase.from('daily_content').select('*').order('content_date', { ascending: false }).limit(6);
       dailyData = recentRes.data || [];
+      if (dailyData.length > 0 && dailyData[0].content_date !== d) {
+        setContentDate(dailyData[0].content_date);
+      }
     }
     setDailyContent(dailyData);
-    
     setLoading(false);
   };
 
@@ -424,19 +426,31 @@ export default function ContentTab({ userId, userProfile }) {
 
           {/* ━━━ ROW 1: Social Posts ━━━ */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>📱 Social Posts</div>
-              {dailyContent.length > 0 && (
-                <div style={{ fontSize: 12, color: T.m }}>{new Date(dailyContent[0].content_date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</div>
-              )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginRight: 8 }}>📱 Social Posts</div>
+                {['all', 'facebook', 'instagram'].map(p => (
+                  <div key={p} onClick={() => setPlatformFilter(p)} style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", border: platformFilter === p ? "1px solid #22C55E" : `1px solid ${T.b}`, background: platformFilter === p ? "rgba(34,197,94,0.1)" : "transparent", color: platformFilter === p ? "#22C55E" : T.m }}>
+                    {p === 'all' ? 'All' : p === 'facebook' ? '📘 Facebook' : '📸 Instagram'}
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div onClick={() => { const d = new Date(contentDate + 'T12:00:00'); d.setDate(d.getDate() - 1); setContentDate(d.toISOString().split('T')[0]); }} style={{ background: "transparent", border: `1px solid ${T.b}`, color: T.m, borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}>←</div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.t, minWidth: 120, textAlign: "center" }}>
+                  {new Date(contentDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                </span>
+                <div onClick={() => { const d = new Date(contentDate + 'T12:00:00'); d.setDate(d.getDate() + 1); setContentDate(d.toISOString().split('T')[0]); }} style={{ background: "transparent", border: `1px solid ${T.b}`, color: T.m, borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}>→</div>
+                <div onClick={() => setContentDate(new Date().toISOString().split('T')[0])} style={{ background: "transparent", border: "1px solid #22C55E", color: "#22C55E", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>Today</div>
+              </div>
             </div>
 
-            {loading ? (
-              <div style={{ textAlign: "center", padding: "40px", color: T.m, background: T.card, borderRadius: 12, border: `1px solid ${T.b}` }}>Loading...</div>
-            ) : (
+            {(() => {
+              const filtered = dailyContent.filter(p => platformFilter === 'all' || p.platform === platformFilter);
+              if (loading) return <div style={{ textAlign: "center", padding: "40px", color: T.m, background: T.card, borderRadius: 12, border: `1px solid ${T.b}` }}>Loading...</div>;
+              return (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-                {[0, 1, 2].map(i => {
-                  const item = dailyContent[i];
+                {(filtered.length > 0 ? filtered : [null, null, null]).map((item, i) => {
                   if (!item) {
                     return (
                       <div key={i} style={{ background: T.card, borderRadius: 10, border: `2px dashed ${T.b}`, borderLeft: `4px solid ${T.b}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", minHeight: 280 }}>
@@ -521,7 +535,8 @@ export default function ContentTab({ userId, userProfile }) {
                   );
                 })}
               </div>
-            )}
+              );
+            })()}
 
             {/* Platform pills */}
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
