@@ -57,10 +57,14 @@ export default function ContentTab({ userId, userProfile }) {
   const [boostRadius, setBoostRadius] = useState(25);
   const [boostAudiences, setBoostAudiences] = useState([]);
   const [boostSubmitting, setBoostSubmitting] = useState(false);
+  const [fbPosts, setFbPosts] = useState([]);
 
   useEffect(() => {
     loadContent(contentDate);
     if (isTeamLeader) loadTeamPosts();
+    if (userId) {
+      supabase.from('user_fb_posts').select('page_slug, target_brokerage, created_at').eq('user_id', userId).eq('post_type', 'recruiting_link').then(({ data }) => { if (data) setFbPosts(data); });
+    }
   }, [contentDate]);
 
   const loadContent = async (date) => {
@@ -233,6 +237,7 @@ export default function ContentTab({ userId, userProfile }) {
       const data = await res.json();
       if (res.ok && !data.error) {
         setDailyContent(prev => prev.map(c => c.id === item.id ? { ...c, is_posted: true, posted_at: new Date().toISOString(), engagement: data.engagement || data } : c));
+        supabase.from('user_fb_posts').insert({ user_id: userId, post_type: 'daily_content', content_id: item.id, page_name: item.headline, fb_results: data.results || data.engagement, pages_posted: data.results?.filter(r => r.status === 'posted').map(r => r.page) || [] }).then(() => {});
         showToast("Posted to 2 pages!");
       } else {
         showToast("Error: " + (data.error || "Post failed"));
@@ -397,7 +402,7 @@ export default function ContentTab({ userId, userProfile }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{getPageUrl(lp.path)}</span>
                   <CopyButton text={getPageUrl(lp.path)} label="Copy" />
-                  {isAdmin && <div onClick={async () => { try { const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=link&url=${encodeURIComponent(getPageUrl(lp.path))}&title=${encodeURIComponent(lp.fbTitle || lp.name)}&message=${encodeURIComponent(selectedBrokerage ? `Are you leaving money on the table at ${selectedBrokerage}? Find out now.` : 'Are you leaving money on the table at your brokerage? Find out now.')}&user_id=${userId}`); const d = await res.json(); if (d.success) { showToast('Posted to ' + (d.results?.length || 2) + ' FB pages!'); } else { showToast('Error: ' + (d.error || 'Unknown')); } } catch (e) { showToast('Error: ' + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Post to FB</div>}
+                  {isAdmin && (() => { const posted = fbPosts.some(p => p.page_slug === lp.path && p.target_brokerage === selectedBrokerage); return posted ? <span style={{ padding: "6px 12px", fontSize: 11, color: "#22C55E", fontWeight: 700, whiteSpace: "nowrap" }}>✅ Posted</span> : <div onClick={async () => { try { const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=link&url=${encodeURIComponent(getPageUrl(lp.path))}&title=${encodeURIComponent(lp.fbTitle || lp.name)}&message=${encodeURIComponent(selectedBrokerage ? `Are you leaving money on the table at ${selectedBrokerage}? Find out now.` : 'Are you leaving money on the table at your brokerage? Find out now.')}&user_id=${userId}`); const d = await res.json(); if (d.success) { await supabase.from('user_fb_posts').insert({ user_id: userId, post_type: 'recruiting_link', page_name: lp.name, page_slug: lp.path, target_brokerage: selectedBrokerage, link_url: getPageUrl(lp.path), fb_results: d.results, pages_posted: d.results?.filter(r => r.status === 'posted').map(r => r.page) || [] }); setFbPosts(prev => [...prev, { page_slug: lp.path, target_brokerage: selectedBrokerage, created_at: new Date().toISOString() }]); showToast('Posted to ' + (d.results?.length || 2) + ' FB pages!'); } else { showToast('Error: ' + (d.error || 'Unknown')); } } catch (e) { showToast('Error: ' + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Post to FB</div>; })()}
                   {isAdmin && <div onClick={() => setBoostItem({ id: null, headline: lp.name, image_url: null, _boostUrl: getPageUrl(lp.path) })} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#F59E0B", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #F59E0B40", whiteSpace: "nowrap" }}>Boost</div>}
                 </div>
               </div>
@@ -713,7 +718,7 @@ export default function ContentTab({ userId, userProfile }) {
                         {blogTab === "published" && (<>
                           {teamSlug && <a href={`https://rkrt.in/${teamSlug}/${post.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", borderRadius: 6, background: T.bl + "18", color: T.bl, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>👁️ View</a>}
                           {!post.is_posted_fb && isAdmin && (
-                            <div onClick={async () => { try { const res = await fetch(`https://usknntguurefeyzusbdh.supabase.co/functions/v1/post-to-facebook?mode=post&id=${post.id}&source=team&user_id=${userId}`); const d = await res.json(); if (d.success || !d.error) { setTeamPosts(prev => prev.map(x => x.id === post.id ? { ...x, is_posted_fb: true, posted_fb_at: new Date().toISOString() } : x)); showToast("Posted to FB!"); } else { showToast("Error: " + (d.error || "Unknown")); } } catch (e) { showToast("Error: " + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#22C55E", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #22C55E" }}>📘 Post to FB</div>
+                            <div onClick={async () => { try { const res = await fetch(`https://usknntguurefeyzusbdh.supabase.co/functions/v1/post-to-facebook?mode=post&id=${post.id}&source=team&user_id=${userId}`); const d = await res.json(); if (d.success || !d.error) { setTeamPosts(prev => prev.map(x => x.id === post.id ? { ...x, is_posted_fb: true, posted_fb_at: new Date().toISOString() } : x)); supabase.from('user_fb_posts').insert({ user_id: userId, post_type: 'team_post', content_id: post.id, page_name: post.title, fb_results: d.results, pages_posted: d.results?.filter(r => r.status === 'posted').map(r => r.page) || [] }).then(() => {}); showToast("Posted to FB!"); } else { showToast("Error: " + (d.error || "Unknown")); } } catch (e) { showToast("Error: " + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#22C55E", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #22C55E" }}>📘 Post to FB</div>
                           )}
                           {post.is_posted_fb && <span style={{ padding: "6px 12px", fontSize: 11, color: "#22C55E", fontWeight: 700 }}>✅ Posted to FB</span>}
                           {post.is_posted_fb && isAdmin && (
