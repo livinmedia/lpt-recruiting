@@ -439,6 +439,86 @@ Write the email body. Be specific to this person — reference their brokerage, 
         <span style={{ fontSize: 14, color: T.s }}>{crmLeads.length} leads</span>
       </div>
 
+      {/* 🔥 Hottest Leads Podium */}
+      {(() => {
+        const scoredLeads = [...leads].filter(l => (l.interest_score || 0) > 0).sort((a, b) => (b.interest_score || 0) - (a.interest_score || 0));
+        const top3 = scoredLeads.slice(0, 3);
+        const rest = scoredLeads.slice(3, 10);
+        const hotCount = scoredLeads.filter(l => l.heat_level === "hot" || l.heat_level === "on_fire").length;
+        const warmCount = scoredLeads.filter(l => l.heat_level === "warming" || l.heat_level === "interested").length;
+        const coldCount = scoredLeads.filter(l => !l.heat_level || l.heat_level === "cold").length;
+        const MEDAL = ["🥇", "🥈", "🥉"];
+        const MEDAL_BORDER = ["#FFD700", "#C0C0C0", "#CD7F32"];
+        const MEDAL_GLOW = ["rgba(255,215,0,0.25)", "rgba(192,192,192,0.15)", "rgba(205,127,50,0.15)"];
+        const MEDAL_SCORE_SIZE = [48, 36, 36];
+        if (scoredLeads.length === 0) return null;
+        return (
+          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px", marginBottom: 12 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginBottom: 20 }}>🔥 Hottest Leads</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
+              {[["Total Leads", scoredLeads.length, T.a], ["Hot Leads", hotCount, "#FF4444"], ["Warming", warmCount, "#FF8C00"], ["Cold", coldCount, T.m]].map(([label, value, color]) => (
+                <div key={label} style={{ background: T.d, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
+                  <div style={{ fontSize: 26, fontWeight: 800, color }}>{value}</div>
+                  <div style={{ fontSize: 11, color: T.m, marginTop: 3, fontWeight: 600, letterSpacing: 0.5 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+            {top3.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${top3.length}, 1fr)`, gap: 12, marginBottom: 20 }}>
+                {top3.map((l, i) => {
+                  const heatColor = HEAT_COLOR[l.heat_level] || T.b;
+                  const heatIcon = HEAT_ICON[l.heat_level] || "❄️";
+                  const isToday = l.last_activity_at && new Date(l.last_activity_at).toDateString() === new Date().toDateString();
+                  return (
+                    <div key={i} onClick={() => { onSelectLead(l); onNavigate("lead"); }}
+                      style={{ background: T.d, border: `1.5px solid ${MEDAL_BORDER[i]}`, borderRadius: 12, padding: "18px 16px", cursor: "pointer", textAlign: "center", boxShadow: `0 0 18px ${MEDAL_GLOW[i]}`, transition: "transform 0.15s", position: "relative" }}
+                      onMouseOver={ev => ev.currentTarget.style.transform = "translateY(-2px)"}
+                      onMouseOut={ev => ev.currentTarget.style.transform = "translateY(0)"}
+                    >
+                      <div style={{ position: "absolute", top: 10, left: 12, fontSize: 18 }}>{MEDAL[i]}</div>
+                      <div style={{ fontSize: MEDAL_SCORE_SIZE[i], fontWeight: 900, color: MEDAL_BORDER[i], lineHeight: 1, marginBottom: 8, marginTop: 8 }}>{l.interest_score || 0}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: T.t, marginBottom: 3 }}>{l.first_name} {l.last_name}</div>
+                      <div style={{ fontSize: 12, color: T.s, marginBottom: 8 }}>{(l.brokerage_name || l.brokerage || "Unknown").substring(0, 22)}</div>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: heatColor + "22", border: `1px solid ${heatColor}44`, color: heatColor, fontWeight: 700 }}>{heatIcon} {(l.heat_level || "cold").replace(/_/g, " ")}</span>
+                        {l.last_activity_at && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: T.b + "30", color: T.m, fontWeight: 600 }}>{isToday ? "Active today" : ago(l.last_activity_at)}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {rest.length > 0 && (
+              <div style={{ borderTop: `1px solid ${T.b}`, paddingTop: 16 }}>
+                {rest.map((l, i) => {
+                  const heatColor = HEAT_COLOR[l.heat_level] || T.b;
+                  const heatIcon = HEAT_ICON[l.heat_level] || "❄️";
+                  const isToday = l.last_activity_at && new Date(l.last_activity_at).toDateString() === new Date().toDateString();
+                  return (
+                    <div key={i} onClick={() => { onSelectLead(l); onNavigate("lead"); }}
+                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 10px", borderRadius: 8, marginBottom: 4, cursor: "pointer", transition: "background 0.1s" }}
+                      onMouseOver={ev => ev.currentTarget.style.background = T.d}
+                      onMouseOut={ev => ev.currentTarget.style.background = "transparent"}
+                    >
+                      <span style={{ fontSize: 12, color: T.m, fontWeight: 800, minWidth: 22, textAlign: "center" }}>#{i + 4}</span>
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>{heatIcon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: T.t, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.first_name} {l.last_name}</div>
+                        <div style={{ fontSize: 11, color: T.s }}>{(l.brokerage_name || l.brokerage || "Unknown").substring(0, 28)}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <div style={{ padding: "3px 9px", borderRadius: 20, background: heatColor + "22", border: `1px solid ${heatColor}44`, fontSize: 12, fontWeight: 800, color: heatColor }}>{l.interest_score || 0}</div>
+                        <div style={{ fontSize: 10, color: T.m, minWidth: 60, textAlign: "right" }}>{isToday ? "Today" : l.last_activity_at ? ago(l.last_activity_at) : "—"}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* 🔥 Hot Leads Pinned */}
       {hotLeads.length > 0 && (
         <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
