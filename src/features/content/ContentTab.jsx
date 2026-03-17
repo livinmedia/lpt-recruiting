@@ -390,9 +390,10 @@ export default function ContentTab({ userId, userProfile }) {
                   <div style={{ fontSize: 13, color: T.s }}>{lp.desc}</div>
                 </div>
                 {/* URL + Copy */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{getPageUrl(lp.path)}</span>
                   <CopyButton text={getPageUrl(lp.path)} label="Copy" />
+                  {isAdmin && <div onClick={async () => { try { const { data: row, error: insErr } = await supabase.from('daily_content').insert({ content_date: new Date().toISOString().split('T')[0], platform: 'facebook', content_type: 'link', theme: 'recruiting_link', headline: lp.name, body: `Check out our ${lp.name} — see what switching to LPT Realty means for your income.\n\n${getPageUrl(lp.path)}`, landing_page_slug: lp.path, is_posted: false, content_source: 'manual' }).select('id').single(); if (insErr) throw insErr; const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=post&id=${row.id}`); const d = await res.json(); if (d.success || !d.error) { showToast("Shared to FB!"); } else { showToast("Error: " + (d.error || "Unknown")); } } catch (e) { showToast("Error: " + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Share to FB</div>}
                 </div>
               </div>
             ))}
