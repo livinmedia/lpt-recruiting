@@ -58,6 +58,8 @@ export default function ContentTab({ userId, userProfile }) {
   const [boostAudiences, setBoostAudiences] = useState([]);
   const [boostSubmitting, setBoostSubmitting] = useState(false);
   const [fbPosts, setFbPosts] = useState([]);
+  const [recruitingPages, setRecruitingPages] = useState([]);
+  const [rpLoading, setRpLoading] = useState(false);
 
   useEffect(() => {
     loadContent(contentDate);
@@ -341,7 +343,7 @@ export default function ContentTab({ userId, userProfile }) {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-        {[["links", "🔗 Recruiting Links"], ["daily", "📅 Daily Content"], ...(isTeamLeader ? [["team_blog", "👥 Team Blog"]] : [])].map(([id, label]) => (
+        {[["links", "🔗 Recruiting Links"], ["daily", "📅 Daily Content"], ["pages", "📄 Recruiting Pages"], ...(isTeamLeader ? [["team_blog", "👥 Team Blog"]] : [])].map(([id, label]) => (
           <div
             key={id}
             onClick={() => setContentTab(id)}
@@ -632,6 +634,58 @@ export default function ContentTab({ userId, userProfile }) {
           <style>{`@media (max-width: 768px) { .video-row { grid-template-columns: 1fr !important; } }`}</style>
         </div>
       )}
+
+      {/* Recruiting Pages Tab */}
+      {contentTab === "pages" && (() => {
+        if (recruitingPages.length === 0 && !rpLoading) {
+          setRpLoading(true);
+          supabase.from('recruiting_pages').select('*').eq('user_id', userId).order('created_at', { ascending: false }).then(({ data }) => { setRecruitingPages(data || []); setRpLoading(false); });
+        }
+        return (
+          <div>
+            {rpLoading ? (
+              <div style={{ textAlign: "center", padding: "60px", color: T.m, background: T.card, borderRadius: 12, border: `1px solid ${T.b}` }}>Loading recruiting pages...</div>
+            ) : recruitingPages.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: T.m, background: T.card, borderRadius: 12, border: `1px solid ${T.b}` }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: T.t, marginBottom: 8 }}>No recruiting pages yet</div>
+                <div style={{ fontSize: 14, lineHeight: 1.6 }}>Pages are auto-generated weekly for paid plans. Upgrade to get personalized recruiting pages targeting specific brokerages in your market.</div>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                {recruitingPages.map(page => {
+                  const slug = page.slug?.startsWith('r/') ? page.slug : `r/${page.slug}`;
+                  return (
+                    <div key={page.id} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                      {page.image_url ? <img src={page.image_url} alt="" style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} /> : (
+                        <div style={{ width: "100%", height: 160, background: "linear-gradient(135deg, #1a1a2e, #16213e)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: 40, opacity: 0.3 }}>📄</span>
+                        </div>
+                      )}
+                      <div style={{ padding: 16, flex: 1, display: "flex", flexDirection: "column" }}>
+                        <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                          {page.target_brokerage && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: T.a + "18", color: T.a, letterSpacing: 0.5 }}>{page.target_brokerage}</span>}
+                          {page.target_market && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: T.bl + "18", color: T.bl }}>{page.target_market}</span>}
+                          {page.is_active === false && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: T.m + "18", color: T.m }}>Inactive</span>}
+                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: T.t, marginBottom: 8, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{page.title || "Recruiting Page"}</div>
+                        <div style={{ display: "flex", gap: 16, fontSize: 12, color: T.m, marginBottom: 12 }}>
+                          <span>{page.view_count || 0} views</span>
+                          <span>{page.lead_count || 0} leads</span>
+                        </div>
+                        <div style={{ marginTop: "auto", display: "flex", gap: 8 }}>
+                          <a href={`https://rkrt.in/${slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "8px 12px", borderRadius: 8, background: T.a + "15", border: `1px solid ${T.a}30`, color: T.a, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>View Page</a>
+                          {isAdmin && <div onClick={async () => { try { const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=link&url=${encodeURIComponent('https://rkrt.in/' + slug)}&title=${encodeURIComponent(page.title || 'Recruiting Page')}&message=${encodeURIComponent(page.target_brokerage ? `Thinking about leaving ${page.target_brokerage}? See what LPT Realty offers.` : 'See what switching to LPT Realty means for your income.')}&user_id=${userId}`); const d = await res.json(); if (d.success) showToast('Posted to FB!'); else showToast('Error: ' + (d.error || 'Unknown')); } catch (e) { showToast('Error: ' + e.message); } }} style={{ padding: "8px 12px", borderRadius: 8, background: "#1877F218", border: "1px solid #1877F240", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Post to FB</div>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Team Blog Tab */}
       {contentTab === "team_blog" && isTeamLeader && (
