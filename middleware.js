@@ -5,7 +5,7 @@ export default async function middleware(request) {
   const pathname = url.pathname;
   const parts = pathname.split('/').filter(Boolean);
 
-  if (pathname === '/') {
+  if (pathname === '/' && !request.headers.get('host')?.startsWith('app.')) {
     const res = await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-homepage' + url.search);
     return new Response(res.body, {
       status: res.status,
