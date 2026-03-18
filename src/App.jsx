@@ -667,6 +667,10 @@ export default function App(){
   const [adminUserLeadStats, setAdminUserLeadStats] = useState({});
   const [leaderboard,setLeaderboard]=useState([]);
   const [lbRefreshing,setLbRefreshing]=useState(false);
+  const [adminDetailUser,setAdminDetailUser]=useState(null);
+  const [adminDetailStats,setAdminDetailStats]=useState(null);
+  const [adminDetailActivity,setAdminDetailActivity]=useState([]);
+  const [adminDetailLoading,setAdminDetailLoading]=useState(false);
   const [socialAccounts,setSocialAccounts]=useState([]);
   const [socialPosts,setSocialPosts]=useState([]);
   const [socialLoading,setSocialLoading]=useState(false);
@@ -1099,6 +1103,106 @@ export default function App(){
           {leaderboard.length===0&&!adminLoading&&<div style={{textAlign:"center",padding:"40px",color:T.m}}><div style={{fontSize:28,marginBottom:8}}>🏆</div><div style={{fontSize:14}}>No score data yet</div></div>}
         </div>);
       })()}
+
+      {/* Users List */}
+      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
+        <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>👥 Users ({adminUsers.length})</div>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",minWidth:600}}>
+            <thead><tr>{["Name","Email","Brokerage","Plan","Leads","Last Active",""].map(h=>
+              <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:T.m,letterSpacing:1.2,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
+            )}</tr></thead>
+            <tbody>{adminUsers.map(u=>{
+              const planColors={regional_operator:"#F59E0B",team_leader:"#BC8CFF",recruiter:"#58A6FF",free:T.m};
+              return(
+              <tr key={u.id} onClick={async()=>{
+                setAdminDetailUser(u);setAdminDetailLoading(true);setAdminDetailStats(null);setAdminDetailActivity([]);
+                const [leads,activity,fbPosts]=await Promise.all([
+                  supabase.from("leads").select("*",{count:"exact",head:true}).eq("user_id",u.id),
+                  supabase.from("user_activity").select("*").eq("user_id",u.id).order("created_at",{ascending:false}).limit(20),
+                  supabase.from("user_fb_posts").select("*",{count:"exact",head:true}).eq("user_id",u.id),
+                ]);
+                setAdminDetailStats({leads:leads.count||0,enrichUsed:u.enrichment_credits_used||0,enrichRemaining:(u.enrichment_credits||0)-(u.enrichment_credits_used||0),fbPosts:fbPosts.count||0});
+                setAdminDetailActivity(activity.data||[]);
+                setAdminDetailLoading(false);
+              }} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                <td style={{padding:"10px 12px",fontSize:14,fontWeight:600,color:T.t,whiteSpace:"nowrap"}}>{u.full_name||"—"}</td>
+                <td style={{padding:"10px 12px",fontSize:13,color:T.bl}}>{u.email||"—"}</td>
+                <td style={{padding:"10px 12px",fontSize:13,color:T.s}}>{(u.brokerage||"—").substring(0,20)}</td>
+                <td style={{padding:"10px 12px"}}><span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:(planColors[u.plan]||T.m)+"20",color:planColors[u.plan]||T.m}}>{u.plan||"free"}</span></td>
+                <td style={{padding:"10px 12px",fontSize:13,fontWeight:600,color:T.t}}>{adminUserLeadStats[u.id]?.total||0}</td>
+                <td style={{padding:"10px 12px",fontSize:12,color:T.m}}>{u.last_active_at?ago(u.last_active_at):"—"}</td>
+                <td style={{padding:"10px 12px"}}><span style={{fontSize:11,color:T.bl,fontWeight:600}}>View →</span></td>
+              </tr>);
+            })}</tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* User Detail Modal */}
+      {adminDetailUser&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.8)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setAdminDetailUser(null)}>
+          <div style={{width:"100%",maxWidth:700,maxHeight:"90vh",overflowY:"auto",background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:32}} onClick={e=>e.stopPropagation()}>
+            {(()=>{const u=adminDetailUser;const planColors={regional_operator:"#F59E0B",team_leader:"#BC8CFF",recruiter:"#58A6FF",free:T.m};return(<>
+              {/* Header */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24}}>
+                <div>
+                  <div style={{fontSize:22,fontWeight:800,color:T.t}}>{u.full_name||u.email||"—"}</div>
+                  <div style={{fontSize:14,color:T.s,marginTop:4}}>{u.email}</div>
+                  <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:4,background:(planColors[u.plan]||T.m)+"20",color:planColors[u.plan]||T.m}}>{u.plan||"free"}</span>
+                    <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:4,background:u.role==="owner"?T.r+"20":T.s+"20",color:u.role==="owner"?T.r:T.s}}>{u.role||"user"}</span>
+                    {u.brokerage&&<span style={{fontSize:11,padding:"3px 10px",borderRadius:4,background:T.bl+"15",color:T.bl,fontWeight:600}}>{u.brokerage}</span>}
+                    <span style={{fontSize:11,color:T.m}}>Joined {u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</span>
+                  </div>
+                </div>
+                <div onClick={()=>setAdminDetailUser(null)} style={{cursor:"pointer",color:T.m,fontSize:20}}>✕</div>
+              </div>
+
+              {/* Stats */}
+              {adminDetailLoading?<div style={{textAlign:"center",padding:40,color:T.m}}>Loading...</div>:adminDetailStats&&(
+              <>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
+                  {[["Leads",adminDetailStats.leads,T.a],["Enrichments Used",adminDetailStats.enrichUsed,T.bl],["Credits Left",adminDetailStats.enrichRemaining,adminDetailStats.enrichRemaining>10?T.a:T.r],["FB Posts",adminDetailStats.fbPosts,"#1877F2"]].map(([l,v,c])=>
+                    <div key={l} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"14px 12px",textAlign:"center"}}>
+                      <div style={{fontSize:24,fontWeight:800,color:c}}>{v}</div>
+                      <div style={{fontSize:10,color:T.m,fontWeight:600,letterSpacing:0.5,marginTop:2}}>{l}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent Activity */}
+                <div style={{marginBottom:24}}>
+                  <div style={{fontSize:14,fontWeight:700,color:T.t,marginBottom:12}}>Recent Activity</div>
+                  {adminDetailActivity.length===0?<div style={{padding:20,textAlign:"center",color:T.m,fontSize:13}}>No activity recorded</div>:
+                  <div style={{maxHeight:250,overflowY:"auto"}}>
+                    {adminDetailActivity.map((a,i)=>(
+                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderRadius:6,marginBottom:2,fontSize:13}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                        <span style={{color:T.t,fontWeight:500}}>{(a.action||a.event_type||"activity").replace(/_/g," ")}</span>
+                        <span style={{fontSize:11,color:T.m,flexShrink:0,marginLeft:12}}>{ago(a.created_at)}</span>
+                      </div>
+                    ))}
+                  </div>}
+                </div>
+
+                {/* Quick Actions */}
+                <div style={{borderTop:`1px solid ${T.b}`,paddingTop:20,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{fontSize:12,color:T.m,fontWeight:600}}>Plan:</span>
+                    <select value={u.plan||"free"} onChange={async(ev)=>{const newPlan=ev.target.value;await supabase.from("profiles").update({plan:newPlan}).eq("id",u.id);setAdminDetailUser({...u,plan:newPlan});setAdminUsers(prev=>prev.map(x=>x.id===u.id?{...x,plan:newPlan}:x));}} style={{padding:"6px 10px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:12,fontFamily:"inherit"}}>
+                      {["free","recruiter","team_leader","regional_operator"].map(p=><option key={p} value={p}>{p.replace(/_/g," ")}</option>)}
+                    </select>
+                  </div>
+                  <div onClick={async()=>{const val=!u.is_beta_tester;await supabase.from("profiles").update({is_beta_tester:val}).eq("id",u.id);setAdminDetailUser({...u,is_beta_tester:val});setAdminUsers(prev=>prev.map(x=>x.id===u.id?{...x,is_beta_tester:val}:x));}} style={{padding:"6px 14px",borderRadius:6,background:u.is_beta_tester?T.a+"18":T.d,color:u.is_beta_tester?T.a:T.m,fontSize:12,fontWeight:600,cursor:"pointer",border:`1px solid ${u.is_beta_tester?T.a+"40":T.b}`}}>
+                    {u.is_beta_tester?"✓ Beta Tester":"Toggle Beta"}
+                  </div>
+                  {u.role!=="owner"&&<div onClick={async()=>{setImpersonateLoading(u.id);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();if(data.error){alert(data.error);setImpersonateLoading(false);return;}setRealUser({authUser,profile});setImpersonating(data.impersonate||{id:u.id,full_name:u.full_name||u.email,email:u.email,plan:u.plan||'free',role:u.role||'user'});setAdminDetailUser(null);setViewWithHistory('home');}catch(e){alert('Failed to connect');}setImpersonateLoading(false);}} style={{padding:"6px 14px",borderRadius:6,border:`1px solid ${T.bl}30`,background:"transparent",color:T.bl,fontSize:12,fontWeight:600,cursor:"pointer"}}>{impersonateLoading===u.id?"Loading...":"👁 View As"}</div>}
+                </div>
+              </>)}
+            </>);})()}
+          </div>
+        </div>
+      )}
 
       </>}
 
