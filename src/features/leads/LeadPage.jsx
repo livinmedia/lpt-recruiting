@@ -100,7 +100,7 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   useEffect(() => {
     if (lead?.id) {
       loadTasks();
-      supabase.from("lead_events").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(10).then(({ data }) => setEvents(data || []));
+      supabase.from("lead_events").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(100).then(({ data }) => setEvents(data || []));
       loadDripEmails();
     }
   }, [lead?.id]);
@@ -794,12 +794,81 @@ Write the email body. Be specific to this person — reference their brokerage, 
             </div>
           )}
 
-          {tab === "activity" && (
-            <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px" }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginBottom: 16 }}>Activity</div>
-              <div style={{ textAlign: "center", padding: "40px", color: T.m }}>Activity log coming soon</div>
+          {tab === "activity" && (() => {
+            const emailsSent = dripEmails.filter(e => e.status === 'sent').length;
+            const emailOpens = events.filter(e => e.event_type === 'email_open').length;
+            const pageViews = events.filter(e => e.event_type === 'multiple_visits_day' || e.event_type === 'page_view' || e.event_type === 'blog_visit' || e.event_type === 'return_visit').reduce((s, e) => s + (e.metadata?.visit_count || 1), 0);
+
+            // Merge events + drip emails into unified timeline
+            const timeline = [
+              ...events.map(e => ({ type: 'event', eventType: e.event_type, metadata: e.metadata, ts: e.created_at, source: e.event_source })),
+              ...dripEmails.map(e => ({ type: 'drip', eventType: e.status === 'sent' ? 'drip_sent' : 'drip_scheduled', metadata: { subject: e.subject, status: e.status }, ts: e.sent_at || e.scheduled_for, source: 'drip' })),
+            ].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+
+            const DRIP_META = {
+              drip_sent: { icon: "📬", color: "#F59E0B", label: (m) => `Drip email sent: ${m?.subject || ""}` },
+              drip_scheduled: { icon: "⏳", color: "#6E7681", label: (m) => `Drip scheduled: ${m?.subject || ""}` },
+            };
+
+            return (
+            <div>
+              {/* Engagement Summary */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+                {[
+                  ["Total Events", events.length, "#22d3ee", "📊"],
+                  ["Emails Sent", emailsSent, "#10b981", "✉️"],
+                  ["Email Opens", emailOpens, "#f59e0b", "📧"],
+                  ["Page Views", pageViews, "#f97316", "👀"],
+                ].map(([label, val, color, icon]) => (
+                  <div key={label} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "18px 16px", textAlign: "center" }}>
+                    <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color }}>{val}</div>
+                    <div style={{ fontSize: 11, color: T.m, fontWeight: 600, letterSpacing: 0.5, marginTop: 4 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Timeline */}
+              <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginBottom: 20 }}>Activity Timeline</div>
+                {timeline.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px", color: T.m }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
+                    No activity recorded yet
+                  </div>
+                ) : (
+                  <div>
+                    {timeline.map((item, i) => {
+                      const meta = EVENT_META[item.eventType] || DRIP_META[item.eventType] || { icon: "📌", color: T.m, label: () => item.eventType?.replace(/_/g, " ") || "Event" };
+                      const desc = typeof meta.label === 'function' ? meta.label(item.metadata) : meta.label;
+                      return (
+                        <div key={i} style={{ display: "flex", gap: 14, padding: "12px 0", borderBottom: i < timeline.length - 1 ? `1px solid ${T.b}` : "none" }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 10, background: meta.color + "18", border: `1px solid ${meta.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                            {meta.icon}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: T.t }}>{desc}</div>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                              <span style={{ fontSize: 12, color: T.m }}>{timeAgo(item.ts)}</span>
+                              {item.source && item.source !== 'system' && <span style={{ fontSize: 11, padding: "1px 6px", borderRadius: 4, background: T.b, color: T.s }}>{item.source}</span>}
+                            </div>
+                            {item.metadata && Object.keys(item.metadata).length > 0 && item.eventType !== 'drip_sent' && item.eventType !== 'drip_scheduled' && (
+                              <div style={{ marginTop: 8, fontSize: 12, color: T.s, background: T.bg, border: `1px solid ${T.b}`, borderRadius: 6, padding: "8px 10px", lineHeight: 1.6 }}>
+                                {Object.entries(item.metadata).filter(([k]) => k !== 'subject').slice(0, 5).map(([k, v]) => (
+                                  <div key={k}><span style={{ color: T.m }}>{k.replace(/_/g, " ")}:</span> {typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Sidebar */}
