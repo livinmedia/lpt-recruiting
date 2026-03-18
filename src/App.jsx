@@ -1037,6 +1037,18 @@ export default function App(){
         const top3=leaderboard.slice(0,3);
         const rest=leaderboard.slice(3,10);
         const podiumColors=["#FFD700","#C0C0C0","#CD7F32"];
+        const openUserDash=async(lbUser)=>{
+          const prof=adminUsers.find(x=>x.id===lbUser.user_id)||(lbUser.profiles?{id:lbUser.user_id,...lbUser.profiles}:{id:lbUser.user_id});
+          setAdminDetailUser(prof);setAdminDetailLoading(true);setAdminDetailStats(null);setAdminDetailActivity([]);setAdminDetailLeads([]);
+          const [leads,activity,fbPosts,topLeads]=await Promise.all([
+            supabase.from("leads").select("*",{count:"exact",head:true}).eq("user_id",prof.id),
+            supabase.from("user_activity").select("*").eq("user_id",prof.id).order("created_at",{ascending:false}).limit(30),
+            supabase.from("user_fb_posts").select("*",{count:"exact",head:true}).eq("user_id",prof.id),
+            supabase.from("leads").select("first_name,last_name,brokerage,brokerage_name,interest_score").eq("user_id",prof.id).order("interest_score",{ascending:false}).limit(10),
+          ]);
+          setAdminDetailStats({leads:leads.count||0,enrichUsed:prof.enrichment_credits_used||0,enrichRemaining:(prof.enrichment_credits||0)-(prof.enrichment_credits_used||0),fbPosts:fbPosts.count||0,daysActive:lbUser.days_active_last_30d||0,score:lbUser.accountability_score||0});
+          setAdminDetailActivity(activity.data||[]);setAdminDetailLeads(topLeads.data||[]);setAdminDetailLoading(false);
+        };
         const scoreBorder=(s)=>s>=80?T.a:s>=50?T.y:s>=20?"#f97316":T.r;
         const refreshScores=async()=>{
           setLbRefreshing(true);
@@ -1064,7 +1076,7 @@ export default function App(){
 
           {top3.length>0&&<div style={{display:"grid",gridTemplateColumns:top3.length===1?"1fr":top3.length===2?"1fr 1fr":"1fr 1fr 1fr",gap:16,marginBottom:24}}>
             {top3.map((u,i)=>{const sc=u.accountability_score||0;const p=u.profiles||{};return(
-              <div key={u.id} style={{background:T.d,borderRadius:14,padding:"24px 20px",border:`2px solid ${podiumColors[i]}30`,textAlign:"center",position:"relative"}}>
+              <div key={u.id} onClick={()=>openUserDash(u)} style={{background:T.d,borderRadius:14,padding:"24px 20px",border:`2px solid ${podiumColors[i]}30`,textAlign:"center",position:"relative",cursor:"pointer",transition:"transform 0.15s"}} onMouseOver={ev=>ev.currentTarget.style.transform="translateY(-2px)"} onMouseOut={ev=>ev.currentTarget.style.transform="translateY(0)"}>
                 <div style={{position:"absolute",top:-12,left:"50%",transform:"translateX(-50%)",background:podiumColors[i],color:"#000",fontWeight:800,fontSize:14,padding:"4px 14px",borderRadius:20}}>#{i+1}</div>
                 <div style={{fontSize:18,fontWeight:700,color:T.t,marginTop:12}}>{p.full_name||p.email||"—"}</div>
                 <div style={{fontSize:12,color:T.s,marginTop:2}}>{p.email||""}</div>
@@ -1085,7 +1097,7 @@ export default function App(){
                 <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:T.m,letterSpacing:1.2,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
               )}</tr></thead>
               <tbody>{rest.map((u,i)=>{const sc=u.accountability_score||0;const p=u.profiles||{};const la=u.last_active_at?new Date(u.last_active_at):null;return(
-                <tr key={u.id} style={{borderBottom:`1px solid ${T.b}`,borderLeft:`3px solid ${scoreBorder(sc)}`}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                <tr key={u.id} onClick={()=>openUserDash(u)} style={{borderBottom:`1px solid ${T.b}`,borderLeft:`3px solid ${scoreBorder(sc)}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
                   <td style={{padding:"10px 12px",fontSize:14,fontWeight:700,color:T.m}}>#{i+4}</td>
                   <td style={{padding:"10px 12px"}}><div style={{fontSize:13,fontWeight:600,color:T.t}}>{p.full_name||"—"}</div><div style={{fontSize:11,color:T.s}}>{p.email||""}</div></td>
                   <td style={{padding:"10px 12px",fontSize:16,fontWeight:800,color:scoreBorder(sc)}}>{sc}</td>
