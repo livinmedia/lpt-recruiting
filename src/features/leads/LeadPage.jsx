@@ -96,6 +96,7 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   const [dripEditSubject, setDripEditSubject] = useState("");
   const [dripEditBody, setDripEditBody] = useState("");
   const [dripActivateMsg, setDripActivateMsg] = useState("");
+  const [selectedDrips, setSelectedDrips] = useState(new Set());
 
   useEffect(() => {
     if (lead?.id) {
@@ -150,6 +151,22 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
     setDripActivateMsg(`Sequence activated! ${approvedCount} email${approvedCount !== 1 ? 's' : ''} will send on schedule.`);
     logActivity(userId, 'drip_enabled', { lead_id: lead.id });
     setTimeout(() => setDripActivateMsg(""), 4000);
+  };
+
+  const bulkUpdateDrips = async (newStatus) => {
+    const ids = Array.from(selectedDrips);
+    if (ids.length === 0) return;
+    await supabase.from('lead_drip_emails').update({ status: newStatus, ...(newStatus === 'approved' ? { approved: true } : {}) }).in('id', ids);
+    setSelectedDrips(new Set());
+    loadDripEmails();
+  };
+
+  const bulkDeleteDrips = async () => {
+    const ids = Array.from(selectedDrips);
+    if (ids.length === 0) return;
+    await supabase.from('lead_drip_emails').delete().in('id', ids);
+    setSelectedDrips(new Set());
+    loadDripEmails();
   };
 
   const loadTasks = async () => {
@@ -583,14 +600,30 @@ Write the email body. Be specific to this person — reference their brokerage, 
 
                 {!dripGenerating && dripEmails.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {/* Bulk toolbar */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: T.s, fontSize: 12 }}>
+                        <input type="checkbox" checked={selectedDrips.size === dripEmails.length && dripEmails.length > 0} onChange={(ev) => { if (ev.target.checked) setSelectedDrips(new Set(dripEmails.map(d => d.id))); else setSelectedDrips(new Set()); }} />
+                        Select All ({selectedDrips.size}/{dripEmails.length})
+                      </label>
+                      {selectedDrips.size > 0 && (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <div onClick={() => bulkUpdateDrips('approved')} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #22C55E', background: 'transparent', color: '#22C55E', cursor: 'pointer', fontWeight: 600 }}>✓ Approve ({selectedDrips.size})</div>
+                          <div onClick={() => bulkUpdateDrips('cancelled')} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #F59E0B', background: 'transparent', color: '#F59E0B', cursor: 'pointer', fontWeight: 600 }}>✕ Cancel ({selectedDrips.size})</div>
+                          <div onClick={() => bulkDeleteDrips()} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #F43F5E', background: 'transparent', color: '#F43F5E', cursor: 'pointer', fontWeight: 600 }}>🗑 Delete ({selectedDrips.size})</div>
+                        </div>
+                      )}
+                    </div>
                     {dripEmails.map(e => {
-                      const statusColors = { scheduled: '#FBBF24', sent: '#10b981', cancelled: '#6b7280', failed: '#EF4444' };
+                      const statusColors = { scheduled: '#FBBF24', sent: '#10b981', cancelled: '#6b7280', failed: '#EF4444', approved: '#10b981' };
                       const color = statusColors[e.status] || T.s;
                       const isExpanded = dripExpandedId === e.id;
                       const isEditing = dripEditingId === e.id;
                       return (
                         <div key={e.id} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: `1px solid ${e.approved ? 'rgba(0,229,160,0.3)' : '#1a2540'}`, overflow: 'hidden' }}>
-                          <div onClick={() => { if (!isEditing) setDripExpandedId(isExpanded ? null : e.id); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', cursor: 'pointer' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={selectedDrips.has(e.id)} onChange={() => { const next = new Set(selectedDrips); if (next.has(e.id)) next.delete(e.id); else next.add(e.id); setSelectedDrips(next); }} onClick={ev => ev.stopPropagation()} style={{ marginRight: 10, flexShrink: 0 }} />
+                            <div onClick={() => { if (!isEditing) setDripExpandedId(isExpanded ? null : e.id); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0 }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               {isEditing ? (
                                 <input value={dripEditSubject} onChange={ev => setDripEditSubject(ev.target.value)} style={{ width: '100%', background: '#0d1117', border: `1px solid ${T.b}`, color: T.t, borderRadius: 4, padding: '4px 8px', fontSize: 13, fontWeight: 600 }} onClick={ev => ev.stopPropagation()} />
@@ -604,6 +637,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
                               <span style={{ fontSize: 10, fontWeight: 700, color, background: color + '20', padding: '3px 8px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{e.status}</span>
                               <span style={{ fontSize: 12, color: T.s, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                             </div>
+                          </div>
                           </div>
                           {isExpanded && (
                             <div style={{ padding: '0 12px 12px', borderTop: `1px solid ${T.b}` }}>
@@ -635,9 +669,13 @@ Write the email body. Be specific to this person — reference their brokerage, 
                     {/* Bottom action bar */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, padding: '10px 0 0', borderTop: `1px solid ${T.b}` }}>
                       <span style={{ fontSize: 12, color: T.s }}>{dripEmails.filter(e => e.approved).length} of {dripEmails.length} approved</span>
-                      {!dripEnabled && (
-                        <button onClick={activateDripSequence} disabled={dripEmails.filter(e => e.approved).length === 0} style={{ fontSize: 12, background: dripEmails.filter(e => e.approved).length > 0 ? T.a : '#374151', color: dripEmails.filter(e => e.approved).length > 0 ? '#000' : T.s, border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, cursor: dripEmails.filter(e => e.approved).length > 0 ? 'pointer' : 'default', opacity: dripEmails.filter(e => e.approved).length > 0 ? 1 : 0.5 }}>🚀 Activate Sequence</button>
-                      )}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <div onClick={async () => { await supabase.from('lead_drip_emails').update({ status: 'approved', approved: true }).eq('lead_id', lead.id).in('status', ['scheduled']); loadDripEmails(); }} style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8, border: '1px solid #22C55E', background: 'rgba(34,197,94,0.1)', color: '#22C55E', cursor: 'pointer', fontWeight: 700 }}>✓ Approve All</div>
+                        <div onClick={async () => { await supabase.from('lead_drip_emails').update({ status: 'cancelled', approved: false }).eq('lead_id', lead.id).in('status', ['scheduled', 'approved']); loadDripEmails(); }} style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8, border: '1px solid #F43F5E', background: 'transparent', color: '#F43F5E', cursor: 'pointer', fontWeight: 600 }}>✕ Cancel All</div>
+                        {!dripEnabled && (
+                          <div onClick={activateDripSequence} style={{ fontSize: 12, background: dripEmails.filter(e => e.approved).length > 0 ? T.a : '#374151', color: dripEmails.filter(e => e.approved).length > 0 ? '#000' : T.s, border: 'none', borderRadius: 8, padding: '6px 14px', fontWeight: 700, cursor: dripEmails.filter(e => e.approved).length > 0 ? 'pointer' : 'default', opacity: dripEmails.filter(e => e.approved).length > 0 ? 1 : 0.5 }}>🚀 Activate</div>
+                        )}
+                      </div>
                     </div>
                     {dripActivateMsg && <div style={{ fontSize: 12, color: T.a, textAlign: 'center', marginTop: 6, fontWeight: 600 }}>{dripActivateMsg}</div>}
                   </div>
