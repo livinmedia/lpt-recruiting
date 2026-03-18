@@ -670,6 +670,7 @@ export default function App(){
   const [adminDetailUser,setAdminDetailUser]=useState(null);
   const [adminDetailStats,setAdminDetailStats]=useState(null);
   const [adminDetailActivity,setAdminDetailActivity]=useState([]);
+  const [adminDetailLeads,setAdminDetailLeads]=useState([]);
   const [adminDetailLoading,setAdminDetailLoading]=useState(false);
   const [socialAccounts,setSocialAccounts]=useState([]);
   const [socialPosts,setSocialPosts]=useState([]);
@@ -1034,7 +1035,7 @@ export default function App(){
         const totalRecruits=leaderboard.reduce((s,u)=>s+(u.recruits_closed||0),0);
         const atRisk=leaderboard.filter(u=>(u.accountability_score||0)<20||(u.last_active_at&&new Date(u.last_active_at)<d14)||(u.days_active_last_30d!=null&&u.days_active_last_30d<3));
         const top3=leaderboard.slice(0,3);
-        const rest=leaderboard.slice(3);
+        const rest=leaderboard.slice(3,10);
         const podiumColors=["#FFD700","#C0C0C0","#CD7F32"];
         const scoreBorder=(s)=>s>=80?T.a:s>=50?T.y:s>=20?"#f97316":T.r;
         const refreshScores=async()=>{
@@ -1104,32 +1105,111 @@ export default function App(){
         </div>);
       })()}
 
-      {/* Users List */}
+      {/* Users List or User Dashboard */}
+      {adminDetailUser?(()=>{
+        const u=adminDetailUser;const planColors={regional_operator:"#F59E0B",team_leader:"#BC8CFF",recruiter:"#58A6FF",free:T.m};
+        return(<div>
+          {/* Back + Header */}
+          <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:20}}>
+            <div onClick={()=>setAdminDetailUser(null)} style={{padding:"8px 14px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.s,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Back</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:22,fontWeight:800,color:T.t}}>{u.full_name||u.email||"—"}</div>
+              <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap",alignItems:"center"}}>
+                <span style={{fontSize:13,color:T.s}}>{u.email}</span>
+                <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:(planColors[u.plan]||T.m)+"20",color:planColors[u.plan]||T.m}}>{u.plan||"free"}</span>
+                <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:u.role==="owner"?T.r+"20":T.s+"20",color:u.role==="owner"?T.r:T.s}}>{u.role||"user"}</span>
+                {u.brokerage&&<span style={{fontSize:11,color:T.bl,fontWeight:600}}>{u.brokerage}</span>}
+                <span style={{fontSize:11,color:T.m}}>Joined {u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions Bar */}
+          <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"14px 20px",marginBottom:20,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:12,color:T.m,fontWeight:600}}>Plan:</span>
+              <select value={u.plan||"free"} onChange={async(ev)=>{const np=ev.target.value;await supabase.from("profiles").update({plan:np}).eq("id",u.id);setAdminDetailUser({...u,plan:np});setAdminUsers(prev=>prev.map(x=>x.id===u.id?{...x,plan:np}:x));}} style={{padding:"6px 10px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:12,fontFamily:"inherit"}}>
+                {["free","recruiter","team_leader","regional_operator"].map(p=><option key={p} value={p}>{p.replace(/_/g," ")}</option>)}
+              </select>
+            </div>
+            <div onClick={async()=>{const val=!u.is_beta_tester;await supabase.from("profiles").update({is_beta_tester:val}).eq("id",u.id);setAdminDetailUser({...u,is_beta_tester:val});setAdminUsers(prev=>prev.map(x=>x.id===u.id?{...x,is_beta_tester:val}:x));}} style={{padding:"6px 14px",borderRadius:6,background:u.is_beta_tester?T.a+"18":T.d,color:u.is_beta_tester?T.a:T.m,fontSize:12,fontWeight:600,cursor:"pointer",border:`1px solid ${u.is_beta_tester?T.a+"40":T.b}`}}>
+              {u.is_beta_tester?"✓ Beta Tester":"Toggle Beta"}
+            </div>
+            {u.role!=="owner"&&<div onClick={async()=>{setImpersonateLoading(u.id);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();if(data.error){alert(data.error);setImpersonateLoading(false);return;}setRealUser({authUser,profile});setImpersonating(data.impersonate||{id:u.id,full_name:u.full_name||u.email,email:u.email,plan:u.plan||'free',role:u.role||'user'});setAdminDetailUser(null);setViewWithHistory('home');}catch(e){alert('Failed to connect');}setImpersonateLoading(false);}} style={{padding:"6px 16px",borderRadius:6,background:T.bl+"18",border:`1px solid ${T.bl}40`,color:T.bl,fontSize:12,fontWeight:700,cursor:"pointer"}}>{impersonateLoading===u.id?"Loading...":"👁 Log In As"}</div>}
+          </div>
+
+          {adminDetailLoading?<div style={{textAlign:"center",padding:60,color:T.m,fontSize:15}}>Loading user data...</div>:adminDetailStats&&(<>
+            {/* Stat Cards */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10,marginBottom:20}}>
+              {[["Total Leads",adminDetailStats.leads,T.a],["Credits Used",adminDetailStats.enrichUsed,T.bl],["Credits Left",adminDetailStats.enrichRemaining,adminDetailStats.enrichRemaining>10?T.a:T.r],["FB Posts",adminDetailStats.fbPosts,"#1877F2"],["Days Active",adminDetailStats.daysActive||0,T.y],["Score",adminDetailStats.score||0,T.p]].map(([l,v,c])=>
+                <div key={l} style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 12px",textAlign:"center"}}>
+                  <div style={{fontSize:26,fontWeight:800,color:c}}>{v}</div>
+                  <div style={{fontSize:10,color:T.m,fontWeight:600,letterSpacing:0.5,marginTop:3}}>{l}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Two columns: Activity + Top Leads */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+              <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"20px 22px"}}>
+                <div style={{fontSize:15,fontWeight:700,color:T.t,marginBottom:14}}>Recent Activity</div>
+                {adminDetailActivity.length===0?<div style={{padding:20,textAlign:"center",color:T.m,fontSize:13}}>No activity</div>:
+                <div style={{maxHeight:320,overflowY:"auto"}}>
+                  {adminDetailActivity.map((a,i)=>(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderRadius:6,marginBottom:2,fontSize:13}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                      <span style={{color:T.t,fontWeight:500}}>{(a.action||a.event_type||"activity").replace(/_/g," ")}</span>
+                      <span style={{fontSize:11,color:T.m,flexShrink:0,marginLeft:12}}>{ago(a.created_at)}</span>
+                    </div>
+                  ))}
+                </div>}
+              </div>
+              <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"20px 22px"}}>
+                <div style={{fontSize:15,fontWeight:700,color:T.t,marginBottom:14}}>Top Leads by Score</div>
+                {adminDetailLeads.length===0?<div style={{padding:20,textAlign:"center",color:T.m,fontSize:13}}>No leads</div>:
+                <div>
+                  {adminDetailLeads.slice(0,10).map((l,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:6,marginBottom:2}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
+                      <span style={{fontSize:12,color:T.m,fontWeight:800,minWidth:18}}>#{i+1}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:600,color:T.t,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.first_name} {l.last_name}</div>
+                        <div style={{fontSize:11,color:T.s}}>{(l.brokerage||l.brokerage_name||"—").substring(0,24)}</div>
+                      </div>
+                      <span style={{fontSize:13,fontWeight:800,color:l.interest_score>=60?T.a:l.interest_score>=30?T.y:T.m}}>{l.interest_score||0}</span>
+                    </div>
+                  ))}
+                </div>}
+              </div>
+            </div>
+          </>)}
+        </div>);
+      })():(
       <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:12,padding:"24px 26px",marginBottom:24}}>
         <div style={{fontSize:18,fontWeight:700,color:T.t,marginBottom:16}}>👥 Users ({adminUsers.length})</div>
         <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",minWidth:600}}>
-            <thead><tr>{["Name","Email","Brokerage","Plan","Leads","Last Active",""].map(h=>
+          <table style={{width:"100%",borderCollapse:"collapse",minWidth:500}}>
+            <thead><tr>{["Name","Email","Plan","Leads","Last Active",""].map(h=>
               <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:T.m,letterSpacing:1.2,borderBottom:`1px solid ${T.b}`,whiteSpace:"nowrap",background:T.side}}>{h}</th>
             )}</tr></thead>
             <tbody>{adminUsers.map(u=>{
-              const planColors={regional_operator:"#F59E0B",team_leader:"#BC8CFF",recruiter:"#58A6FF",free:T.m};
+              const pc={regional_operator:"#F59E0B",team_leader:"#BC8CFF",recruiter:"#58A6FF",free:T.m};
               return(
               <tr key={u.id} onClick={async()=>{
-                setAdminDetailUser(u);setAdminDetailLoading(true);setAdminDetailStats(null);setAdminDetailActivity([]);
-                const [leads,activity,fbPosts]=await Promise.all([
+                setAdminDetailUser(u);setAdminDetailLoading(true);setAdminDetailStats(null);setAdminDetailActivity([]);setAdminDetailLeads([]);
+                const [leads,activity,fbPosts,topLeads]=await Promise.all([
                   supabase.from("leads").select("*",{count:"exact",head:true}).eq("user_id",u.id),
-                  supabase.from("user_activity").select("*").eq("user_id",u.id).order("created_at",{ascending:false}).limit(20),
+                  supabase.from("user_activity").select("*").eq("user_id",u.id).order("created_at",{ascending:false}).limit(30),
                   supabase.from("user_fb_posts").select("*",{count:"exact",head:true}).eq("user_id",u.id),
+                  supabase.from("leads").select("first_name,last_name,brokerage,brokerage_name,interest_score").eq("user_id",u.id).order("interest_score",{ascending:false}).limit(10),
                 ]);
-                setAdminDetailStats({leads:leads.count||0,enrichUsed:u.enrichment_credits_used||0,enrichRemaining:(u.enrichment_credits||0)-(u.enrichment_credits_used||0),fbPosts:fbPosts.count||0});
+                const lbEntry=leaderboard.find(l=>l.user_id===u.id);
+                setAdminDetailStats({leads:leads.count||0,enrichUsed:u.enrichment_credits_used||0,enrichRemaining:(u.enrichment_credits||0)-(u.enrichment_credits_used||0),fbPosts:fbPosts.count||0,daysActive:lbEntry?.days_active_last_30d||0,score:lbEntry?.accountability_score||0});
                 setAdminDetailActivity(activity.data||[]);
+                setAdminDetailLeads(topLeads.data||[]);
                 setAdminDetailLoading(false);
               }} style={{borderBottom:`1px solid ${T.b}`,cursor:"pointer"}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
                 <td style={{padding:"10px 12px",fontSize:14,fontWeight:600,color:T.t,whiteSpace:"nowrap"}}>{u.full_name||"—"}</td>
                 <td style={{padding:"10px 12px",fontSize:13,color:T.bl}}>{u.email||"—"}</td>
-                <td style={{padding:"10px 12px",fontSize:13,color:T.s}}>{(u.brokerage||"—").substring(0,20)}</td>
-                <td style={{padding:"10px 12px"}}><span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:(planColors[u.plan]||T.m)+"20",color:planColors[u.plan]||T.m}}>{u.plan||"free"}</span></td>
+                <td style={{padding:"10px 12px"}}><span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:(pc[u.plan]||T.m)+"20",color:pc[u.plan]||T.m}}>{u.plan||"free"}</span></td>
                 <td style={{padding:"10px 12px",fontSize:13,fontWeight:600,color:T.t}}>{adminUserLeadStats[u.id]?.total||0}</td>
                 <td style={{padding:"10px 12px",fontSize:12,color:T.m}}>{u.last_active_at?ago(u.last_active_at):"—"}</td>
                 <td style={{padding:"10px 12px"}}><span style={{fontSize:11,color:T.bl,fontWeight:600}}>View →</span></td>
@@ -1138,70 +1218,6 @@ export default function App(){
           </table>
         </div>
       </div>
-
-      {/* User Detail Modal */}
-      {adminDetailUser&&(
-        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.8)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setAdminDetailUser(null)}>
-          <div style={{width:"100%",maxWidth:700,maxHeight:"90vh",overflowY:"auto",background:T.card,border:`1px solid ${T.b}`,borderRadius:16,padding:32}} onClick={e=>e.stopPropagation()}>
-            {(()=>{const u=adminDetailUser;const planColors={regional_operator:"#F59E0B",team_leader:"#BC8CFF",recruiter:"#58A6FF",free:T.m};return(<>
-              {/* Header */}
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24}}>
-                <div>
-                  <div style={{fontSize:22,fontWeight:800,color:T.t}}>{u.full_name||u.email||"—"}</div>
-                  <div style={{fontSize:14,color:T.s,marginTop:4}}>{u.email}</div>
-                  <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
-                    <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:4,background:(planColors[u.plan]||T.m)+"20",color:planColors[u.plan]||T.m}}>{u.plan||"free"}</span>
-                    <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:4,background:u.role==="owner"?T.r+"20":T.s+"20",color:u.role==="owner"?T.r:T.s}}>{u.role||"user"}</span>
-                    {u.brokerage&&<span style={{fontSize:11,padding:"3px 10px",borderRadius:4,background:T.bl+"15",color:T.bl,fontWeight:600}}>{u.brokerage}</span>}
-                    <span style={{fontSize:11,color:T.m}}>Joined {u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</span>
-                  </div>
-                </div>
-                <div onClick={()=>setAdminDetailUser(null)} style={{cursor:"pointer",color:T.m,fontSize:20}}>✕</div>
-              </div>
-
-              {/* Stats */}
-              {adminDetailLoading?<div style={{textAlign:"center",padding:40,color:T.m}}>Loading...</div>:adminDetailStats&&(
-              <>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
-                  {[["Leads",adminDetailStats.leads,T.a],["Enrichments Used",adminDetailStats.enrichUsed,T.bl],["Credits Left",adminDetailStats.enrichRemaining,adminDetailStats.enrichRemaining>10?T.a:T.r],["FB Posts",adminDetailStats.fbPosts,"#1877F2"]].map(([l,v,c])=>
-                    <div key={l} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"14px 12px",textAlign:"center"}}>
-                      <div style={{fontSize:24,fontWeight:800,color:c}}>{v}</div>
-                      <div style={{fontSize:10,color:T.m,fontWeight:600,letterSpacing:0.5,marginTop:2}}>{l}</div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Recent Activity */}
-                <div style={{marginBottom:24}}>
-                  <div style={{fontSize:14,fontWeight:700,color:T.t,marginBottom:12}}>Recent Activity</div>
-                  {adminDetailActivity.length===0?<div style={{padding:20,textAlign:"center",color:T.m,fontSize:13}}>No activity recorded</div>:
-                  <div style={{maxHeight:250,overflowY:"auto"}}>
-                    {adminDetailActivity.map((a,i)=>(
-                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderRadius:6,marginBottom:2,fontSize:13}} onMouseOver={ev=>ev.currentTarget.style.background=T.d} onMouseOut={ev=>ev.currentTarget.style.background="transparent"}>
-                        <span style={{color:T.t,fontWeight:500}}>{(a.action||a.event_type||"activity").replace(/_/g," ")}</span>
-                        <span style={{fontSize:11,color:T.m,flexShrink:0,marginLeft:12}}>{ago(a.created_at)}</span>
-                      </div>
-                    ))}
-                  </div>}
-                </div>
-
-                {/* Quick Actions */}
-                <div style={{borderTop:`1px solid ${T.b}`,paddingTop:20,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <span style={{fontSize:12,color:T.m,fontWeight:600}}>Plan:</span>
-                    <select value={u.plan||"free"} onChange={async(ev)=>{const newPlan=ev.target.value;await supabase.from("profiles").update({plan:newPlan}).eq("id",u.id);setAdminDetailUser({...u,plan:newPlan});setAdminUsers(prev=>prev.map(x=>x.id===u.id?{...x,plan:newPlan}:x));}} style={{padding:"6px 10px",borderRadius:6,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:12,fontFamily:"inherit"}}>
-                      {["free","recruiter","team_leader","regional_operator"].map(p=><option key={p} value={p}>{p.replace(/_/g," ")}</option>)}
-                    </select>
-                  </div>
-                  <div onClick={async()=>{const val=!u.is_beta_tester;await supabase.from("profiles").update({is_beta_tester:val}).eq("id",u.id);setAdminDetailUser({...u,is_beta_tester:val});setAdminUsers(prev=>prev.map(x=>x.id===u.id?{...x,is_beta_tester:val}:x));}} style={{padding:"6px 14px",borderRadius:6,background:u.is_beta_tester?T.a+"18":T.d,color:u.is_beta_tester?T.a:T.m,fontSize:12,fontWeight:600,cursor:"pointer",border:`1px solid ${u.is_beta_tester?T.a+"40":T.b}`}}>
-                    {u.is_beta_tester?"✓ Beta Tester":"Toggle Beta"}
-                  </div>
-                  {u.role!=="owner"&&<div onClick={async()=>{setImpersonateLoading(u.id);try{const res=await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/admin-impersonate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:authUser.id,target_user_id:u.id})});const data=await res.json();if(data.error){alert(data.error);setImpersonateLoading(false);return;}setRealUser({authUser,profile});setImpersonating(data.impersonate||{id:u.id,full_name:u.full_name||u.email,email:u.email,plan:u.plan||'free',role:u.role||'user'});setAdminDetailUser(null);setViewWithHistory('home');}catch(e){alert('Failed to connect');}setImpersonateLoading(false);}} style={{padding:"6px 14px",borderRadius:6,border:`1px solid ${T.bl}30`,background:"transparent",color:T.bl,fontSize:12,fontWeight:600,cursor:"pointer"}}>{impersonateLoading===u.id?"Loading...":"👁 View As"}</div>}
-                </div>
-              </>)}
-            </>);})()}
-          </div>
-        </div>
       )}
 
       </>}
