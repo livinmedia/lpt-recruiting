@@ -679,6 +679,8 @@ export default function App(){
   const [blogTab,setBlogTab]=useState("brokerage");
   const [dailyContent,setDailyContent]=useState([]);
   const [dcExpanded,setDcExpanded]=useState({});
+  const [dcDate,setDcDate]=useState(new Date().toISOString().split('T')[0]);
+  const [dcPlatform,setDcPlatform]=useState("All");
   const [rkrtContent,setRkrtContent]=useState([]);
   const [rkrtContentTab,setRkrtContentTab]=useState("social");
   const [rkrtGenerating,setRkrtGenerating]=useState(false);
@@ -1004,20 +1006,39 @@ export default function App(){
           )}
         </div>}
         {blogTab==="daily"&&<div>
-          {dailyContent.length>0?dailyContent.map((dc,i)=>{
-            const expanded=dcExpanded[dc.id];
-            const platformColor=dc.platform==="facebook"?"#3B82F6":dc.platform==="instagram"?"#E040FB":"#F59E0B";
-            return(
-            <div key={dc.id||i} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 18px",marginBottom:8}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:4,background:platformColor+"20",color:platformColor,textTransform:"capitalize"}}>{dc.platform||"post"}</span>
-                <span style={{fontSize:12,color:T.m}}>{dc.content_date||new Date(dc.created_at).toLocaleDateString()}</span>
-                {dc.is_posted&&<span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:T.a+"20",color:T.a}}>Posted</span>}
-              </div>
-              <div style={{fontSize:14,color:T.t,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{expanded?(dc.body||dc.content||""):(dc.body||dc.content||"").substring(0,150)}{!expanded&&(dc.body||dc.content||"").length>150?"…":""}</div>
-              {(dc.body||dc.content||"").length>150&&<div onClick={()=>setDcExpanded(p=>({...p,[dc.id]:!expanded}))} style={{fontSize:12,color:T.a,fontWeight:600,cursor:"pointer",marginTop:6}}>{expanded?"Show less":"Show more"}</div>}
-            </div>);
-          }):<div style={{textAlign:"center",padding:"24px",color:T.m,fontSize:14}}>No daily content yet</div>}
+          {/* Date Navigation */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginBottom:16}}>
+            <div onClick={()=>{const d=new Date(dcDate+'T12:00:00');d.setDate(d.getDate()-1);setDcDate(d.toISOString().split('T')[0]);}} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,color:T.s,padding:"6px 12px",cursor:"pointer",fontSize:16}}>←</div>
+            <span style={{fontSize:15,fontWeight:700,color:T.t,minWidth:200,textAlign:"center"}}>{new Date(dcDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'})}</span>
+            <div onClick={()=>{const d=new Date(dcDate+'T12:00:00');d.setDate(d.getDate()+1);setDcDate(d.toISOString().split('T')[0]);}} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:8,color:T.s,padding:"6px 12px",cursor:"pointer",fontSize:16}}>→</div>
+            <div onClick={()=>setDcDate(new Date().toISOString().split('T')[0])} style={{background:T.a+"15",border:`1px solid ${T.a}30`,borderRadius:8,color:T.a,padding:"6px 12px",cursor:"pointer",fontSize:12,fontWeight:700}}>Today</div>
+          </div>
+          {/* Platform Filter */}
+          <div style={{display:"flex",gap:8,marginBottom:16}}>
+            {["All","Facebook","Instagram"].map(p=>(
+              <div key={p} onClick={()=>setDcPlatform(p)} style={{padding:"6px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:dcPlatform===p?T.a+"15":T.d,border:`1px solid ${dcPlatform===p?T.a+"30":T.b}`,color:dcPlatform===p?T.a:T.m}}>{p}</div>
+            ))}
+          </div>
+          {/* Filtered Content */}
+          {(()=>{
+            const filtered=dailyContent.filter(dc=>dc.content_date===dcDate&&(dcPlatform==="All"||dc.platform===dcPlatform.toLowerCase()));
+            return filtered.length>0?filtered.map((dc,i)=>{
+              const expanded=dcExpanded[dc.id];
+              const platformColor=dc.platform==="facebook"?"#3B82F6":dc.platform==="instagram"?"#E040FB":"#F59E0B";
+              return(
+              <div key={dc.id||i} style={{background:T.d,border:`1px solid ${T.b}`,borderRadius:10,padding:"16px 18px",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                  <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:4,background:platformColor+"20",color:platformColor,textTransform:"capitalize"}}>{dc.platform||"post"}</span>
+                  <span style={{fontSize:12,color:T.m}}>{dc.content_date}</span>
+                  {dc.is_posted&&<span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:4,background:T.a+"20",color:T.a}}>Posted</span>}
+                  {dc.theme&&<span style={{fontSize:11,color:T.s,textTransform:"capitalize"}}>{dc.theme.replace(/_/g," ")}</span>}
+                </div>
+                {dc.headline&&<div style={{fontSize:15,fontWeight:700,color:T.t,marginBottom:6}}>{dc.headline}</div>}
+                <div style={{fontSize:13,color:T.s,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{expanded?(dc.body||dc.content||""):(dc.body||dc.content||"").substring(0,150)}{!expanded&&(dc.body||dc.content||"").length>150?"…":""}</div>
+                {(dc.body||dc.content||"").length>150&&<div onClick={()=>setDcExpanded(p=>({...p,[dc.id]:!expanded}))} style={{fontSize:12,color:T.a,fontWeight:600,cursor:"pointer",marginTop:6}}>{expanded?"Show less":"Show more"}</div>}
+              </div>);
+            }):<div style={{textAlign:"center",padding:"40px",color:T.m}}><div style={{fontSize:28,marginBottom:8}}>📭</div>No content for this date{dcPlatform!=="All"?` on ${dcPlatform}`:""}</div>;
+          })()}
         </div>}
       </div>
       </>}
