@@ -46,6 +46,18 @@ export default async function middleware(request) {
     });
   }
 
+  if (pathname.startsWith('/i/')) {
+    const slug = pathname.slice(3); // strip "/i/"
+    const existingParams = url.searchParams.toString();
+    const connector = existingParams ? '&' : '';
+    const lpUrl = `https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-insight?slug=${encodeURIComponent(slug)}${connector}${existingParams}`;
+    const res = await fetch(lpUrl);
+    return new Response(res.body, {
+      status: res.status,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' }
+    });
+  }
+
   if (parts.length > 0 && BLOG_SECTIONS.includes(parts[0])) {
     const section = parts[0];
     const post = parts[1] || '';
@@ -68,6 +80,6 @@ export default async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
+  matcher: ['/', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
 };
 // 1773555408
