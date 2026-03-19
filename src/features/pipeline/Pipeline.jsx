@@ -26,6 +26,7 @@ export default function Pipeline({
   setSearch,
   inlineLoading = false,
   onUpdateStage,
+  onTriggerDraftEmail,
 }) {
   const [pipeView, setPipeView] = useState("kanban");
   const [filters, setFilters] = useState({ market: "", tier: "", urgency: "", brokerage: "" });
@@ -92,7 +93,7 @@ export default function Pipeline({
         </div>
         {act && (
           <div
-            onClick={() => { onSelectLead(l); onNavigate("lead"); askRueInline(act.q); }}
+            onClick={() => { onSelectLead(l); onNavigate("lead"); if (act.label === "Draft Outreach" && onTriggerDraftEmail) { onTriggerDraftEmail(); } else { askRueInline(act.q); } }}
             style={{ marginTop: 6, padding: "10px 14px", borderRadius: 5, background: T.as, border: `1px solid ${T.a}15`, fontSize: 14, fontWeight: 700, color: T.a, cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "center", justifyContent: "center" }}
           >
             {act.icon} {act.label}

@@ -1,7 +1,7 @@
 // RKRT.in Lead Page
 // Individual lead detail view
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
@@ -62,7 +62,7 @@ function ScoreGauge({ score }) {
   );
 }
 
-export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, inlineLoading, userId, onDelete, userProfile }) {
+export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, inlineLoading, userId, onDelete, userProfile, autoDraftEmail, onAutoDraftConsumed }) {
   const [tab, setTab] = useState("overview");
   const [notes, setNotes] = useState(lead.notes || "");
   const [saving, setSaving] = useState(false);
@@ -105,6 +105,19 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
       loadDripEmails();
     }
   }, [lead?.id]);
+
+  // Auto-open email sidebar and draft when arriving from Pipeline "Draft Outreach"
+  const autoDraftTriggered = useRef(false);
+  useEffect(() => {
+    if (autoDraftEmail && !autoDraftTriggered.current) {
+      autoDraftTriggered.current = true;
+      (async () => {
+        await openEmailSidebar();
+        draftWithRue();
+      })();
+      if (onAutoDraftConsumed) onAutoDraftConsumed();
+    }
+  }, [autoDraftEmail]);
 
   const loadDripEmails = async () => {
     const { data } = await supabase.from("lead_drip_emails").select("*").eq("lead_id", lead.id).eq("rue_generated", true).order("scheduled_for", { ascending: true });
@@ -483,8 +496,8 @@ Write the email body. Be specific to this person — reference their brokerage, 
         {ruePrompts.slice(1).map(([icon, label, q], i) => (
           <div
             key={i}
-            onClick={() => onAskInline(q)}
-            style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, padding: "14px 16px", cursor: inlineLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 10, opacity: inlineLoading ? 0.5 : 1 }}
+            onClick={() => i === 0 ? (async () => { await openEmailSidebar(); draftWithRue(); })() : onAskInline(q)}
+            style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, padding: "14px 16px", cursor: inlineLoading || emailDrafting ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 10, opacity: inlineLoading ? 0.5 : 1 }}
             onMouseOver={e => e.currentTarget.style.borderColor = T.bh}
             onMouseOut={e => e.currentTarget.style.borderColor = T.b}
           >
