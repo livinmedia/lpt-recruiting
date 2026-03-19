@@ -51,6 +51,7 @@ export default function App(){
   const [activity,setActivity]=useState([]);
   const [selLead,setSelLead]=useState(null);
   const [autoDraftEmail,setAutoDraftEmail]=useState(false);
+  const [pendingLeadId,setPendingLeadId]=useState(null);
   const [loading,setLoading]=useState(true);
   const [search,setSearch]=useState("");
   const [authUser,setAuthUser]=useState(null);
@@ -132,6 +133,15 @@ export default function App(){
     return () => supabase.removeChannel(channel);
   },[load]);
 
+  // Resolve pending lead ID from URL hash once leads are loaded
+  useEffect(()=>{
+    if(pendingLeadId&&leads.length>0){
+      const found=leads.find(l=>l.id===pendingLeadId);
+      if(found){setSelLead(found);selLeadRef.current=found;}
+      setPendingLeadId(null);
+    }
+  },[pendingLeadId,leads]);
+
   const [chartsReady,setChartsReady]=useState(false);
   useEffect(()=>{rechartsReady.then(()=>setChartsReady(true));},[]);
   const [inlineResponse,setInlineResponse]=useState(null);
@@ -141,6 +151,7 @@ export default function App(){
   const [rueChatInput,setRueChatInput]=useState("");
   const [rueCopySaved,setRueCopySaved]=useState(false);
   const rueMessagesRef=useRef(null);
+  const selLeadRef=useRef(null);
   const [inboxUnread,setInboxUnread]=useState(0);
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [profileMenuOpen,setProfileMenuOpen]=useState(false);
@@ -175,8 +186,14 @@ export default function App(){
           const {data:rueIntake}=await supabase.from('rue_intake').select('completed').eq('user_id',prof.id).single();
           if(!rueIntake || !rueIntake.completed) setShowRueIntake(true);
         }
-        const initialView = window.location.hash.replace("#","");
-        if (initialView && initialView !== "home") setView(initialView);
+        const initialHash = window.location.hash.replace("#","");
+        const leadMatch = initialHash.match(/^lead\/(.+)$/);
+        if (leadMatch) {
+          setView("lead");
+          setPendingLeadId(leadMatch[1]);
+        } else if (initialHash && initialHash !== "home") {
+          setView(initialHash);
+        }
         // Check for Stripe upgrade success
         if(window.location.search.includes('upgraded=true')){
           const freshProf=await supabase.from("profiles").select("*").eq("id",session.user.id).single();
@@ -568,7 +585,9 @@ export default function App(){
   };
 
   const setViewWithHistory=(v)=>{
-    window.history.pushState({view:v},"",`#${v}`);
+    const lid = v==="lead" && selLeadRef.current?.id ? selLeadRef.current.id : null;
+    const hash = lid ? `lead/${lid}` : v;
+    window.history.pushState({view:v,leadId:lid},"",`#${hash}`);
     setView(v);
     setInlineResponse(null);
     setInlineChatHistory([]);
@@ -576,12 +595,25 @@ export default function App(){
   };
   useEffect(()=>{
     const onPop=(ev)=>{
-      if(ev.state?.view){setView(ev.state.view);if(ev.state.view!=="lead")setSelLead(null);}
-      else{const h=window.location.hash.replace("#","");setView(h||"home");setSelLead(null);}
+      if(ev.state?.view){
+        setView(ev.state.view);
+        if(ev.state.view==="lead"&&ev.state.leadId){
+          const found=leads.find(l=>l.id===ev.state.leadId);
+          if(found){setSelLead(found);selLeadRef.current=found;}else setSelLead(null);
+        } else if(ev.state.view!=="lead") setSelLead(null);
+      } else {
+        const h=window.location.hash.replace("#","");
+        const leadMatch=h.match(/^lead\/(.+)$/);
+        if(leadMatch){
+          setView("lead");
+          const found=leads.find(l=>l.id===leadMatch[1]);
+          if(found){setSelLead(found);selLeadRef.current=found;}
+        } else {setView(h||"home");setSelLead(null);}
+      }
     };
     window.addEventListener("popstate",onPop);
     return()=>window.removeEventListener("popstate",onPop);
-  },[]);
+  },[leads]);
 
   // Track page views on navigation
   useEffect(() => {
@@ -595,6 +627,7 @@ export default function App(){
 
   const handleSelectLead = (lead) => {
     setSelLead(lead);
+    selLeadRef.current=lead;
     if (lead?.id) trackActivity(effectiveUserId, 'view_lead', { lead_id: lead.id, lead_name: `${lead.first_name || ''} ${lead.last_name || ''}`.trim() });
   };
 
@@ -2137,7 +2170,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="beta"&&isBeta&&<BetaHubView/>}
         {view==="profile"&&<ProfilePage profile={effectiveProfile} userId={effectiveUserId} leads={leads} onProfileUpdate={loadProfile}/>}
         {view==="lead"&&!selLead&&<div style={{padding:40,textAlign:"center"}}><p style={{color:"#8B949E"}}>No lead selected.</p><div onClick={()=>setViewWithHistory("pipeline")} style={{color:"#00B386",cursor:"pointer",marginTop:8}}>← Back to Pipeline</div></div>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askRueInline} onClearInline={()=>{setInlineResponse(null);setInlineChatHistory([]);}} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onDelete={handleDeleteLead} userProfile={effectiveProfile} autoDraftEmail={autoDraftEmail} onAutoDraftConsumed={()=>setAutoDraftEmail(false)}/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);selLeadRef.current=null;setViewWithHistory("pipeline");}} onAskInline={askRueInline} onClearInline={()=>{setInlineResponse(null);setInlineChatHistory([]);}} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onDelete={handleDeleteLead} userProfile={effectiveProfile} autoDraftEmail={autoDraftEmail} onAutoDraftConsumed={()=>setAutoDraftEmail(false)}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>
