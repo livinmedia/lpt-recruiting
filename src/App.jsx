@@ -649,9 +649,12 @@ export default function App(){
 
 
   const [newLead,setNewLead]=useState({first_name:"",last_name:"",phone:"",email:"",market:"",brokerage:"",source:"",notes:""});
+  const [savingLead,setSavingLead]=useState(false);
+  const canSaveLead=newLead.first_name.trim()&&(newLead.phone.trim()||newLead.email.trim());
 
   const saveLead=async(doResearch)=>{
-    if(!newLead.first_name.trim())return;
+    if(!canSaveLead||savingLead)return;
+    setSavingLead(true);
     try{
       const body={
         user_id:authUser.id,
@@ -667,7 +670,7 @@ export default function App(){
         urgency:"LOW"
       };
       const r=await fetch(`${RUE_SUPA}/leads`,{method:"POST",headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(body)});
-      if(!r.ok){console.error("Add lead error:",r.status,await r.text());return;}
+      if(!r.ok){console.error("Add lead error:",r.status,await r.text());setSavingLead(false);return;}
       const saved=await r.json();
       const lead=Array.isArray(saved)?saved[0]:saved;
       await load();
@@ -681,7 +684,8 @@ export default function App(){
         setViewWithHistory("crm");
       }
       setNewLead({first_name:"",last_name:"",phone:"",email:"",market:"",brokerage:"",source:"",notes:""});
-    }catch(e){console.error("Save lead error:",e);}
+      setSavingLead(false);
+    }catch(e){console.error("Save lead error:",e);setSavingLead(false);}
   };
 
   const needsFollowUp=leads.filter(l=>l.pipeline_stage&&l.pipeline_stage!=="new"&&l.pipeline_stage!=="recruited"&&l.created_at&&(Date.now()-new Date(l.created_at))>3*86400000);
@@ -2140,19 +2144,12 @@ select option{background:${T.card};color:${T.t}}
               ))}
               {inlineLoading&&(<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0"}}><div style={{width:6,height:6,borderRadius:"50%",background:T.a,animation:"pulse 0.8s infinite"}}/><div style={{width:6,height:6,borderRadius:"50%",background:T.a,animation:"pulse 0.8s 0.2s infinite"}}/><div style={{width:6,height:6,borderRadius:"50%",background:T.a,animation:"pulse 0.8s 0.4s infinite"}}/><span style={{fontSize:12,color:T.m,marginLeft:4}}>Rue is thinking...</span></div>)}
             </div>
-            {inlineResponse&&!inlineLoading&&(isPro?(
+            {inlineResponse&&!inlineLoading&&(
               <div style={{padding:"10px 14px",borderTop:`1px solid ${T.b}`,display:"flex",gap:8,flexShrink:0}}>
                 <input value={rueChatInput} onChange={e=>setRueChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendRueChatReply(rueChatInput);setRueChatInput("");}}} placeholder="Ask Rue a follow-up..." style={{flex:1,background:T.d,border:`1px solid ${T.b}`,borderRadius:7,padding:"8px 12px",fontSize:13,color:T.t,outline:"none"}}/>
                 <div onClick={()=>{if(rueChatInput.trim()){sendRueChatReply(rueChatInput);setRueChatInput("");}}} style={{padding:"8px 16px",borderRadius:7,background:T.a,color:"#000",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",whiteSpace:"nowrap",flexShrink:0}}>Send →</div>
               </div>
-            ):(
-              <div style={{padding:"10px 16px",borderTop:`1px solid ${T.b}`,background:"#F59E0B08",flexShrink:0}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-                  <div style={{fontSize:12,color:T.s}}><span style={{fontWeight:700,color:"#F59E0B"}}>🔒 Pro</span> — upgrade to continue the conversation</div>
-                  <div onClick={()=>setViewWithHistory("profile")} style={{padding:"6px 14px",borderRadius:7,background:"#F59E0B",color:"#000",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Upgrade →</div>
-                </div>
-              </div>
-            ))}
+            )}
           </div>
         )}
 
@@ -2160,7 +2157,7 @@ select option{background:${T.card};color:${T.t}}
 <Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0,5)} userId={effectiveUserId} onNavigate={setViewWithHistory} onSelectLead={handleSelectLead} askRueInline={askRueInline} chartsReady={chartsReady} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell}/></>}
         {view==="pipeline"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} search={search} setSearch={setSearch} onTriggerDraftEmail={()=>setAutoDraftEmail(true)}/></>}
         {view==="crm"&&<>{!authLoading&&!isPro&&<div style={{background:'#F59E0B15',border:'1px solid #F59E0B40',borderRadius:10,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}><div><span style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>⚠️ Free Plan: </span><span style={{fontSize:13,color:T.s}}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={()=>startCheckout(authUser?.id,profile?.email)} style={{padding:'8px 16px',borderRadius:8,background:'#F59E0B',color:'#000',fontSize:13,fontWeight:700,cursor:'pointer'}}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} userId={effectiveUserId} profile={effectiveProfile} onBulkDelete={(ids)=>setLeads(p=>p.filter(l=>!ids.includes(l.id)))}/></>}
-        {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{setNewLead(prev=>({...prev,...data}));setView("addlead");}} onEnrich={(agent)=>setEnrichAgent(agent)}/></ProGate>}
+        {view==="agents"&&<ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data)=>{if(data&&data.id){load();handleSelectLead(data);setViewWithHistory("lead");}else{setNewLead(prev=>({...prev,...data}));setViewWithHistory("addlead");}}} onEnrich={(agent)=>setEnrichAgent(agent)}/></ProGate>}
         {enrichAgent&&<AgentEnrichment supabase={supabase} agent={enrichAgent} userId={authUser?.id} profile={profile} onClose={()=>setEnrichAgent(null)} onLeadAdded={(lead)=>{setEnrichAgent(null);}}/>}
         {view==="content"&&<ContentTab userId={effectiveUserId} userProfile={effectiveProfile}/>}
         {view==="inbox"&&<EmailInbox supabase={supabase} userId={authUser?.id} profile={effectiveProfile} />}
@@ -2179,8 +2176,8 @@ select option{background:${T.card};color:${T.t}}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}} className="form-grid">
                 <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>FIRST NAME *</div><input autoComplete="off" value={newLead.first_name} onChange={ev=>setNewLead(p=>({...p,first_name:ev.target.value}))} placeholder="First Name" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${newLead.first_name.trim()?T.a+"30":T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
                 <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>LAST NAME</div><input autoComplete="off" value={newLead.last_name} onChange={ev=>setNewLead(p=>({...p,last_name:ev.target.value}))} placeholder="Last Name" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
-                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>PHONE</div><input autoComplete="off" value={newLead.phone} onChange={ev=>setNewLead(p=>({...p,phone:ev.target.value}))} placeholder="(555) 123-4567" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
-                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>EMAIL</div><input autoComplete="off" value={newLead.email} onChange={ev=>setNewLead(p=>({...p,email:ev.target.value}))} placeholder="agent@email.com" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
+                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>PHONE {!newLead.email.trim()?"*":""}</div><input autoComplete="off" value={newLead.phone} onChange={ev=>setNewLead(p=>({...p,phone:ev.target.value}))} placeholder="(555) 123-4567" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${newLead.phone.trim()?T.a+"30":T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
+                <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>EMAIL {!newLead.phone.trim()?"*":""}</div><input autoComplete="off" value={newLead.email} onChange={ev=>setNewLead(p=>({...p,email:ev.target.value}))} placeholder="agent@email.com" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${newLead.email.trim()?T.a+"30":T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
                 <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>MARKET</div><input autoComplete="off" value={newLead.market} onChange={ev=>setNewLead(p=>({...p,market:ev.target.value}))} placeholder="Austin, TX" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
                 <div><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>BROKERAGE</div><input autoComplete="off" value={newLead.brokerage} onChange={ev=>setNewLead(p=>({...p,brokerage:ev.target.value}))} placeholder="Current Brokerage" style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/></div>
                 <div style={{gridColumn:"1/3"}}><div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>SOURCE</div><select value={newLead.source} onChange={ev=>setNewLead(p=>({...p,source:ev.target.value}))} style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}><option value="">Select source...</option>{["Manual","Referral","Facebook Ad","Instagram Ad","GHL Webhook","LinkedIn","Cold Outreach","Event","Open House","Other"].map(s=><option key={s} value={s}>{s}</option>)}</select></div>
@@ -2189,9 +2186,10 @@ select option{background:${T.card};color:${T.t}}
                 <div style={{fontSize:12,color:T.m,letterSpacing:1.5,fontWeight:700,marginBottom:6}}>NOTES</div>
                 <textarea value={newLead.notes} onChange={ev=>setNewLead(p=>({...p,notes:ev.target.value}))} placeholder="Where you met them, what they said, any context..." rows={3} style={{width:"100%",padding:"14px 16px",borderRadius:8,background:T.d,border:`1px solid ${T.b}`,color:T.t,fontSize:16,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",lineHeight:1.5}}/>
               </div>
+              {!canSaveLead&&(newLead.first_name.trim()||newLead.phone.trim()||newLead.email.trim())&&<div style={{fontSize:12,color:"#F59E0B",marginBottom:12}}>Please enter a name and at least a phone or email.</div>}
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                <div onClick={()=>saveLead(true)} style={{padding:"14px 28px",borderRadius:8,background:newLead.first_name.trim()?T.a:"#333",color:newLead.first_name.trim()?"#000":T.m,fontSize:16,fontWeight:700,cursor:newLead.first_name.trim()?"pointer":"default",display:"flex",alignItems:"center",gap:8}}>🔍 Save & Research with RUE</div>
-                <div onClick={()=>saveLead(false)} style={{padding:"14px 28px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.s,fontSize:16,fontWeight:700,cursor:newLead.first_name.trim()?"pointer":"default",opacity:newLead.first_name.trim()?1:0.4}}>Save to CRM</div>
+                <div onClick={()=>{if(canSaveLead&&!savingLead)saveLead(true);}} style={{padding:"14px 28px",borderRadius:8,background:canSaveLead&&!savingLead?T.a:"#333",color:canSaveLead&&!savingLead?"#000":T.m,fontSize:16,fontWeight:700,cursor:canSaveLead&&!savingLead?"pointer":"default",display:"flex",alignItems:"center",gap:8,pointerEvents:savingLead?"none":"auto"}}>{savingLead?"Saving...":"🔍 Save & Research with RUE"}</div>
+                <div onClick={()=>{if(canSaveLead&&!savingLead)saveLead(false);}} style={{padding:"14px 28px",borderRadius:8,background:T.card,border:`1px solid ${T.b}`,color:T.s,fontSize:16,fontWeight:700,cursor:canSaveLead&&!savingLead?"pointer":"default",opacity:canSaveLead&&!savingLead?1:0.4,pointerEvents:savingLead?"none":"auto"}}>{savingLead?"Saving...":"Save to CRM"}</div>
               </div>
             </div>
           </div>

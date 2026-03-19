@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { isPro } from '../lib/utils';
 import { startCheckout } from '../lib/supabase';
 
+const FREE_MESSAGE_LIMIT = 10;
+
 const RUE_CHAT_URL = "https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat";
 
 const T = {
@@ -187,53 +189,9 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
 
   const userIsPro = isPro(profile);
 
-  // Upgrade wall for free users
-  if (!userIsPro) return (
-    <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)", zIndex: 1300 }} />
-      <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 420, maxWidth: "100vw", background: T.bg, borderLeft: `1px solid ${T.b}`, zIndex: 1301, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)", animation: "slideInRight 0.25s ease" }}>
-        {/* Header */}
-        <div style={{ padding: "18px 20px", borderBottom: `1px solid ${T.b}`, display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg, #00E5A0, #3B82F6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🤖</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: T.t }}>Rue</div>
-            <div style={{ fontSize: 12, color: T.a, fontWeight: 600 }}>Your AI Recruiting Agent</div>
-          </div>
-          <div onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: T.s, background: T.d, border: `1px solid ${T.b}` }}>✕</div>
-        </div>
-
-        {/* Upgrade content */}
-        <div style={{ flex: 1, padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-          <div style={{ width: 72, height: 72, borderRadius: 18, background: "linear-gradient(135deg, #00E5A0, #3B82F6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, marginBottom: 20, boxShadow: "0 0 40px #00E5A040" }}>🤖</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: T.t, marginBottom: 10 }}>Meet Rue — Your AI Recruiting Coach</div>
-          <div style={{ fontSize: 14, color: T.s, lineHeight: 1.7, marginBottom: 28, maxWidth: 320 }}>
-            Rue can help you find prospects, draft outreach messages, analyze your pipeline, and build recruiting strategies.
-          </div>
-
-          <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "20px 24px", width: "100%", marginBottom: 24, textAlign: "left" }}>
-            <div style={{ fontSize: 12, color: T.a, fontWeight: 700, letterSpacing: 1.2, marginBottom: 12 }}>ASK RUE TO</div>
-            {["Find agents to recruit in your market", "Draft personalized outreach messages", "Score and prioritize your pipeline leads", "Create weekly recruiting game plans"].map((item, i) => (
-              <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
-                <span style={{ color: T.a, fontSize: 12, marginTop: 2, flexShrink: 0 }}>✓</span>
-                <span style={{ fontSize: 13, color: T.s, lineHeight: 1.4 }}>{item}</span>
-              </div>
-            ))}
-          </div>
-
-          <div
-            onClick={() => startCheckout(profile?.id, profile?.email)}
-            style={{ width: "100%", padding: "16px", borderRadius: 12, background: T.a, color: "#000", fontSize: 15, fontWeight: 800, cursor: "pointer", textAlign: "center", marginBottom: 12 }}
-          >
-            Upgrade to Recruiter — $97/mo →
-          </div>
-          <div onClick={onClose} style={{ fontSize: 12, color: T.m, cursor: "pointer", textDecoration: "underline" }}>
-            Learn more about RKRT Pro features
-          </div>
-        </div>
-        <style>{`@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
-      </div>
-    </>
-  );
+  // Free users can use Rue for basic confirmation/validation with a message limit
+  const userMessageCount = messages.filter(m => m.role === "user").length;
+  const freeHitLimit = !userIsPro && userMessageCount >= FREE_MESSAGE_LIMIT;
 
   return (
     <>
@@ -368,38 +326,50 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
           <div ref={messagesEnd} />
         </div>
 
+        {/* Free tier limit banner */}
+        {freeHitLimit && (
+          <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.b}`, background: "#F59E0B08", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+              <div style={{ fontSize: 12, color: T.s }}>You've used your {FREE_MESSAGE_LIMIT} free messages. Upgrade for unlimited Rue access.</div>
+              <div onClick={() => startCheckout(profile?.id, profile?.email)} style={{ padding: "6px 14px", borderRadius: 7, background: "#F59E0B", color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Upgrade →</div>
+            </div>
+          </div>
+        )}
+
         {/* Input */}
-        <div style={{
-          padding: "14px 20px", borderTop: `1px solid ${T.b}`,
-          display: "flex", gap: 10, flexShrink: 0,
-          background: T.side,
-        }}>
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder="Ask Rue anything..."
-            style={{
-              flex: 1, padding: "12px 16px", borderRadius: 10,
-              background: T.d, border: `1px solid ${T.b}`,
-              color: T.t, fontSize: 14, outline: "none",
-              fontFamily: "inherit",
-            }}
-          />
-          <div
-            onClick={sendMessage}
-            style={{
-              padding: "12px 20px", borderRadius: 10,
-              background: input.trim() && !loading ? T.a : T.d,
-              color: input.trim() && !loading ? "#000" : T.m,
-              fontSize: 14, fontWeight: 700,
-              cursor: input.trim() && !loading ? "pointer" : "default",
-              display: "flex", alignItems: "center",
-              transition: "all 0.15s",
-            }}
-          >Send</div>
-        </div>
+        {!freeHitLimit && (
+          <div style={{
+            padding: "14px 20px", borderTop: `1px solid ${T.b}`,
+            display: "flex", gap: 10, flexShrink: 0,
+            background: T.side,
+          }}>
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+              placeholder="Ask Rue anything..."
+              style={{
+                flex: 1, padding: "12px 16px", borderRadius: 10,
+                background: T.d, border: `1px solid ${T.b}`,
+                color: T.t, fontSize: 14, outline: "none",
+                fontFamily: "inherit",
+              }}
+            />
+            <div
+              onClick={sendMessage}
+              style={{
+                padding: "12px 20px", borderRadius: 10,
+                background: input.trim() && !loading ? T.a : T.d,
+                color: input.trim() && !loading ? "#000" : T.m,
+                fontSize: 14, fontWeight: 700,
+                cursor: input.trim() && !loading ? "pointer" : "default",
+                display: "flex", alignItems: "center",
+                transition: "all 0.15s",
+              }}
+            >Send</div>
+          </div>
+        )}
       </div>
 
       <style>{`

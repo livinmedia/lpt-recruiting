@@ -91,7 +91,6 @@ export async function agentSearch({
   } else {
     params.push(`order=full_name.asc`);
   params.push(`full_name=not.eq.`);
-  params.push(`full_name=not.eq.`);
   }
 
   params.push(`limit=${limit}`);
@@ -115,8 +114,16 @@ export async function agentSearch({
     }
 
     const total = parseInt(r.headers.get("content-range")?.split("/")?.[1] || "0");
-    const data = await r.json();
-    return { data: Array.isArray(data) ? data : [], total };
+    const raw = await r.json();
+    // Deduplicate agents by id to prevent the same agent appearing multiple times
+    const seen = new Set();
+    const data = (Array.isArray(raw) ? raw : []).filter((a) => {
+      const key = a.id ?? `${a.license_number}-${a.state}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return { data, total };
   } catch (e) {
     console.error("Agent search error:", e);
     return { data: [], total: 0 };

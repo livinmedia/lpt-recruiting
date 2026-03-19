@@ -6,6 +6,18 @@ import T from '../../lib/theme';
 import { supabase, agentSearch, logActivity } from '../../lib/supabase';
 import { ago, truncate } from '../../lib/utils';
 
+function isValidEmail(email) {
+  if (!email || typeof email !== "string") return false;
+  const e = email.trim().toLowerCase();
+  if (!e || !e.includes("@")) return false;
+  const junk = ["unknown","none","n/a","na","null","undefined","noemail","no-email","noreply","no-reply","test","placeholder","example","fake"];
+  const local = e.split("@")[0];
+  const domain = e.split("@")[1];
+  if (junk.includes(local) || junk.includes(e)) return false;
+  if (["example.com","test.com","unknown.com","none.com"].includes(domain)) return false;
+  return true;
+}
+
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
 const STATE_DATA = { FL: 939832, TX: 189036, NY: 143738, CT: 19568 };
 const TOTAL_AGENTS = 1292174;
@@ -238,7 +250,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
             </thead>
             <tbody>
               {agents.length > 0 ? agents.map((a, i) => (
-                <tr key={i} style={{ borderBottom: `1px solid ${T.b}` }} onMouseOver={e => e.currentTarget.style.background = T.d} onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+                <tr key={a.id ?? i} style={{ borderBottom: `1px solid ${T.b}` }} onMouseOver={e => e.currentTarget.style.background = T.d} onMouseOut={e => e.currentTarget.style.background = "transparent"}>
                   <td style={{ padding: "14px 16px", fontSize: 15, fontWeight: 600, color: T.t }}>{truncate(agentName(a), 28)}</td>
                   <td style={{ padding: "14px 16px", fontSize: 14, color: T.s }}>{truncate(a.brokerage_name, 24) || "—"}</td>
                   <td style={{ padding: "14px 16px", fontSize: 14, color: T.s }}>{a.city || "—"}</td>
@@ -299,7 +311,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
             {enrichedData && (
               <div style={{ background: T.d, borderRadius: 10, padding: "16px 20px", marginBottom: 20 }}>
                 <div style={{ fontSize: 13, color: T.a, fontWeight: 700, marginBottom: 12 }}>🔍 ENRICHED DATA</div>
-                {enrichedData.email && <div style={{ fontSize: 14, color: T.t, marginBottom: 8 }}>📧 {enrichedData.email}</div>}
+                {isValidEmail(enrichedData.email) ? <div style={{ fontSize: 14, color: T.t, marginBottom: 8 }}>📧 {enrichedData.email}</div> : <div style={{ fontSize: 14, color: T.m, marginBottom: 8, fontStyle: "italic" }}>📧 No email found</div>}
                 {enrichedData.phone && <div style={{ fontSize: 14, color: T.t, marginBottom: 8 }}>📱 {enrichedData.phone}</div>}
                 {enrichedData.linkedin && <div style={{ fontSize: 14, color: T.bl, marginBottom: 8 }}>💼 <a href={enrichedData.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: T.bl }}>{enrichedData.linkedin}</a></div>}
                 {enrichedData.summary && <div style={{ fontSize: 14, color: T.s, lineHeight: 1.6, marginTop: 12 }}>{enrichedData.summary}</div>}

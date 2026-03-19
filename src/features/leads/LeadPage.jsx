@@ -313,8 +313,8 @@ ABOUT THE LEAD:
 - Name: ${lead.first_name} ${lead.last_name}
 - Their current brokerage: ${lead.brokerage_name || lead.brokerage || "unknown"}
 - Their market: ${lead.market || "unknown"}
-- Email: ${lead.email || "unknown"}
-- Phone: ${lead.phone || "unknown"}
+- Email: ${lead.email || "not available"}
+- Phone: ${lead.phone || "not available"}
 - Pipeline stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}
 - Interest score: ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"})
 - Activity: ${lead.activity_summary ? JSON.stringify(lead.activity_summary) : "no activity yet"}

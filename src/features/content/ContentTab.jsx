@@ -328,6 +328,16 @@ export default function ContentTab({ userId, userProfile }) {
 
   const getPageUrl = (path) => `https://rkrt.in/${path}?ref=${userId || ''}&target=${encodeURIComponent(selectedBrokerage)}`;
 
+  // Display-friendly URL: strip query params so links don't look overwhelming
+  const getDisplayUrl = (fullUrl) => {
+    try {
+      const u = new URL(fullUrl);
+      return u.origin + u.pathname;
+    } catch {
+      return fullUrl;
+    }
+  };
+
   const userBrokerage = userProfile?.brokerage || "LPT Realty";
   const userBrokSlug = userBrokerage.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
   const userBlogUrl = `https://rkrt.in/${userBrokSlug}?ref=${userId || ''}`;
@@ -402,7 +412,7 @@ export default function ContentTab({ userId, userProfile }) {
                 </div>
                 {/* URL + Copy */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                  <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{getPageUrl(lp.path)}</span>
+                  <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={getPageUrl(lp.path)}>{getDisplayUrl(getPageUrl(lp.path))}</span>
                   <CopyButton text={getPageUrl(lp.path)} label="Copy" />
                   {isAdmin && (() => { const posted = fbPosts.some(p => p.page_slug === lp.path && p.target_brokerage === selectedBrokerage); return posted ? <span style={{ padding: "6px 12px", fontSize: 11, color: "#22C55E", fontWeight: 700, whiteSpace: "nowrap" }}>✅ Posted</span> : <div onClick={async () => { try { const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=link&url=${encodeURIComponent(getPageUrl(lp.path))}&title=${encodeURIComponent(lp.fbTitle || lp.name)}&message=${encodeURIComponent(selectedBrokerage ? `Are you leaving money on the table at ${selectedBrokerage}? Find out now.` : 'Are you leaving money on the table at your brokerage? Find out now.')}&user_id=${userId}`); const d = await res.json(); if (d.success) { await supabase.from('user_fb_posts').insert({ user_id: userId, post_type: 'recruiting_link', page_name: lp.name, page_slug: lp.path, target_brokerage: selectedBrokerage, link_url: getPageUrl(lp.path), fb_results: d.results, pages_posted: d.results?.filter(r => r.status === 'posted').map(r => r.page) || [] }); setFbPosts(prev => [...prev, { page_slug: lp.path, target_brokerage: selectedBrokerage, created_at: new Date().toISOString() }]); showToast('Posted to ' + (d.results?.length || 2) + ' FB pages!'); } else { showToast('Error: ' + (d.error || 'Unknown')); } } catch (e) { showToast('Error: ' + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Post to FB</div>; })()}
                   {isAdmin && <div onClick={() => setBoostItem({ id: null, headline: lp.name, image_url: null, _boostUrl: getPageUrl(lp.path) })} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#F59E0B", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #F59E0B40", whiteSpace: "nowrap" }}>Boost</div>}
@@ -420,7 +430,7 @@ export default function ContentTab({ userId, userProfile }) {
                 <div style={{ fontSize: 13, color: T.s }}>AI-generated recruiting articles for your brokerage</div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace" }}>{userBlogUrl}</span>
+                <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={userBlogUrl}>{getDisplayUrl(userBlogUrl)}</span>
                 <CopyButton text={userBlogUrl} label="Copy" />
                 <a href={userBlogUrl} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>View →</a>
               </div>

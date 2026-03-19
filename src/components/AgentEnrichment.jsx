@@ -19,6 +19,25 @@ const T = {
   purple: "#a78bfa",
 };
 
+/** Returns true if the email looks like a real address (not a placeholder / junk). */
+function isValidEmail(email) {
+  if (!email || typeof email !== "string") return false;
+  const e = email.trim().toLowerCase();
+  if (!e || !e.includes("@")) return false;
+  // Reject obvious placeholders the enrichment API may return
+  const junk = [
+    "unknown", "none", "n/a", "na", "null", "undefined",
+    "noemail", "no-email", "noreply", "no-reply", "test",
+    "placeholder", "example", "fake", "info@example.com",
+  ];
+  const local = e.split("@")[0];
+  const domain = e.split("@")[1];
+  if (junk.includes(local) || junk.includes(e)) return false;
+  if (domain === "example.com" || domain === "test.com") return false;
+  if (domain === "unknown.com" || domain === "none.com") return false;
+  return true;
+}
+
 function formatName(raw) {
   if (!raw) return "";
   if (raw.includes(",")) {
@@ -155,13 +174,23 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Enrichment failed."); setEnriching(false); return; }
       if (json.quality === 0 || json.no_credit_charged) {
-        setError("No data found — no credit charged.");
+        setError("No new data found — no credit charged.");
         setEnriching(false);
         return;
       }
       const d = json.data || {};
-      setEnrichResult({ ...d, quality: json.quality, sources: json.sources, status: json.status, pattern_guess: d.email_confidence === "pattern_guess" });
-      setSelectedEmail(d.email || "");
+      const cleanEmail = isValidEmail(d.email) ? d.email : "";
+      const cleanCandidates = (d.email_candidates || []).filter(isValidEmail);
+      setEnrichResult({
+        ...d,
+        email: cleanEmail,
+        email_candidates: cleanCandidates,
+        quality: json.quality,
+        sources: json.sources,
+        status: json.status,
+        pattern_guess: d.email_confidence === "pattern_guess",
+      });
+      setSelectedEmail(cleanEmail);
       fetchUsage();
     } catch (err) {
       setError("Network error — please try again.");
@@ -447,7 +476,7 @@ export default function AgentEnrichment({ supabase, agent, userId, profile, onCl
                       </div>
                     </>
                   ) : (
-                    <span style={{ color: T.s, fontSize: 13 }}>Not found</span>
+                    <span style={{ color: T.s, fontSize: 13, fontStyle: "italic" }}>No email found</span>
                   )}
                 </div>
 

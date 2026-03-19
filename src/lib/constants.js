@@ -36,6 +36,7 @@ export const BROKERAGES = [
 
 // Target brokerages for recruiting
 export const TARGET_BROKERAGES = [
+  "LPT Realty",
   "Keller Williams",
   "eXp Realty",
   "RE/MAX",
