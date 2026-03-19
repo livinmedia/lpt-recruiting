@@ -135,10 +135,20 @@ export default function App(){
 
   // Resolve pending lead ID from URL hash once leads are loaded
   useEffect(()=>{
-    if(pendingLeadId&&leads.length>0){
-      const found=leads.find(l=>l.id===pendingLeadId);
-      if(found){setSelLead(found);selLeadRef.current=found;}
+    if(!pendingLeadId) return;
+    const found=leads.find(l=>l.id===pendingLeadId);
+    if(found){
+      setSelLead(found);selLeadRef.current=found;
       setPendingLeadId(null);
+    } else if(leads.length>0){
+      // Lead not in local list — fetch directly by ID
+      (async()=>{
+        try{
+          const r=await fetch(`${RUE_SUPA}/leads?id=eq.${pendingLeadId}&limit=1`,{headers:{"apikey":RUE_KEY,"Authorization":`Bearer ${RUE_KEY}`}});
+          if(r.ok){const data=await r.json();const lead=Array.isArray(data)?data[0]:data;if(lead){setSelLead(lead);selLeadRef.current=lead;}}
+        }catch(e){console.error("Failed to load lead from URL:",e);}
+        setPendingLeadId(null);
+      })();
     }
   },[pendingLeadId,leads]);
 
@@ -599,7 +609,7 @@ export default function App(){
         setView(ev.state.view);
         if(ev.state.view==="lead"&&ev.state.leadId){
           const found=leads.find(l=>l.id===ev.state.leadId);
-          if(found){setSelLead(found);selLeadRef.current=found;}else setSelLead(null);
+          if(found){setSelLead(found);selLeadRef.current=found;}else{setPendingLeadId(ev.state.leadId);}
         } else if(ev.state.view!=="lead") setSelLead(null);
       } else {
         const h=window.location.hash.replace("#","");
@@ -607,7 +617,7 @@ export default function App(){
         if(leadMatch){
           setView("lead");
           const found=leads.find(l=>l.id===leadMatch[1]);
-          if(found){setSelLead(found);selLeadRef.current=found;}
+          if(found){setSelLead(found);selLeadRef.current=found;}else{setPendingLeadId(leadMatch[1]);}
         } else {setView(h||"home");setSelLead(null);}
       }
     };
@@ -2166,7 +2176,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="admin"&&!impersonating&&profile?.role==="owner"&&<AdminView/>}
         {view==="beta"&&isBeta&&<BetaHubView/>}
         {view==="profile"&&<ProfilePage profile={effectiveProfile} userId={effectiveUserId} leads={leads} onProfileUpdate={loadProfile}/>}
-        {view==="lead"&&!selLead&&<div style={{padding:40,textAlign:"center"}}><p style={{color:"#8B949E"}}>No lead selected.</p><div onClick={()=>setViewWithHistory("pipeline")} style={{color:"#00B386",cursor:"pointer",marginTop:8}}>← Back to Pipeline</div></div>}
+        {view==="lead"&&!selLead&&<div style={{padding:40,textAlign:"center"}}>{pendingLeadId?<p style={{color:"#8B949E"}}>Loading lead…</p>:<><p style={{color:"#8B949E"}}>No lead selected.</p><div onClick={()=>setViewWithHistory("pipeline")} style={{color:"#00B386",cursor:"pointer",marginTop:8}}>← Back to Pipeline</div></>}</div>}
         {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);selLeadRef.current=null;setViewWithHistory("pipeline");}} onAskInline={askRueInline} onClearInline={()=>{setInlineResponse(null);setInlineChatHistory([]);}} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onDelete={handleDeleteLead} userProfile={effectiveProfile} autoDraftEmail={autoDraftEmail} onAutoDraftConsumed={()=>setAutoDraftEmail(false)}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
