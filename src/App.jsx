@@ -2137,7 +2137,7 @@ select option{background:${T.card};color:${T.t}}
         {view==="beta"&&isBeta&&<BetaHubView/>}
         {view==="profile"&&<ProfilePage profile={effectiveProfile} userId={effectiveUserId} leads={leads} onProfileUpdate={loadProfile}/>}
         {view==="lead"&&!selLead&&<div style={{padding:40,textAlign:"center"}}><p style={{color:"#8B949E"}}>No lead selected.</p><div onClick={()=>setViewWithHistory("pipeline")} style={{color:"#00B386",cursor:"pointer",marginTop:8}}>← Back to Pipeline</div></div>}
-        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askRueInline} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onDelete={handleDeleteLead} userProfile={effectiveProfile} autoDraftEmail={autoDraftEmail} onAutoDraftConsumed={()=>setAutoDraftEmail(false)}/>}
+        {view==="lead"&&selLead&&<LeadPage lead={selLead} onBack={()=>{setSelLead(null);setViewWithHistory("pipeline");}} onAskInline={askRueInline} onClearInline={()=>{setInlineResponse(null);setInlineChatHistory([]);}} inlineResponse={inlineResponse} inlineLoading={inlineLoading} userId={effectiveUserId} onDelete={handleDeleteLead} userProfile={effectiveProfile} autoDraftEmail={autoDraftEmail} onAutoDraftConsumed={()=>setAutoDraftEmail(false)}/>}
         {view==="addlead"&&(
           <div style={{padding:"24px 32px",maxWidth:640,margin:"0 auto"}}>
             <div onClick={()=>setViewWithHistory("home")} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:15,color:T.s,cursor:"pointer",marginBottom:16}}>← Back</div>

@@ -62,7 +62,7 @@ function ScoreGauge({ score }) {
   );
 }
 
-export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, inlineLoading, userId, onDelete, userProfile, autoDraftEmail, onAutoDraftConsumed }) {
+export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inlineResponse, inlineLoading, userId, onDelete, userProfile, autoDraftEmail, onAutoDraftConsumed }) {
   const [tab, setTab] = useState("overview");
   const [notes, setNotes] = useState(lead.notes || "");
   const [saving, setSaving] = useState(false);
@@ -188,15 +188,26 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
     setTasks(data || []);
   };
 
+  const [notesSaved, setNotesSaved] = useState(false);
   const saveNotes = async () => {
     setSaving(true);
-    await supabase.from("leads").update({ notes }).eq("id", lead.id);
-    logActivity(userId, 'update_lead_notes', { lead_id: lead.id });
+    setNotesSaved(false);
+    const { error } = await supabase.from("leads").update({ notes }).eq("id", lead.id);
+    if (error) {
+      console.error("Failed to save notes:", error);
+      alert("Failed to save notes. Please try again.");
+    } else {
+      lead.notes = notes;
+      logActivity(userId, 'update_lead_notes', { lead_id: lead.id });
+      setNotesSaved(true);
+      setTimeout(() => setNotesSaved(false), 2000);
+    }
     setSaving(false);
   };
 
   const updateStage = async (newStage) => {
-    await supabase.from("leads").update({ pipeline_stage: newStage }).eq("id", lead.id);
+    const { error } = await supabase.from("leads").update({ pipeline_stage: newStage }).eq("id", lead.id);
+    if (error) { console.error("Failed to update stage:", error); return; }
     logActivity(userId, 'update_lead_stage', { lead_id: lead.id, stage: newStage });
     lead.pipeline_stage = newStage;
   };
@@ -247,6 +258,7 @@ export default function LeadPage({ lead, onBack, onAskInline, inlineResponse, in
   const interest = interestLevel(lead.interest_score || 0);
 
   const openEmailSidebar = async () => {
+    if (onClearInline) onClearInline();
     setEmailTo(lead.email || "");
     setEmailSubject(`Why ${lead.brokerage_name || lead.brokerage || "your brokerage"} agents are making a move`);
     setEmailBody("");
@@ -839,8 +851,10 @@ Write the email body. Be specific to this person — reference their brokerage, 
                 placeholder="Add notes about this lead..."
                 style={{ width: "100%", minHeight: 200, padding: "16px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.t, fontSize: 15, outline: "none", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
               />
-              <div onClick={saveNotes} style={{ marginTop: 12, padding: "12px 20px", borderRadius: 8, background: saving ? T.m : T.a, color: saving ? T.s : "#000", fontSize: 14, fontWeight: 700, cursor: saving ? "wait" : "pointer", textAlign: "center", width: "fit-content" }}>
-                {saving ? "Saving..." : "Save Notes"}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
+                <div onClick={saveNotes} style={{ padding: "12px 20px", borderRadius: 8, background: saving ? T.m : notesSaved ? "#10b981" : T.a, color: saving ? T.s : "#000", fontSize: 14, fontWeight: 700, cursor: saving ? "wait" : "pointer", textAlign: "center", width: "fit-content" }}>
+                  {saving ? "Saving..." : notesSaved ? "✓ Saved!" : "Save Notes"}
+                </div>
               </div>
             </div>
           )}
