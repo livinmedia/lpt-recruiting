@@ -54,6 +54,7 @@ export async function startCheckout({ priceId, plan, mode = "subscription" } = {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
+        "apikey": SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({ priceId, plan, mode }),
     });
