@@ -85,19 +85,32 @@ export const PRIORITY_COLORS = {
   low: T.s,
 };
 
+// Stripe Price IDs
+export const STRIPE_PRICES = {
+  recruiter: 'price_1T7KWqLUyw8VkDG8LGq23UWH',
+  team_leader: 'price_1TBzqwLUyw8VkDG8QdUDNo9L',
+  regional_operator: 'price_1TBzqwLUyw8VkDG8dvxzP3ZX',
+  credits_50: 'price_1TBzqwLUyw8VkDG8ybG9deHo',
+  credits_200: 'price_1TBzqxLUyw8VkDG8RDQNXLj6',
+  credits_500: 'price_1TBzqxLUyw8VkDG8hODfUyyk',
+};
+
 // Pricing tiers
 export const PRICING_TIERS = [
   {
+    key: 'free',
     name: 'Free',
     price: '$0',
     period: 'forever',
     features: ['Agent search (limited)', '5 pipeline leads', 'Basic dashboard'],
   },
   {
+    key: 'recruiter',
     name: 'Recruiter',
     price: '$97',
     period: '/mo',
     badge: 'MOST POPULAR',
+    priceId: STRIPE_PRICES.recruiter,
     features: [
       '1.2M+ agent directory',
       'Unlimited leads',
@@ -109,10 +122,12 @@ export const PRICING_TIERS = [
     ],
   },
   {
+    key: 'team_leader',
     name: 'Team Leader',
     price: '$297',
     period: '/mo',
     badge: '5 SEATS',
+    priceId: STRIPE_PRICES.team_leader,
     features: [
       'Everything in Recruiter',
       '5 team member seats',
@@ -123,10 +138,12 @@ export const PRICING_TIERS = [
     ],
   },
   {
+    key: 'regional_operator',
     name: 'Regional Operator',
     price: '$997',
     period: '/mo',
     badge: '10 SEATS',
+    priceId: STRIPE_PRICES.regional_operator,
     features: [
       'Everything in Team Leader',
       '10 seats',
@@ -136,6 +153,13 @@ export const PRICING_TIERS = [
       'Dedicated onboarding',
     ],
   },
+];
+
+// Credit packs for enrichment
+export const CREDIT_PACKS = [
+  { key: 'credits_50', credits: 50, price: '$25', perCredit: '$0.50', priceId: STRIPE_PRICES.credits_50 },
+  { key: 'credits_200', credits: 200, price: '$75', perCredit: '$0.38', priceId: STRIPE_PRICES.credits_200 },
+  { key: 'credits_500', credits: 500, price: '$150', perCredit: '$0.30', priceId: STRIPE_PRICES.credits_500 },
 ];
 
 // Landing page configs

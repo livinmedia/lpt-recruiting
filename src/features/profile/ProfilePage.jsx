@@ -544,12 +544,16 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
         const planLabel = PLAN_INFO[currentPlan]?.label || (currentPlan === "free" ? "Free" : currentPlan);
         const planColor = PLAN_INFO[currentPlan]?.color || T.m;
 
-        const handleCheckout = async (body) => {
-          setPlanLoading(body.plan || body.credit_pack);
+        const handleCheckout = async ({ priceId, plan, mode = "subscription" }) => {
+          setPlanLoading(plan || priceId);
           try {
+            const { data: { session: authSession } } = await supabase.auth.getSession();
+            const token = authSession?.access_token;
+            if (!token) { alert("Please sign in first."); setPlanLoading(null); return; }
             const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
-              method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ user_id: userId, email: profile?.email, ...body })
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+              body: JSON.stringify({ priceId, plan, mode })
             });
             const data = await res.json();
             if (data.url) window.location.href = data.url;
@@ -559,14 +563,14 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
         };
 
         const PLANS = [
-          { key: "recruiter", name: "Recruiter", price: "$97", period: "/mo", features: ["100 enrichment credits/mo", "AI content generation", "Rue AI assistant", "Commission calculator", "Lead scoring & drip emails", "Post to Facebook"], color: "#22C55E", popular: false },
-          { key: "team_leader", name: "Team Leader", price: "$297", period: "/mo", features: ["Everything in Recruiter", "5 team seats", "500 enrichment credits/mo", "Team blog", "Brokerage blog", "Priority support"], color: "#F59E0B", popular: true },
-          { key: "regional_operator", name: "Regional Operator", price: "$997", period: "/mo", features: ["Everything in Team Leader", "10 team seats", "1,000 enrichment credits/mo", "White label option", "Dedicated support", "Custom integrations"], color: "#8B5CF6", popular: false },
+          { key: "recruiter", priceId: "price_1T7KWqLUyw8VkDG8LGq23UWH", name: "Recruiter", price: "$97", period: "/mo", features: ["100 enrichment credits/mo", "AI content generation", "Rue AI assistant", "Commission calculator", "Lead scoring & drip emails", "Post to Facebook"], color: "#22C55E", popular: false },
+          { key: "team_leader", priceId: "price_1TBzqwLUyw8VkDG8QdUDNo9L", name: "Team Leader", price: "$297", period: "/mo", features: ["Everything in Recruiter", "5 team seats", "500 enrichment credits/mo", "Team blog", "Brokerage blog", "Priority support"], color: "#F59E0B", popular: true },
+          { key: "regional_operator", priceId: "price_1TBzqwLUyw8VkDG8dvxzP3ZX", name: "Regional Operator", price: "$997", period: "/mo", features: ["Everything in Team Leader", "10 team seats", "1,000 enrichment credits/mo", "White label option", "Dedicated support", "Custom integrations"], color: "#8B5CF6", popular: false },
         ];
         const CREDIT_PACKS = [
-          { key: "50", credits: 50, price: "$25", perCredit: "$0.50" },
-          { key: "200", credits: 200, price: "$75", perCredit: "$0.38" },
-          { key: "500", credits: 500, price: "$150", perCredit: "$0.30" },
+          { key: "credits_50", priceId: "price_1TBzqwLUyw8VkDG8ybG9deHo", credits: 50, price: "$25", perCredit: "$0.50" },
+          { key: "credits_200", priceId: "price_1TBzqxLUyw8VkDG8RDQNXLj6", credits: 200, price: "$75", perCredit: "$0.38" },
+          { key: "credits_500", priceId: "price_1TBzqxLUyw8VkDG8hODfUyyk", credits: 500, price: "$150", perCredit: "$0.30" },
         ];
 
         return (<>
@@ -627,7 +631,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
                         {isCurrent ? (
                           <div style={{ padding: "12px", borderRadius: 8, background: T.b, color: T.m, fontSize: 14, fontWeight: 700, textAlign: "center" }}>Current Plan</div>
                         ) : (
-                          <div onClick={() => handleCheckout({ plan: plan.key })} style={{ padding: "12px", borderRadius: 8, background: plan.color, color: "#000", fontSize: 14, fontWeight: 700, textAlign: "center", cursor: planLoading === plan.key ? "wait" : "pointer", opacity: planLoading === plan.key ? 0.7 : 1 }}>
+                          <div onClick={() => handleCheckout({ priceId: plan.priceId, plan: plan.key })} style={{ padding: "12px", borderRadius: 8, background: plan.color, color: "#000", fontSize: 14, fontWeight: 700, textAlign: "center", cursor: planLoading === plan.key ? "wait" : "pointer", opacity: planLoading === plan.key ? 0.7 : 1 }}>
                             {planLoading === plan.key ? "Loading..." : currentPlan === "free" ? "Get Started" : "Upgrade"}
                           </div>
                         )}
@@ -644,7 +648,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
                       <div key={pack.key} style={{ background: T.bg, border: `1px solid ${T.b}`, borderRadius: 10, padding: "18px 16px", textAlign: "center" }}>
                         <div style={{ fontSize: 28, fontWeight: 900, color: T.bl }}>{pack.credits}</div>
                         <div style={{ fontSize: 12, color: T.m, marginBottom: 8 }}>credits · {pack.perCredit} each</div>
-                        <div onClick={() => handleCheckout({ credit_pack: pack.key })} style={{ padding: "10px", borderRadius: 8, background: T.bl + "18", border: `1px solid ${T.bl}40`, color: T.bl, fontSize: 13, fontWeight: 700, cursor: planLoading === pack.key ? "wait" : "pointer" }}>
+                        <div onClick={() => handleCheckout({ priceId: pack.priceId, plan: pack.key, mode: "payment" })} style={{ padding: "10px", borderRadius: 8, background: T.bl + "18", border: `1px solid ${T.bl}40`, color: T.bl, fontSize: 13, fontWeight: 700, cursor: planLoading === pack.key ? "wait" : "pointer" }}>
                           {planLoading === pack.key ? "Loading..." : `Buy for ${pack.price}`}
                         </div>
                       </div>

@@ -1,6 +1,7 @@
 import { AppProvider, useApp } from './context/AppContext';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY, logActivity } from './lib/supabase';
 import { startCheckout } from './lib/supabase';
+import { STRIPE_PRICES } from './lib/constants';
 import T from './lib/theme';
 
 // Feature components
@@ -30,7 +31,6 @@ import BetaIntakeFlow from './components/BetaIntakeFlow';
 import RueDrawer from './components/RueDrawer';
 import EmailInbox from './components/EmailInbox';
 import AgentEnrichment from './components/AgentEnrichment';
-import BookingPage from './pages/BookingPage';
 import RKRTCommunity from './components/RKRTCommunity';
 import { ProGate } from './components/shared';
 
@@ -43,8 +43,6 @@ const rechartsReady = import("recharts").then(m => {
 });
 
 export default function App() {
-  const bookingMatch = window.location.pathname.match(/^\/book\/([^/]+)/);
-  if (bookingMatch) return <BookingPage slug={bookingMatch[1]} />;
   return <AppProvider><AppShell /></AppProvider>;
 }
 
@@ -126,8 +124,8 @@ function AppShell() {
         </div>}
         <RueInlineChat ctx={ctx} renderRueResponse={renderRueResponse} />
         {view === "home" && <Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0, 5)} userId={effectiveUserId} onNavigate={setViewWithHistory} onSelectLead={handleSelectLead} askRueInline={askRueInline} chartsReady={chartsLoaded} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell} />}
-        {view === "pipeline" && <>{!authLoading && !isPro && <div style={{ background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><div><span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>⚠️ Free Plan: </span><span style={{ fontSize: 13, color: T.s }}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={() => startCheckout(authUser?.id, profile?.email)} style={{ padding: '8px 16px', borderRadius: 8, background: '#F59E0B', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} search={search} setSearch={setSearch} onTriggerDraftEmail={() => setAutoDraftEmail(true)} /></>}
-        {view === "crm" && <>{!authLoading && !isPro && <div style={{ background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><div><span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>⚠️ Free Plan: </span><span style={{ fontSize: 13, color: T.s }}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={() => startCheckout(authUser?.id, profile?.email)} style={{ padding: '8px 16px', borderRadius: 8, background: '#F59E0B', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} userId={effectiveUserId} profile={effectiveProfile} onBulkDelete={(ids) => setLeads(p => p.filter(l => !ids.includes(l.id)))} /></>}
+        {view === "pipeline" && <>{!authLoading && !isPro && <div style={{ background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><div><span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>⚠️ Free Plan: </span><span style={{ fontSize: 13, color: T.s }}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: '8px 16px', borderRadius: 8, background: '#F59E0B', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} search={search} setSearch={setSearch} onTriggerDraftEmail={() => setAutoDraftEmail(true)} /></>}
+        {view === "crm" && <>{!authLoading && !isPro && <div style={{ background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><div><span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>⚠️ Free Plan: </span><span style={{ fontSize: 13, color: T.s }}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: '8px 16px', borderRadius: 8, background: '#F59E0B', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} userId={effectiveUserId} profile={effectiveProfile} onBulkDelete={(ids) => setLeads(p => p.filter(l => !ids.includes(l.id)))} /></>}
         {view === "agents" && <ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data) => { if (data?.id) { load(); handleSelectLead(data); setViewWithHistory("lead"); } else { setNewLead(prev => ({ ...prev, ...data })); setViewWithHistory("addlead"); } }} onEnrich={(agent) => setEnrichAgent(agent)} /></ProGate>}
         {enrichAgent && <AgentEnrichment supabase={supabase} agent={enrichAgent} userId={authUser?.id} profile={profile} onClose={() => setEnrichAgent(null)} onLeadAdded={() => setEnrichAgent(null)} />}
         {view === "content" && <ContentTab userId={effectiveUserId} userProfile={effectiveProfile} />}

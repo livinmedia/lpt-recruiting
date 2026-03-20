@@ -40,24 +40,28 @@ export async function logActivity(userId, action, metadata = {}) {
 
 /**
  * Start Stripe checkout
+ * @param {object} opts - { priceId, plan, mode }
+ *   mode: "subscription" (default) or "payment" (for credit packs)
  */
-export async function startCheckout(userId, email) {
+export async function startCheckout({ priceId, plan, mode = "subscription" } = {}) {
   try {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    const token = authSession?.access_token;
+    if (!token) { alert("Please sign in first."); return; }
+
     const r = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: userId,
-        email: email,
-        success_url: `${window.location.origin}?upgraded=true`,
-        cancel_url: `${window.location.origin}?cancelled=true`,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ priceId, plan, mode }),
     });
     const data = await r.json();
     if (data.url) {
       window.location.href = data.url;
     } else {
-      alert("Could not start checkout. Please try again.");
+      alert("Could not start checkout: " + (data.error || "Unknown error"));
     }
   } catch (e) {
     alert("Checkout error. Please try again.");

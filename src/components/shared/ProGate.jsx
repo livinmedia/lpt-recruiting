@@ -4,7 +4,7 @@
 import T from '../../lib/theme';
 import { getPlanLimits } from '../../lib/utils';
 import { startCheckout } from '../../lib/supabase';
-import { PRICING_TIERS } from '../../lib/constants';
+import { PRICING_TIERS, STRIPE_PRICES } from '../../lib/constants';
 
 export function ProGate({ feature, userId, userProfile, children }) {
   const limits = getPlanLimits(userProfile);
@@ -43,7 +43,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'Rue AI recruiting agent',
       ],
       cta: 'Upgrade to Recruiter →',
-      ctaAction: () => startCheckout(userId, userProfile?.email),
+      ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' }),
       ctaStyle: { background: T.a, color: '#000', cursor: 'pointer', fontWeight: 800 },
     },
     {
@@ -61,17 +61,17 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'Blog CMS',
         'HeyGen video content',
       ],
-      cta: 'Coming Soon',
-      ctaAction: null,
-      ctaStyle: { background: T.b, color: T.s, cursor: 'default' },
+      cta: 'Upgrade to Team Leader →',
+      ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.team_leader, plan: 'team_leader' }),
+      ctaStyle: { background: '#F59E0B', color: '#000', cursor: 'pointer', fontWeight: 800 },
     },
     {
-      name: 'Enterprise',
-      price: '$4,797',
+      name: 'Regional Operator',
+      price: '$997',
       period: '/mo',
       color: '#070d1a',
       textColor: '#fff',
-      badge: 'WHITE LABEL',
+      badge: '10 SEATS',
       features: [
         'Everything in Team Leader',
         '10 seats',
@@ -80,8 +80,8 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'API access',
         'Dedicated onboarding',
       ],
-      cta: 'Contact Us',
-      ctaAction: () => window.open('mailto:anthony@rkrt.in'),
+      cta: 'Upgrade to Regional →',
+      ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.regional_operator, plan: 'regional_operator' }),
       ctaStyle: { background: '#1B4FFF', color: '#fff', cursor: 'pointer', fontWeight: 800 },
     },
   ];

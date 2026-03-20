@@ -3,7 +3,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import T from '../../lib/theme';
-import { supabase, agentSearch, logActivity } from '../../lib/supabase';
+import { supabase, agentSearch, logActivity, startCheckout } from '../../lib/supabase';
+import { CREDIT_PACKS } from '../../lib/constants';
 import { ago, truncate } from '../../lib/utils';
 
 function isValidEmail(email) {
@@ -22,12 +23,7 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 const STATE_DATA = { FL: 939832, TX: 189036, NY: 143738, CT: 19568 };
 const TOTAL_AGENTS = 1292174;
 
-const CREDIT_PACKS = [
-  { label: "10 for $25", desc: "Starter" },
-  { label: "100 for $50", desc: "Popular" },
-  { label: "500 for $200", desc: "Pro" },
-  { label: "1000 for $500", desc: "Team" },
-];
+// Credit packs imported from constants
 
 export default function AgentDirectory({ userId, userProfile, onAddLead, onEnrich }) {
   const [agents, setAgents] = useState([]);
@@ -170,15 +166,15 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {CREDIT_PACKS.map(pack => (
                 <button
-                  key={pack.label}
-                  onClick={() => alert("Coming soon — Stripe checkout")}
+                  key={pack.key}
+                  onClick={() => startCheckout({ priceId: pack.priceId, plan: pack.key, mode: "payment" })}
                   style={{
                     padding: "5px 12px", fontSize: 12, borderRadius: 6, cursor: "pointer",
                     background: "rgba(34,211,238,0.08)", color: "#22d3ee",
                     border: "1px solid rgba(34,211,238,0.25)", fontWeight: 600,
                   }}
                 >
-                  {pack.label} <span style={{ fontSize: 10, color: "#64748b", fontWeight: 400 }}>{pack.desc}</span>
+                  {pack.credits} for {pack.price} <span style={{ fontSize: 10, color: "#64748b", fontWeight: 400 }}>{pack.perCredit}/ea</span>
                 </button>
               ))}
             </div>

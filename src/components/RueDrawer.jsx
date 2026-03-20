@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { isPro } from '../lib/utils';
 import { startCheckout } from '../lib/supabase';
+import { STRIPE_PRICES } from '../lib/constants';
 
 const FREE_MESSAGE_LIMIT = 10;
 
@@ -331,7 +332,7 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
           <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.b}`, background: "#F59E0B08", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
               <div style={{ fontSize: 12, color: T.s }}>You've used your {FREE_MESSAGE_LIMIT} free messages. Upgrade for unlimited Rue access.</div>
-              <div onClick={() => startCheckout(profile?.id, profile?.email)} style={{ padding: "6px 14px", borderRadius: 7, background: "#F59E0B", color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Upgrade →</div>
+              <div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: "6px 14px", borderRadius: 7, background: "#F59E0B", color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Upgrade →</div>
             </div>
           </div>
         )}
