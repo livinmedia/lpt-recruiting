@@ -278,7 +278,7 @@ async function loadArticle(){
     document.title=a.title+' — RKRT Intel';
     const ogT=document.querySelector('meta[property="og:title"]');if(ogT)ogT.content=a.title;
     const desc=document.querySelector('meta[name="description"]');if(desc)desc.content=a.subtitle||'';
-    if(a.image_url){let ogI=document.querySelector('meta[property="og:image"]');if(!ogI){ogI=document.createElement('meta');ogI.setAttribute('property','og:image');document.head.appendChild(ogI);}ogI.content=a.image_url;}
+    if(a.cover_image_url||a.image_url){let ogI=document.querySelector('meta[property="og:image"]');if(!ogI){ogI=document.createElement('meta');ogI.setAttribute('property','og:image');document.head.appendChild(ogI);}ogI.content=a.cover_image_url||a.image_url;}
 
     const pageUrl=window.location.href;
     const catLabel=(CAT_LABELS[a.category]||a.category||'').toUpperCase();
@@ -300,7 +300,7 @@ async function loadArticle(){
         <div class="article-meta">
           <span class="badge badge-${a.category}">${catLabel}</span>
           <span class="meta-text">${a.published_at?fmtDate(a.published_at):''}</span>
-          <span class="meta-text">${a.read_time||'5'} min read</span>
+          <span class="meta-text">${a.read_time_min||a.read_time||'5'} min read</span>
           <span class="meta-text">${a.views||0} views</span>
         </div>
         <h1 class="article-title">${a.title}</h1>
@@ -316,7 +316,7 @@ async function loadArticle(){
           </div>
         </div>
       </div>
-      ${a.image_url?'<div class="article-hero"><img src="'+a.image_url+'" alt=""></div>':''}
+      ${a.cover_image_url||a.image_url?'<div class="article-hero"><img src="'+a.cover_image_url||a.image_url+'" alt=""></div>':''}
       <div class="article-body">${rebuilt}</div>
 
       <div class="inline-cta green">
@@ -357,8 +357,8 @@ async function loadRelated(cat,slug){
     const s=document.getElementById('related-section');
     if(d.length===0){s.style.display='none';return;}
     s.innerHTML='<h3>Related Articles</h3><div class="related-grid">'+d.map(a=>{
-      const img=a.image_url?'<img src="'+a.image_url+'" alt="" loading="lazy">':'<div style="font-size:24px;opacity:0.3">📄</div>';
-      return '<a href="/article?slug='+a.slug+'" class="related-card"><div class="related-card-img">'+img+'</div><div class="related-card-body"><h4>'+a.title+'</h4><span>'+(a.read_time||'3')+' min read</span></div></a>';
+      const img=a.cover_image_url||a.image_url?'<img src="'+a.cover_image_url||a.image_url+'" alt="" loading="lazy">':'<div style="font-size:24px;opacity:0.3">📄</div>';
+      return '<a href="/article?slug='+a.slug+'" class="related-card"><div class="related-card-img">'+img+'</div><div class="related-card-body"><h4>'+a.title+'</h4><span>'+(a.read_time_min||a.read_time||'3')+' min read</span></div></a>';
     }).join('')+'</div>';
   }catch(e){}
 }
@@ -369,7 +369,7 @@ async function loadSidebarTrending(){
     const d=await r.json()||[];
     const el=document.getElementById('sb-trending');
     if(d.length===0){el.innerHTML='<div style="font-size:12px;color:var(--m)">No trending articles yet.</div>';return;}
-    el.innerHTML=d.map((a,i)=>'<a href="/article?slug='+a.slug+'" class="sb-trending-item"><div class="sb-trending-num">'+(i+1)+'</div><div><div class="sb-trending-title">'+a.title+'</div><div class="sb-trending-meta">'+(a.views||0)+' views · '+(a.read_time||'3')+' min</div></div></a>').join('');
+    el.innerHTML=d.map((a,i)=>'<a href="/article?slug='+a.slug+'" class="sb-trending-item"><div class="sb-trending-num">'+(i+1)+'</div><div><div class="sb-trending-title">'+a.title+'</div><div class="sb-trending-meta">'+(a.views||0)+' views · '+(a.read_time_min||a.read_time||'3')+' min</div></div></a>').join('');
   }catch(e){document.getElementById('sb-trending').innerHTML='<div style="font-size:12px;color:var(--m)">—</div>';}
 }
 
