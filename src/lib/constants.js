@@ -98,13 +98,6 @@ export const STRIPE_PRICES = {
 // Pricing tiers
 export const PRICING_TIERS = [
   {
-    key: 'free',
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    features: ['Agent search (limited)', '5 pipeline leads', 'Basic dashboard'],
-  },
-  {
     key: 'recruiter',
     name: 'Recruiter',
     price: '$97',
@@ -184,7 +177,7 @@ export const DAILY_CONTENT_LIMIT = 3;
 
 // Lead limits by plan
 export const PLAN_LIMITS = {
-  free: { leads: 10, content: 3 },
+  free: { leads: 0, content: 0 },
   recruiter: { leads: Infinity, content: Infinity },
   team_leader: { leads: Infinity, content: Infinity },
   regional_operator: { leads: Infinity, content: Infinity },

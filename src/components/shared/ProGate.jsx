@@ -2,30 +2,19 @@
 // Upgrade wall component for pro features
 
 import T from '../../lib/theme';
-import { getPlanLimits } from '../../lib/utils';
+import { getPlanLimits, isTrialExpired } from '../../lib/utils';
 import { startCheckout } from '../../lib/supabase';
-import { PRICING_TIERS, STRIPE_PRICES } from '../../lib/constants';
+import { STRIPE_PRICES } from '../../lib/constants';
 
 export function ProGate({ feature, userId, userProfile, children }) {
   const limits = getPlanLimits(userProfile);
-  
+
   // If user has pro access, show the content
   if (limits.isPro) return children;
 
-  // Build tier cards for the upgrade wall
+  const trialExpired = isTrialExpired(userProfile);
+
   const tiers = [
-    {
-      name: 'Free',
-      price: '$0',
-      period: 'forever',
-      color: T.card,
-      textColor: T.t,
-      badge: null,
-      features: ['Agent search (limited)', '5 pipeline leads', 'Basic dashboard'],
-      cta: 'Limited Preview',
-      ctaAction: null,
-      ctaStyle: { background: T.b, color: T.s, cursor: 'default' },
-    },
     {
       name: 'Recruiter',
       price: '$97',
@@ -34,7 +23,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
       textColor: T.t,
       badge: 'MOST POPULAR',
       features: [
-        '1.2M+ agent directory',
+        '1.7M+ agent directory',
         'Unlimited leads',
         'AI daily content',
         'All 5 landing pages',
@@ -42,8 +31,8 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'Revenue share projections',
         'Rue AI recruiting agent',
       ],
-      cta: 'Start Free Trial →',
-      trialLine: '7-day free trial · Cancel anytime',
+      cta: trialExpired ? 'Subscribe Now →' : 'Start Free Trial →',
+      trialLine: trialExpired ? null : '7-day free trial · Cancel anytime',
       ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' }),
       ctaStyle: { background: T.a, color: '#000', cursor: 'pointer', fontWeight: 800 },
     },
@@ -62,8 +51,8 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'Blog CMS',
         'HeyGen video content',
       ],
-      cta: 'Try Team Leader Free →',
-      trialLine: '7-day free trial · Cancel anytime',
+      cta: trialExpired ? 'Subscribe Now →' : 'Try Team Leader Free →',
+      trialLine: trialExpired ? null : '7-day free trial · Cancel anytime',
       ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.team_leader, plan: 'team_leader' }),
       ctaStyle: { background: '#F59E0B', color: '#000', cursor: 'pointer', fontWeight: 800 },
     },
@@ -82,8 +71,8 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'API access',
         'Dedicated onboarding',
       ],
-      cta: 'Try Regional Free →',
-      trialLine: '7-day free trial · Cancel anytime',
+      cta: trialExpired ? 'Subscribe Now →' : 'Try Regional Free →',
+      trialLine: trialExpired ? null : '7-day free trial · Cancel anytime',
       ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.regional_operator, plan: 'regional_operator' }),
       ctaStyle: { background: '#1B4FFF', color: '#fff', cursor: 'pointer', fontWeight: 800 },
     },
@@ -91,20 +80,25 @@ export function ProGate({ feature, userId, userProfile, children }) {
 
   return (
     <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-      <div style={{ fontSize: 36, marginBottom: 8 }}>🔒</div>
+      <div style={{ fontSize: 36, marginBottom: 8 }}>{trialExpired ? '⏰' : '🔒'}</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: T.t, marginBottom: 8 }}>
-        Start your free trial to unlock the full {feature}
+        {trialExpired
+          ? 'Your 7-day trial has ended'
+          : `Start your free trial to unlock the full ${feature}`}
       </div>
       <div
         style={{
           fontSize: 14,
           color: T.s,
           marginBottom: 36,
-          maxWidth: 480,
+          maxWidth: 520,
           margin: '0 auto 36px',
+          lineHeight: 1.6,
         }}
       >
-        Try any plan free for 7 days. Cancel anytime.
+        {trialExpired
+          ? 'Subscribe to keep recruiting with Rue, your pipeline, and 1.7M+ agents.'
+          : 'Try any plan free for 7 days. Cancel anytime.'}
       </div>
 
       <div
@@ -113,7 +107,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
           gap: 16,
           justifyContent: 'center',
           flexWrap: 'wrap',
-          maxWidth: 1000,
+          maxWidth: 800,
           margin: '0 auto 24px',
         }}
       >
@@ -125,7 +119,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
               border: `1px solid ${tier.name === 'Recruiter' ? T.a : T.b}`,
               borderRadius: 16,
               padding: '24px 20px',
-              width: 210,
+              width: 230,
               textAlign: 'left',
               position: 'relative',
               boxShadow: tier.name === 'Recruiter' ? `0 0 24px ${T.a}30` : 'none',
@@ -151,14 +145,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
                 {tier.badge}
               </div>
             )}
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: tier.name === 'Enterprise' ? '#818cf8' : T.a,
-                marginBottom: 4,
-              }}
-            >
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.a, marginBottom: 4 }}>
               {tier.name.toUpperCase()}
             </div>
             <div style={{ fontSize: 34, fontWeight: 900, color: tier.textColor, lineHeight: 1 }}>
@@ -169,19 +156,11 @@ export function ProGate({ feature, userId, userProfile, children }) {
             {tier.features.map((f) => (
               <div key={f} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'flex-start' }}>
                 <span style={{ color: T.a, fontSize: 11, marginTop: 2 }}>✓</span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: tier.name === 'Enterprise' ? '#c7d2fe' : T.s,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {f}
-                </span>
+                <span style={{ fontSize: 12, color: T.s, lineHeight: 1.4 }}>{f}</span>
               </div>
             ))}
             <div
-              onClick={tier.ctaAction || undefined}
+              onClick={tier.ctaAction}
               style={{
                 ...tier.ctaStyle,
                 marginTop: 16,
@@ -202,7 +181,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
         ))}
       </div>
 
-      <div style={{ fontSize: 11, color: T.m }}>
+      <div style={{ fontSize: 11, color: '#4A5568' }}>
         Powered by Stripe · Secure checkout · Cancel anytime
       </div>
     </div>

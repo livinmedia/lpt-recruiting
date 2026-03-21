@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase, RUE_KEY } from '../lib/supabase';
+import { supabase, RUE_KEY, startCheckout } from '../lib/supabase';
 import { logActivity } from '../lib/supabase';
+import { STRIPE_PRICES } from '../lib/constants';
 
 export default function useAuth() {
   const [authUser, setAuthUser] = useState(null);
@@ -75,6 +76,8 @@ export default function useAuth() {
     setProfile(p => ({ ...p, ...updatedData }));
     setShowOnboarding(false);
     logActivity(authUser?.id, 'onboarding_complete');
+    // Redirect to Stripe checkout for 7-day trial
+    startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' });
   }, [authUser]);
 
   return {

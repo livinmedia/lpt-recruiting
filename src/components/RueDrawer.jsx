@@ -45,8 +45,8 @@ PERSONALITY:
 - When greeting the user, be warm and use their first name
 - You are their unfair advantage in recruiting. Act like it.
 
-SOFT UPSELL (free plan users only):
-When talking to free plan users, naturally mention premium features: 1.7M+ agent database search, unlimited AI-drafted outreach, auto-enrichment with production data. Frame as what you CAN do, never pushy. If interested, mention they can upgrade from the Agent Directory page.`;
+SOFT UPSELL (trial users):
+When talking to trial users, remind them of the value they're getting: 1.7M+ agent database search, unlimited AI-drafted outreach, auto-enrichment with production data. Frame as what they'll keep when they subscribe. If their trial is ending soon, mention they can subscribe from the Agent Directory page to keep full access.`;
 
 export default function RueDrawer({ open, onClose, profile, leads, userId, autoOpen }) {
   const [messages, setMessages] = useState([]);
@@ -347,12 +347,12 @@ export default function RueDrawer({ open, onClose, profile, leads, userId, autoO
           <div ref={messagesEnd} />
         </div>
 
-        {/* Free tier limit banner */}
+        {/* Trial ended limit banner */}
         {freeHitLimit && (
-          <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.b}`, background: "#F59E0B08", flexShrink: 0 }}>
+          <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.b}`, background: "#F43F5E08", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <div style={{ fontSize: 12, color: T.s }}>You've used your {FREE_MESSAGE_LIMIT} free messages. Start a free trial for unlimited Rue access.</div>
-              <div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: "6px 14px", borderRadius: 7, background: "#F59E0B", color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Start Free Trial →</div>
+              <div style={{ fontSize: 12, color: T.s }}>Your trial has ended. Subscribe for unlimited Rue access.</div>
+              <div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: "6px 14px", borderRadius: 7, background: T.a, color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Subscribe →</div>
             </div>
           </div>
         )}

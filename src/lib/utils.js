@@ -97,16 +97,33 @@ export function getBrokerageSlug(b) {
 /**
  * Check if user has pro features
  */
+export function isTrialActive(profile) {
+  if (!profile) return false;
+  if (!profile.is_trial) return false;
+  if (!profile.trial_ends_at) return false;
+  return new Date(profile.trial_ends_at) > new Date();
+}
+
+export function isTrialExpired(profile) {
+  if (!profile) return false;
+  if (!profile.is_trial) return false;
+  if (!profile.trial_ends_at) return false;
+  return new Date(profile.trial_ends_at) <= new Date();
+}
+
 export function isPro(profile) {
   if (!profile) return false;
-  return (
+  if (profile.role === "owner") return true;
+  if (
     profile.plan === "pro" ||
     profile.plan === "recruiter" ||
     profile.plan === "team_leader" ||
     profile.plan === "regional_operator" ||
-    profile.plan === "enterprise" ||
-    profile.role === "owner"
-  );
+    profile.plan === "enterprise"
+  ) return true;
+  // Active trial = full recruiter access
+  if (profile.plan === "free" && isTrialActive(profile)) return true;
+  return false;
 }
 
 /**
@@ -114,15 +131,17 @@ export function isPro(profile) {
  */
 export function getPlanLimits(profile) {
   const isProUser = isPro(profile);
+  const trialExpired = isTrialExpired(profile);
   return {
     isPro: isProUser,
+    isTrialExpired: trialExpired,
     canGenerateContent: isProUser,
     canAccessAgents: isProUser,
     canEnrichContacts: isProUser,
     canAccessCalculator: isProUser,
     canAccessRevenueShare: isProUser,
-    leadLimit: isProUser ? Infinity : 10,
-    landingPageCount: isProUser ? 5 : 1,
+    leadLimit: isProUser ? Infinity : 0,
+    landingPageCount: isProUser ? 5 : 0,
     hasUTMTracking: isProUser,
   };
 }
