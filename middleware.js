@@ -5,8 +5,27 @@ export default async function middleware(request) {
   const pathname = url.pathname;
   const parts = pathname.split('/').filter(Boolean);
 
-  if (pathname === '/' && !request.headers.get('host')?.startsWith('app.')) {
+  const host = request.headers.get('host') || '';
+
+  // join.rkrt.in → redirect to app.rkrt.in
+  if (host.startsWith('join.')) {
+    const target = new URL(request.url);
+    target.host = target.host.replace('join.', 'app.');
+    return Response.redirect(target.toString(), 302);
+  }
+
+  if (pathname === '/' && !host.startsWith('app.')) {
     return Response.redirect(new URL('/home.html', request.url), 302);
+  }
+
+  // /recruit → old sales page
+  if (pathname === '/recruit' && !host.startsWith('app.')) {
+    return Response.redirect(new URL('/recruit.html', request.url), 302);
+  }
+
+  // /article → article page
+  if (pathname === '/article' && !host.startsWith('app.')) {
+    return Response.redirect(new URL('/article.html' + url.search, request.url), 302);
   }
 
   if (pathname === '/share' || pathname.startsWith('/share?')) {
@@ -90,6 +109,6 @@ export default async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
+  matcher: ['/', '/recruit', '/article', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
 };
 // 1773555408
