@@ -33,6 +33,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;background:rg
 .nav-links{display:flex;align-items:center;gap:32px}
 .nav-links a{font-size:14px;color:var(--s);font-weight:500;transition:color 0.15s}
 .nav-links a:hover{color:var(--t)}
+.nav-login{color:var(--green)!important;font-weight:600!important}
 .nav-cta{background:var(--green);color:#000;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;transition:all 0.2s}
 .nav-cta:hover{filter:brightness(1.1);transform:translateY(-1px)}
 
@@ -45,6 +46,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;background:rg
 .hero-cta{display:inline-flex;align-items:center;gap:8px;padding:16px 36px;border-radius:10px;background:var(--green);color:#000;font-weight:700;font-size:17px;transition:all 0.2s;position:relative}
 .hero-cta:hover{filter:brightness(1.1);transform:translateY(-2px);box-shadow:0 8px 30px var(--green-glow)}
 .hero-sub{font-size:14px;color:var(--m);margin-top:16px;position:relative}
+.hero-login{font-size:15px;color:var(--s);margin-top:20px;position:relative}
+.hero-login a{color:var(--green);font-weight:600;transition:color 0.15s}
+.hero-login a:hover{color:#34D399}
 
 /* STATS BAR */
 .stats{padding:40px;border-top:1px solid var(--b);border-bottom:1px solid var(--b);background:var(--bg2)}
@@ -121,8 +125,11 @@ footer{padding:40px;border-top:1px solid var(--b);background:var(--bg2)}
 
 /* MOBILE */
 @media(max-width:768px){
-  nav{padding:0 20px}
-  .nav-links a:not(.nav-cta){display:none}
+  nav{padding:0 16px}
+  .nav-links a:not(.nav-cta):not(.nav-login){display:none}
+  .nav-links{gap:12px}
+  .nav-cta{font-size:15px;padding:12px 20px;white-space:nowrap}
+  .nav-login{font-size:15px!important;white-space:nowrap}
   .hero{padding:120px 20px 60px}
   .stats-inner{grid-template-columns:repeat(2,1fr);gap:16px}
   .section{padding:60px 20px}
@@ -148,7 +155,8 @@ footer{padding:40px;border-top:1px solid var(--b);background:var(--bg2)}
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
       <a href="#rue">Rue AI</a>
-      <a href="https://app.rkrt.in" class="nav-cta">Start 7-Day Free Trial &rarr;</a>
+      <a href="https://app.rkrt.in" class="nav-login">Log In</a>
+      <a href="https://app.rkrt.in" class="nav-cta">Start Free Trial &rarr;</a>
     </div>
   </div>
 </nav>
@@ -159,6 +167,7 @@ footer{padding:40px;border-top:1px solid var(--b);background:var(--bg2)}
   <p>Find top producers, draft perfect outreach, and fill your roster &mdash; all powered by AI. 1.7M+ agents in your pocket.</p>
   <a href="https://app.rkrt.in" class="hero-cta">Start Your 7-Day Free Trial &rarr;</a>
   <div class="hero-sub">No charge for 7 days. Cancel anytime.</div>
+  <div class="hero-login">Already have an account? <a href="https://app.rkrt.in">Log in &rarr;</a></div>
 </section>
 
 <!-- STATS -->
@@ -320,6 +329,7 @@ footer{padding:40px;border-top:1px solid var(--b);background:var(--bg2)}
   <h2>Ready to recruit<br><span class="g">smarter</span>?</h2>
   <a href="https://app.rkrt.in" class="hero-cta">Start Your 7-Day Free Trial &rarr;</a>
   <div class="hero-sub">No credit card charged for 7 days. Full access to everything. Cancel anytime.</div>
+  <div class="hero-login">Already have an account? <a href="https://app.rkrt.in">Log in &rarr;</a></div>
 </section>
 
 <!-- FOOTER -->
