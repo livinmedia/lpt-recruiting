@@ -7,11 +7,14 @@ export default async function middleware(request) {
 
   const host = request.headers.get('host') || '';
 
-  // join.rkrt.in → redirect to app.rkrt.in
+  // join.rkrt.in → serve join.html
   if (host.startsWith('join.')) {
-    const target = new URL(request.url);
-    target.host = target.host.replace('join.', 'app.');
-    return Response.redirect(target.toString(), 302);
+    const joinUrl = new URL('/join.html' , request.url);
+    const res = await fetch(joinUrl);
+    return new Response(res.body, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
   }
 
   if (pathname === '/' && !host.startsWith('app.')) {

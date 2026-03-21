@@ -196,7 +196,7 @@ footer{padding:28px 0;border-top:1px solid var(--b);margin-top:40px;background:v
       <div class="sb-card sb-cta-card">
         <h4>Search 1.7M+ Agents</h4>
         <p>AI-powered recruiting intelligence for brokerages and teams.</p>
-        <a href="https://app.rkrt.in" class="sb-cta-btn">Start 7-Day Free Trial &rarr;</a>
+        <a href="https://join.rkrt.in" class="sb-cta-btn">Start 7-Day Free Trial &rarr;</a>
       </div>
 
       <!-- Trending -->
@@ -224,7 +224,7 @@ footer{padding:28px 0;border-top:1px solid var(--b);margin-top:40px;background:v
       <div class="sb-card sb-agent">
         <h4>Thinking about switching?</h4>
         <p>We'll match you with brokerages &mdash; confidentially.</p>
-        <a href="https://app.rkrt.in" class="sb-agent-btn">Explore Options &rarr;</a>
+        <a href="https://join.rkrt.in?tab=agent" class="sb-agent-btn">Explore Options &rarr;</a>
       </div>
 
       <!-- Categories -->
@@ -291,9 +291,9 @@ async function loadArticle(){
     const pp=body.split('</p>');let rebuilt='';
     for(let i=0;i<pp.length;i++){
       rebuilt+=pp[i]+(i<pp.length-1?'</p>':'');
-      if(i===1)rebuilt+='<div class="inline-ad"><div class="inline-ad-icon">🔍</div><div class="inline-ad-body"><div class="inline-ad-label">SPONSORED</div><h4>Search 1.7M+ Real Estate Agents</h4><p>Find top producers by market, brokerage, and production. AI-powered enrichment pulls contact info instantly.</p><a href="https://app.rkrt.in">Try RKRT Free &rarr;</a></div></div>';
-      if(i===4)rebuilt+='<div class="inline-cta dark"><h3>Thinking about your next move?</h3><p>Tell us what you\'re looking for. We\'ll match you with brokerage options — confidentially.</p><a href="https://app.rkrt.in" class="green-btn">Explore Options &rarr;</a></div>';
-      if(i===7)rebuilt+='<div class="inline-ad"><div class="inline-ad-icon">🧮</div><div class="inline-ad-body"><div class="inline-ad-label">SPONSORED</div><h4>Commission Calculator</h4><p>See exactly how much more you could earn. Compare your current split to top brokerages side-by-side.</p><a href="https://app.rkrt.in">Calculate Now &rarr;</a></div></div>';
+      if(i===1)rebuilt+='<div class="inline-ad"><div class="inline-ad-icon">🔍</div><div class="inline-ad-body"><div class="inline-ad-label">SPONSORED</div><h4>Search 1.7M+ Real Estate Agents</h4><p>Find top producers by market, brokerage, and production. AI-powered enrichment pulls contact info instantly.</p><a href="https://join.rkrt.in">Try RKRT Free &rarr;</a></div></div>';
+      if(i===4)rebuilt+='<div class="inline-cta dark"><h3>Thinking about your next move?</h3><p>Tell us what you\'re looking for. We\'ll match you with brokerage options — confidentially.</p><a href="https://join.rkrt.in?tab=agent" class="green-btn">Explore Options &rarr;</a></div>';
+      if(i===7)rebuilt+='<div class="inline-ad"><div class="inline-ad-icon">🧮</div><div class="inline-ad-body"><div class="inline-ad-label">SPONSORED</div><h4>Commission Calculator</h4><p>See exactly how much more you could earn. Compare your current split to top brokerages side-by-side.</p><a href="https://join.rkrt.in">Calculate Now &rarr;</a></div></div>';
     }
 
     document.getElementById('article-content').innerHTML=`
@@ -323,7 +323,7 @@ async function loadArticle(){
       <div class="inline-cta green">
         <h3>Want to recruit from this data?</h3>
         <p>RKRT gives you the tools to find, reach, and close agents — powered by AI.</p>
-        <a href="https://app.rkrt.in" class="white">Start 7-Day Free Trial &rarr;</a>
+        <a href="https://join.rkrt.in" class="white">Start 7-Day Free Trial &rarr;</a>
       </div>
 
       ${a.tags&&a.tags.length?'<div class="article-tags">'+a.tags.map(t=>'<span class="tag">'+t+'</span>').join('')+'</div>':''}
@@ -332,13 +332,13 @@ async function loadArticle(){
 
       <div class="bottom-banner">
         <h2>Built on data from <span style="color:var(--green)">1.7M+ agents</span></h2>
-        <a href="https://app.rkrt.in">Try RKRT Free &rarr;</a>
+        <a href="https://join.rkrt.in">Try RKRT Free &rarr;</a>
       </div>
 
       <div class="inline-cta green" style="margin-bottom:0">
         <h3>Get ahead of the movement</h3>
         <p>The best recruiters don't wait for agents to switch — they see it coming.</p>
-        <a href="https://app.rkrt.in" class="white">Start 7-Day Free Trial &rarr;</a>
+        <a href="https://join.rkrt.in" class="white">Start 7-Day Free Trial &rarr;</a>
       </div>
     `;
 

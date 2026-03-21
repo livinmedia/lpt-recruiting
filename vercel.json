@@ -5,6 +5,7 @@
     { "source": "/article.html", "destination": "/article.html" },
     { "source": "/home.html", "destination": "/home.html" },
     { "source": "/recruit.html", "destination": "/recruit.html" },
+    { "source": "/join.html", "destination": "/join.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
