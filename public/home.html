@@ -1,725 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RKRT.in — AI Recruiting Intelligence for Real Estate</title>
-  <meta name="description" content="The AI-powered recruiting OS for real estate. 796K+ agent directory, AI content, social automation, and Rue — your AI recruiting agent. From $0/month.">
-  <meta property="og:title" content="RKRT.in — AI Recruiting Intelligence for Real Estate">
-  <meta property="og:description" content="Stop chasing agents. Let AI do the heavy lifting. 796K+ agents, daily content, automated pipelines, and Rue — your 24/7 AI recruiting agent.">
-  <meta property="og:image" content="https://lpt-recruiting.vercel.app/og-home.png">
-  <meta property="og:url" content="https://rkrt.in">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0a0a0f;
-      --bg2: #111118;
-      --bg3: #1a1a24;
-      --accent: #00d4aa;
-      --accent2: #00b894;
-      --accent-glow: rgba(0,212,170,0.15);
-      --text: #e8e8ec;
-      --text2: #9a9aaf;
-      --text3: #6b6b80;
-      --border: #2a2a3a;
-      --card: #14141e;
-      --green: #22c55e;
-      --red: #ef4444;
-      --yellow: #eab308;
-      --blue: #3b82f6;
-      --radius: 12px;
-      --font: 'DM Sans', -apple-system, sans-serif;
-      --mono: 'Space Mono', monospace;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RKRT.in — The AI Recruiting OS for Real Estate</title>
+<meta name="description" content="Find top producers, draft perfect outreach, and fill your roster — powered by AI. 1.7M+ agents indexed. Start your 7-day free trial.">
+<meta property="og:title" content="RKRT.in — The AI Recruiting OS for Real Estate">
+<meta property="og:description" content="1.7M+ agents. AI-powered outreach. Pipeline intelligence. Start your 7-day free trial.">
+<meta property="og:image" content="https://lpt-recruiting.vercel.app/og-home.png">
+<meta property="og:url" content="https://rkrt.in">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0B1120;--bg2:#0F1629;--bg3:#141C32;
+  --green:#10B981;--green-dim:rgba(16,185,129,0.1);--green-glow:rgba(16,185,129,0.15);
+  --t:#E8ECF4;--s:#8B9AB8;--m:#4B5975;--b:rgba(255,255,255,0.06);
+  --card:#111827;--radius:12px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--t);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;background:rgba(11,17,32,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--b)}
+.nav-inner{max-width:1200px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:19px;font-weight:800;letter-spacing:0.5px}
+.nav-logo .g{color:var(--green)}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-links a{font-size:14px;color:var(--s);font-weight:500;transition:color 0.15s}
+.nav-links a:hover{color:var(--t)}
+.nav-cta{background:var(--green);color:#000;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;transition:all 0.2s}
+.nav-cta:hover{filter:brightness(1.1);transform:translateY(-1px)}
 
-    /* NAV */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      padding: 16px 40px;
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(10,10,15,0.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-logo { font-family: var(--mono); font-weight: 700; font-size: 20px; color: var(--accent); letter-spacing: 2px; text-decoration: none; }
-    .nav-links { display: flex; gap: 32px; align-items: center; }
-    .nav-links a { color: var(--text2); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-    .nav-links a:hover { color: var(--accent); }
-    .nav-cta { background: var(--accent); color: var(--bg); padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.2s; }
-    .nav-cta:hover { background: var(--accent2); transform: translateY(-1px); }
+/* HERO */
+.hero{padding:140px 40px 80px;text-align:center;position:relative}
+.hero::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:900px;height:600px;background:radial-gradient(ellipse,var(--green-glow),transparent 70%);pointer-events:none}
+.hero h1{font-size:clamp(36px,5.5vw,64px);font-weight:900;line-height:1.1;max-width:800px;margin:0 auto 20px;position:relative}
+.hero h1 .g{color:var(--green)}
+.hero p{font-size:18px;color:var(--s);max-width:600px;margin:0 auto 36px;line-height:1.7;position:relative}
+.hero-cta{display:inline-flex;align-items:center;gap:8px;padding:16px 36px;border-radius:10px;background:var(--green);color:#000;font-weight:700;font-size:17px;transition:all 0.2s;position:relative}
+.hero-cta:hover{filter:brightness(1.1);transform:translateY(-2px);box-shadow:0 8px 30px var(--green-glow)}
+.hero-sub{font-size:14px;color:var(--m);margin-top:16px;position:relative}
 
-    /* HERO */
-    .hero {
-      padding: 160px 40px 100px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero::before {
-      content: '';
-      position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
-      width: 800px; height: 800px;
-      background: radial-gradient(circle, var(--accent-glow), transparent 70%);
-      pointer-events: none;
-    }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 16px; border-radius: 999px;
-      background: var(--bg3); border: 1px solid var(--border);
-      font-size: 13px; color: var(--text2); margin-bottom: 32px;
-    }
-    .hero-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-    .hero h1 {
-      font-size: clamp(40px, 6vw, 72px);
-      font-weight: 700; line-height: 1.1;
-      max-width: 900px; margin: 0 auto 24px;
-    }
-    .hero h1 .accent { color: var(--accent); }
-    .hero p {
-      font-size: 18px; color: var(--text2);
-      max-width: 640px; margin: 0 auto 40px;
-      line-height: 1.7;
-    }
-    .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-    .btn-primary {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 14px 32px; border-radius: 10px;
-      background: var(--accent); color: var(--bg); font-weight: 600; font-size: 16px;
-      text-decoration: none; transition: all 0.3s;
-      border: none; cursor: pointer;
-    }
-    .btn-primary:hover { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow); }
-    .btn-secondary {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 14px 32px; border-radius: 10px;
-      background: transparent; color: var(--text); font-weight: 600; font-size: 16px;
-      text-decoration: none; transition: all 0.3s;
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+/* STATS BAR */
+.stats{padding:40px;border-top:1px solid var(--b);border-bottom:1px solid var(--b);background:var(--bg2)}
+.stats-inner{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat-val{font-size:24px;font-weight:800;color:var(--green)}
+.stat-label{font-size:13px;color:var(--s);margin-top:4px}
 
-    /* STATS BAR */
-    .stats-bar {
-      display: flex; justify-content: center; gap: 48px; padding: 48px 40px;
-      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-      background: var(--bg2);
-      flex-wrap: wrap;
-    }
-    .stat { text-align: center; }
-    .stat-num { font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--accent); }
-    .stat-label { font-size: 13px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+/* SECTION */
+.section{padding:100px 40px;max-width:1200px;margin:0 auto}
+.section-tag{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:12px;text-align:center}
+.section-title{font-size:clamp(28px,3.5vw,40px);font-weight:800;text-align:center;margin-bottom:16px}
+.section-sub{font-size:16px;color:var(--s);text-align:center;max-width:560px;margin:0 auto 56px}
 
-    /* SECTIONS */
-    section { padding: 100px 40px; }
-    .section-label {
-      font-family: var(--mono); font-size: 12px; text-transform: uppercase;
-      letter-spacing: 3px; color: var(--accent); margin-bottom: 16px;
-    }
-    .section-title { font-size: 40px; font-weight: 700; margin-bottom: 16px; max-width: 700px; }
-    .section-sub { font-size: 18px; color: var(--text2); max-width: 600px; margin-bottom: 56px; line-height: 1.7; }
-    .centered { text-align: center; }
-    .centered .section-title, .centered .section-sub { margin-left: auto; margin-right: auto; }
+/* FEATURE CARDS (3) */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feature-card{background:var(--card);border:1px solid var(--b);border-radius:16px;padding:32px 28px;transition:border-color 0.2s}
+.feature-card:hover{border-color:rgba(16,185,129,0.3)}
+.feature-icon{font-size:32px;margin-bottom:16px}
+.feature-card h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:14px;color:var(--s);line-height:1.7}
 
-    /* PILLARS */
-    .pillars-grid {
-      display: grid; grid-template-columns: repeat(5, 1fr);
-      gap: 16px; max-width: 1200px; margin: 0 auto;
-    }
-    .pillar {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 28px 20px; text-align: center; transition: all 0.3s;
-    }
-    .pillar:hover { border-color: var(--accent); transform: translateY(-4px); }
-    .pillar-icon { font-size: 32px; margin-bottom: 12px; }
-    .pillar-title { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
-    .pillar-items { list-style: none; }
-    .pillar-items li { font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid var(--border); }
-    .pillar-items li:last-child { border: none; }
+/* SMALL FEATURES GRID */
+.small-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px}
+.small-card{background:var(--bg2);border:1px solid var(--b);border-radius:12px;padding:24px 22px}
+.small-card h4{font-size:15px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.small-card p{font-size:13px;color:var(--s);line-height:1.6}
 
-    /* FEATURES GRID */
-    .features-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 20px; max-width: 1200px; margin: 0 auto;
-    }
-    .feature-card {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 32px; transition: all 0.3s; position: relative; overflow: hidden;
-    }
-    .feature-card:hover { border-color: var(--accent); }
-    .feature-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, var(--accent), transparent);
-      opacity: 0; transition: opacity 0.3s;
-    }
-    .feature-card:hover::before { opacity: 1; }
-    .feature-icon { font-size: 28px; margin-bottom: 16px; }
-    .feature-title { font-weight: 600; font-size: 18px; margin-bottom: 8px; }
-    .feature-desc { font-size: 14px; color: var(--text2); line-height: 1.6; }
-    .feature-tag {
-      display: inline-block; padding: 3px 10px; border-radius: 999px;
-      font-size: 11px; font-weight: 600; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .tag-live { background: rgba(34,197,94,0.15); color: var(--green); }
-    .tag-new { background: rgba(59,130,246,0.15); color: var(--blue); }
-    .tag-soon { background: rgba(234,179,8,0.15); color: var(--yellow); }
+/* PRICING */
+.pricing-card{max-width:440px;margin:0 auto;background:var(--card);border:2px solid var(--green);border-radius:20px;padding:40px 36px;text-align:center;position:relative;box-shadow:0 0 40px var(--green-glow)}
+.pricing-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-size:11px;font-weight:800;letter-spacing:1.5px;padding:5px 16px;border-radius:20px}
+.pricing-name{font-size:14px;font-weight:700;color:var(--green);letter-spacing:1px;margin-top:8px}
+.pricing-price{font-size:52px;font-weight:900;margin:8px 0 4px}
+.pricing-price span{font-size:16px;font-weight:400;color:var(--s)}
+.pricing-trial{font-size:14px;color:var(--green);font-weight:600;margin-bottom:24px}
+.pricing-features{text-align:left;margin-bottom:28px}
+.pricing-features li{display:flex;align-items:flex-start;gap:8px;font-size:14px;color:var(--s);margin-bottom:10px;list-style:none}
+.pricing-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.pricing-cta{display:block;padding:16px;border-radius:10px;background:var(--green);color:#000;font-weight:700;font-size:16px;transition:all 0.2s}
+.pricing-cta:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.pricing-other{font-size:13px;color:var(--m);margin-top:40px;text-align:center}
 
-    /* RUE SECTION */
-    .rue-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .rue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; max-width: 1100px; margin: 0 auto; align-items: center; }
-    .rue-chat {
-      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-      padding: 24px; max-width: 420px;
-    }
-    .rue-chat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
-    .rue-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .rue-name { font-weight: 600; font-size: 15px; }
-    .rue-status { font-size: 12px; color: var(--green); }
-    .chat-msg {
-      padding: 12px 16px; border-radius: 12px; margin-bottom: 8px;
-      font-size: 14px; line-height: 1.5; max-width: 85%;
-      animation: fadeUp 0.5s ease both;
-    }
-    .chat-msg.rue { background: var(--bg3); color: var(--text); }
-    .chat-msg.user { background: var(--accent); color: var(--bg); margin-left: auto; }
-    .chat-msg:nth-child(2) { animation-delay: 0.2s; }
-    .chat-msg:nth-child(3) { animation-delay: 0.8s; }
-    .chat-msg:nth-child(4) { animation-delay: 1.4s; }
-    .chat-msg:nth-child(5) { animation-delay: 2s; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .rue-features { list-style: none; }
-    .rue-features li { padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
-    .rue-features li:last-child { border: none; }
-    .rue-check { color: var(--accent); font-size: 18px; flex-shrink: 0; }
-    .rue-feat-title { font-weight: 600; font-size: 14px; }
-    .rue-feat-desc { font-size: 13px; color: var(--text2); }
+/* HOW IT WORKS */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.step{text-align:center;padding:24px 16px}
+.step-num{width:40px;height:40px;border-radius:50%;background:var(--green-dim);border:2px solid var(--green);color:var(--green);font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.step h4{font-size:15px;font-weight:700;margin-bottom:8px}
+.step p{font-size:13px;color:var(--s);line-height:1.6}
 
-    /* COMPETITOR TABLE */
-    .comp-table-wrap { max-width: 1200px; margin: 0 auto; overflow-x: auto; }
-    .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .comp-table th {
-      background: var(--bg3); padding: 14px 12px; text-align: center;
-      font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
-      border-bottom: 2px solid var(--border); color: var(--text2);
-      position: sticky; top: 0;
-    }
-    .comp-table th:first-child { text-align: left; min-width: 200px; }
-    .comp-table th.rkrt { color: var(--accent); border-bottom-color: var(--accent); }
-    .comp-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); }
-    .comp-table td:first-child { text-align: left; font-weight: 500; color: var(--text); }
-    .comp-table tr:hover td { background: var(--bg3); }
-    .c-yes { color: var(--green); }
-    .c-no { color: var(--text3); }
-    .c-partial { color: var(--yellow); }
-    .c-best { color: var(--accent); font-weight: 700; }
+/* FINAL CTA */
+.final-cta{padding:100px 40px;text-align:center;position:relative}
+.final-cta::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse,var(--green-glow),transparent 70%);pointer-events:none}
+.final-cta h2{font-size:clamp(28px,4vw,44px);font-weight:800;margin-bottom:24px;position:relative}
+.final-cta .hero-cta{position:relative}
+.final-cta .hero-sub{position:relative}
 
-    /* PRICING */
-    .pricing-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 20px; max-width: 1100px; margin: 0 auto;
-    }
-    .price-card {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 36px 28px; position: relative; transition: all 0.3s;
-    }
-    .price-card:hover { border-color: var(--accent); transform: translateY(-4px); }
-    .price-card.featured { border-color: var(--accent); }
-    .price-card.featured::before {
-      content: 'MOST POPULAR'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-      background: var(--accent); color: var(--bg); padding: 4px 16px; border-radius: 999px;
-      font-size: 11px; font-weight: 700; letter-spacing: 1px;
-    }
-    .price-name { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 8px; }
-    .price-amount { font-family: var(--mono); font-size: 40px; font-weight: 700; color: var(--text); }
-    .price-amount span { font-size: 16px; color: var(--text3); font-weight: 400; }
-    .price-desc { font-size: 13px; color: var(--text3); margin: 8px 0 24px; }
-    .price-features { list-style: none; margin-bottom: 28px; }
-    .price-features li { font-size: 13px; color: var(--text2); padding: 6px 0; display: flex; align-items: center; gap: 8px; }
-    .price-features li::before { content: '✓'; color: var(--accent); font-weight: 700; }
-    .price-btn {
-      display: block; width: 100%; padding: 12px; border-radius: 8px; text-align: center;
-      font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.2s;
-    }
-    .price-btn.primary { background: var(--accent); color: var(--bg); }
-    .price-btn.primary:hover { background: var(--accent2); }
-    .price-btn.outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
-    .price-btn.outline:hover { border-color: var(--accent); color: var(--accent); }
+/* FOOTER */
+footer{padding:40px;border-top:1px solid var(--b);background:var(--bg2)}
+.footer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-logo{font-size:16px;font-weight:800}
+.footer-logo .g{color:var(--green)}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:13px;color:var(--m);transition:color 0.15s}
+.footer-links a:hover{color:var(--s)}
+.footer-copy{font-size:12px;color:var(--m)}
 
-    /* FAQ */
-    .faq-grid { max-width: 800px; margin: 0 auto; }
-    .faq-item { border-bottom: 1px solid var(--border); }
-    .faq-q {
-      display: flex; justify-content: space-between; align-items: center; width: 100%;
-      padding: 24px 0; background: none; border: none; cursor: pointer;
-      font-family: var(--font); font-size: 16px; font-weight: 600; color: var(--text); text-align: left;
-    }
-    .faq-q:hover { color: var(--accent); }
-    .faq-arrow { font-size: 20px; color: var(--text3); transition: transform 0.3s; }
-    .faq-item.open .faq-arrow { transform: rotate(45deg); color: var(--accent); }
-    .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
-    .faq-a-inner { padding: 0 0 24px; font-size: 14px; color: var(--text2); line-height: 1.7; }
-
-    /* CTA BANNER */
-    .cta-banner {
-      text-align: center; padding: 80px 40px;
-      background: linear-gradient(180deg, var(--bg2), var(--bg));
-      border-top: 1px solid var(--border);
-    }
-    .cta-banner h2 { font-size: 36px; margin-bottom: 16px; }
-    .cta-banner p { font-size: 16px; color: var(--text2); margin-bottom: 32px; }
-
-    /* FOOTER */
-    footer {
-      padding: 48px 40px; border-top: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
-    }
-    footer a { color: var(--text3); text-decoration: none; font-size: 13px; }
-    footer a:hover { color: var(--accent); }
-    .footer-links { display: flex; gap: 24px; }
-
-    /* RESPONSIVE */
-    @media (max-width: 1024px) {
-      .pillars-grid { grid-template-columns: repeat(3, 1fr); }
-      .pricing-grid { grid-template-columns: repeat(2, 1fr); }
-      .rue-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 768px) {
-      nav { padding: 12px 20px; }
-      .nav-links a:not(.nav-cta) { display: none; }
-      section, .hero { padding-left: 20px; padding-right: 20px; }
-      .pillars-grid { grid-template-columns: 1fr 1fr; }
-      .features-grid { grid-template-columns: 1fr; }
-      .pricing-grid { grid-template-columns: 1fr; }
-      .stats-bar { gap: 24px; }
-      .hero h1 { font-size: 32px; }
-    }
-  </style>
+/* MOBILE */
+@media(max-width:768px){
+  nav{padding:0 20px}
+  .nav-links a:not(.nav-cta){display:none}
+  .hero{padding:120px 20px 60px}
+  .stats-inner{grid-template-columns:repeat(2,1fr);gap:16px}
+  .section{padding:60px 20px}
+  .features-grid{grid-template-columns:1fr}
+  .small-grid{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr 1fr;gap:16px}
+  .pricing-card{padding:32px 24px}
+  .footer-inner{flex-direction:column;text-align:center}
+}
+@media(max-width:480px){
+  .stats-inner{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
 
-  <!-- NAV -->
-  <nav>
-    <a href="/" class="nav-logo">RKRT</a>
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">rkrt<span class="g">.in</span></a>
     <div class="nav-links">
       <a href="#features">Features</a>
-      <a href="#rue">Talk to Rue</a>
-      <a href="#compare">Compare</a>
       <a href="#pricing">Pricing</a>
-      <a href="/login">Log In</a>
-      <a href="/signup" class="nav-cta">Start Free</a>
+      <a href="#rue">Rue AI</a>
+      <a href="https://app.rkrt.in" class="nav-cta">Start 7-Day Free Trial &rarr;</a>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-badge"><span class="dot"></span> 796,187 agents and counting</div>
-    <h1>Stop chasing agents.<br><span class="accent">Let AI recruit for you.</span></h1>
-    <p>The only platform that combines a 796K agent directory, AI content engine, social automation, and a conversational AI recruiting agent — all in one place.</p>
-    <div class="hero-actions">
-      <a href="/signup" class="btn-primary">Start Recruiting Free →</a>
-      <a href="#rue" class="btn-secondary">Talk to Rue →</a>
+<!-- HERO -->
+<section class="hero">
+  <h1>The AI Recruiting OS<br>for <span class="g">Real Estate</span></h1>
+  <p>Find top producers, draft perfect outreach, and fill your roster &mdash; all powered by AI. 1.7M+ agents in your pocket.</p>
+  <a href="https://app.rkrt.in" class="hero-cta">Start Your 7-Day Free Trial &rarr;</a>
+  <div class="hero-sub">No charge for 7 days. Cancel anytime.</div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stats-inner">
+    <div><div class="stat-val">1,736,985</div><div class="stat-label">Agents Indexed</div></div>
+    <div><div class="stat-val">4 States</div><div class="stat-label">FL, TX, NY, CT</div></div>
+    <div><div class="stat-val">AI-Powered</div><div class="stat-label">Outreach &amp; Intel</div></div>
+    <div><div class="stat-val">24/7</div><div class="stat-label">Rue AI Assistant</div></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-tag">Features</div>
+  <h2 class="section-title">Everything you need to recruit</h2>
+  <p class="section-sub">One platform for finding, researching, reaching, and closing real estate agents.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">&#128269;</div>
+      <h3>1.7M+ Agent Directory</h3>
+      <p>Search every licensed agent by production volume, market, brokerage, and movement history. Know who's ready to switch before they do.</p>
     </div>
-  </section>
-
-  <!-- STATS -->
-  <div class="stats-bar">
-    <div class="stat"><div class="stat-num">796K+</div><div class="stat-label">Licensed Agents</div></div>
-    <div class="stat"><div class="stat-num">4</div><div class="stat-label">States (50 Coming)</div></div>
-    <div class="stat"><div class="stat-num">7</div><div class="stat-label">Brokerage Blogs</div></div>
-    <div class="stat"><div class="stat-num">6/day</div><div class="stat-label">AI Posts Generated</div></div>
-    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Rue AI Agent</div></div>
+    <div class="feature-card" id="rue">
+      <div class="feature-icon">&#129302;</div>
+      <h3>Rue AI Recruiting Agent</h3>
+      <p>Your AI assistant drafts personalized outreach, preps you for objections, researches targets, and builds your weekly game plan. Available 24/7.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128202;</div>
+      <h3>Pipeline Intelligence</h3>
+      <p>Track every prospect from discovery to recruited. Auto-enrichment pulls production data, contact info, and brokerage history. Never lose a lead.</p>
+    </div>
   </div>
 
-  <!-- FIVE PILLARS -->
-  <section id="pillars" class="centered">
-    <div class="section-label">The Platform</div>
-    <div class="section-title">Five pillars. One recruiting OS.</div>
-    <div class="section-sub">No competitor has all five. That's the moat.</div>
-    <div class="pillars-grid">
-      <div class="pillar">
-        <div class="pillar-icon">🧠</div>
-        <div class="pillar-title">Intelligence</div>
-        <ul class="pillar-items">
-          <li>796K Agent Directory</li>
-          <li>Contact Enrichment</li>
-          <li>Interest Scoring</li>
-          <li>Brokerage Change Alerts</li>
-          <li>Switch Risk Prediction</li>
-        </ul>
-      </div>
-      <div class="pillar">
-        <div class="pillar-icon">📊</div>
-        <div class="pillar-title">CRM</div>
-        <ul class="pillar-items">
-          <li>Lead Pipeline</li>
-          <li>90-Day Automation</li>
-          <li>Task Management</li>
-          <li>Drip Email Sequences</li>
-          <li>Email Tracking</li>
-        </ul>
-      </div>
-      <div class="pillar">
-        <div class="pillar-icon">📝</div>
-        <div class="pillar-title">Content</div>
-        <ul class="pillar-items">
-          <li>CMS Content Modeling</li>
-          <li>AI Content Generation</li>
-          <li>Multi-Channel Publish</li>
-          <li>Template Marketplace</li>
-          <li>Asset Library</li>
-        </ul>
-      </div>
-      <div class="pillar">
-        <div class="pillar-icon">📱</div>
-        <div class="pillar-title">Social</div>
-        <ul class="pillar-items">
-          <li>Comment-to-DM Flows</li>
-          <li>Story Reply Triggers</li>
-          <li>Visual Flow Builder</li>
-          <li>Lead Capture from DMs</li>
-          <li>Broadcast Messaging</li>
-        </ul>
-      </div>
-      <div class="pillar">
-        <div class="pillar-icon">🤖</div>
-        <div class="pillar-title">AI Agent</div>
-        <ul class="pillar-items">
-          <li>Rue Chat Widget</li>
-          <li>Dashboard Assistant</li>
-          <li>Content Generator</li>
-          <li>Morning Briefings</li>
-          <li>At-Risk Detection</li>
-        </ul>
-      </div>
+  <div class="small-grid">
+    <div class="small-card">
+      <h4>&#9998;&#65039; AI-Generated Content</h4>
+      <p>Daily recruiting content for your social channels, tailored to your brokerage and market.</p>
     </div>
-  </section>
+    <div class="small-card">
+      <h4>&#128178; Commission Calculator</h4>
+      <p>Show agents their earning potential at your brokerage with branded, shareable calculators.</p>
+    </div>
+    <div class="small-card">
+      <h4>&#128196; Landing Pages</h4>
+      <p>Branded recruiting pages that capture interested agents and feed them into your pipeline.</p>
+    </div>
+    <div class="small-card">
+      <h4>&#128161; Enrichment Credits</h4>
+      <p>One-click data enrichment on any agent &mdash; pull production data, contact info, and social profiles.</p>
+    </div>
+    <div class="small-card">
+      <h4>&#128231; Email Outreach</h4>
+      <p>Send personalized recruiting emails directly from the platform. Rue drafts them for you.</p>
+    </div>
+    <div class="small-card">
+      <h4>&#128203; Movement Tracking</h4>
+      <p>See which agents recently changed brokerages &mdash; the best time to recruit is right after a move.</p>
+    </div>
+  </div>
+</section>
 
-  <!-- FEATURES -->
-  <section id="features" style="background:var(--bg2); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
-    <div class="centered">
-      <div class="section-label">Features</div>
-      <div class="section-title">Everything a recruiter needs. Nothing they don't.</div>
-      <div class="section-sub">Each feature is built to save you time and put more agents in your pipeline.</div>
-    </div>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">🔍</div>
-        <div class="feature-title">Agent Directory</div>
-        <div class="feature-desc">Search 796K+ licensed agents across FL, TX, NY, CT. Filter by state, brokerage, city, newly licensed. 50 states coming soon.</div>
-        <span class="feature-tag tag-live">LIVE</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🧬</div>
-        <div class="feature-title">Contact Enrichment</div>
-        <div class="feature-desc">One click to get personal email, mobile, LinkedIn, Zillow profile for any agent. AI-powered via Perplexity.</div>
-        <span class="feature-tag tag-live">LIVE</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📋</div>
-        <div class="feature-title">Lead Pipeline</div>
-        <div class="feature-desc">Kanban + table view. 6 stages. Drag-and-drop. Interest scoring from Cold to On Fire. Call the right people at the right time.</div>
-        <span class="feature-tag tag-live">LIVE</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🤖</div>
-        <div class="feature-title">Rue AI Agent</div>
-        <div class="feature-desc">Your dedicated AI recruiter. Drafts outreach, handles objections, preps for meetings, researches agents. Always on.</div>
-        <span class="feature-tag tag-live">LIVE</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <div class="feature-title">90-Day Workflow</div>
-        <div class="feature-desc">Auto-fires on lead create: 12 tasks, 6 drip emails, AI research dossier, recruiter notification. Set it and recruit.</div>
-        <span class="feature-tag tag-live">LIVE</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔥</div>
-        <div class="feature-title">Interest Scoring</div>
-        <div class="feature-desc">0–100 score from email opens, clicks, page visits, blog reads. Know exactly who's warming up before you pick up the phone.</div>
-        <span class="feature-tag tag-live">LIVE</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📰</div>
-        <div class="feature-title">Daily AI Content</div>
-        <div class="feature-desc">6 recruiting posts per day (3 Facebook + 3 Instagram). Brokerage-targeted with tracking links. Never write a post again.</div>
-        <span class="feature-tag tag-live">LIVE</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📈</div>
-        <div class="feature-title">Blog Network</div>
-        <div class="feature-desc">7 brokerage blog pages generating SEO-driven inbound leads 24/7. Agents find you through Google while you sleep.</div>
-        <span class="feature-tag tag-live">LIVE</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">💬</div>
-        <div class="feature-title">Social Automation</div>
-        <div class="feature-desc">Comment-to-DM flows, story triggers, keyword automation. Powered by Rue + your agent directory. Not generic templates.</div>
-        <span class="feature-tag tag-new">BUILDING</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🎨</div>
-        <div class="feature-title">Visual Flow Builder</div>
-        <div class="feature-desc">Drag-and-drop conversation flows for social DMs. 10 node types: text, AI, capture, conditions, delays. Your ManyChat replacement.</div>
-        <span class="feature-tag tag-new">BUILDING</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📝</div>
-        <div class="feature-title">CMS + Content Studio</div>
-        <div class="feature-desc">8 content types, multi-channel publishing, template library. Create once, publish to blog + FB + IG + email simultaneously.</div>
-        <span class="feature-tag tag-new">BUILDING</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🎬</div>
-        <div class="feature-title">Video Reels (HeyGen)</div>
-        <div class="feature-desc">AI-generated video recruiter at scale. 1 personalized reel per day per brokerage. Higher engagement than text-only outreach.</div>
-        <span class="feature-tag tag-soon">COMING SOON</span>
-      </div>
-    </div>
-  </section>
+<!-- HOW IT WORKS -->
+<section class="section" style="border-top:1px solid var(--b)">
+  <div class="section-tag">How It Works</div>
+  <h2 class="section-title">From sign-up to first recruit</h2>
+  <p class="section-sub">Get started in under a minute. Rue does the heavy lifting.</p>
 
-  <!-- TALK TO RUE -->
-  <section id="rue" class="rue-section">
-    <div class="centered" style="margin-bottom:40px;">
-      <div class="section-label">Meet Rue</div>
-      <div class="section-title">Your AI recruiting agent. Always on.</div>
-      <div class="section-sub">Rue lives on every page. She has real conversations with agents, captures leads, and drops them straight into your pipeline.</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h4>Sign up in 60 seconds</h4>
+      <p>Create your account, tell us your brokerage and target market.</p>
     </div>
-    <div class="rue-grid">
-      <div>
-        <ul class="rue-features">
-          <li>
-            <span class="rue-check">◆</span>
-            <div><div class="rue-feat-title">Conversations, not templates</div>
-            <div class="rue-feat-desc">Rue has actual back-and-forth conversations with agents. She handles objections, answers questions, and qualifies interest — not canned responses.</div></div>
-          </li>
-          <li>
-            <span class="rue-check">◆</span>
-            <div><div class="rue-feat-title">Knows every agent</div>
-            <div class="rue-feat-desc">Connected to 796K agent records. When an agent engages, Rue already knows their brokerage, market, and license history.</div></div>
-          </li>
-          <li>
-            <span class="rue-check">◆</span>
-            <div><div class="rue-feat-title">Captures leads automatically</div>
-            <div class="rue-feat-desc">Name, email, phone collected naturally during conversation. Lead auto-created in your pipeline. 90-day workflow fires. You get notified.</div></div>
-          </li>
-          <li>
-            <span class="rue-check">◆</span>
-            <div><div class="rue-feat-title">Works for you specifically</div>
-            <div class="rue-feat-desc">Share your unique link (rkrt.in/join?ref=you) — Rue introduces herself as your AI, representing your brokerage and your offer.</div></div>
-          </li>
-          <li>
-            <span class="rue-check">◆</span>
-            <div><div class="rue-feat-title">Lives on every page</div>
-            <div class="rue-feat-desc">Homepage, landing pages, blog posts — Rue adapts her conversation to match the page context and visitor intent.</div></div>
-          </li>
-        </ul>
-      </div>
-      <div class="rue-chat">
-        <div class="rue-chat-header">
-          <div class="rue-avatar">🤖</div>
-          <div><div class="rue-name">Rue</div><div class="rue-status">● Online now</div></div>
-        </div>
-        <div class="chat-msg rue">Hi, I'm Rue — RKRT's AI recruiting agent. Are you a recruiter looking to grow your team, or an agent exploring your options?</div>
-        <div class="chat-msg user">I'm an agent at RE/MAX thinking about switching</div>
-        <div class="chat-msg rue">Great to hear you're exploring. I see RE/MAX agents in your market often look at revenue share models and higher splits. What's most important to you in your next brokerage — income, support, or flexibility?</div>
-        <div class="chat-msg user">Honestly, it's the splits. I'm tired of giving up 30%</div>
-        <div class="chat-msg rue">That's the #1 reason agents switch. Some brokerages in your area offer 85-100% splits with low flat fees. Want me to show you a commission comparison? I just need your name and email to send it over.</div>
-      </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h4>Meet Rue</h4>
+      <p>Your AI assistant learns your recruiting style and starts finding targets.</p>
     </div>
-  </section>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h4>Build your pipeline</h4>
+      <p>Search agents, draft outreach, and track everything in one place.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h4>Close more recruits</h4>
+      <p>Rue preps you for every conversation and automates follow-ups.</p>
+    </div>
+  </div>
+</section>
 
-  <!-- COMPETITOR TABLE -->
-  <section id="compare">
-    <div class="centered">
-      <div class="section-label">Why RKRT</div>
-      <div class="section-title">The only all-in-one recruiting platform.</div>
-      <div class="section-sub">See how RKRT compares to the tools you're probably juggling right now.</div>
-    </div>
-    <div class="comp-table-wrap">
-      <table class="comp-table">
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th class="rkrt">RKRT.in</th>
-            <th>Brokerkit</th>
-            <th>Courted</th>
-            <th>Relitix</th>
-            <th>ManyChat</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Agent Database (800K+)</td><td class="c-best">✓ 796K</td><td class="c-no">✗</td><td class="c-yes">✓ MLS</td><td class="c-yes">✓ MLS</td><td class="c-no">✗</td></tr>
-          <tr><td>AI Recruiting Agent</td><td class="c-best">✓ Rue</td><td class="c-no">✗</td><td class="c-partial">~ AI msgs</td><td class="c-partial">~ AI email</td><td class="c-no">✗</td></tr>
-          <tr><td>Lead Pipeline CRM</td><td class="c-yes">✓</td><td class="c-yes">✓</td><td class="c-yes">✓</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>90-Day Automation</td><td class="c-best">✓ Auto</td><td class="c-partial">~ Manual</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>Interest Scoring (0-100)</td><td class="c-best">✓</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>Daily AI Content</td><td class="c-best">✓ 6/day</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>SEO Blog Network</td><td class="c-best">✓ 7 blogs</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>Social DM Automation</td><td class="c-best">✓ AI-powered</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-yes">✓</td></tr>
-          <tr><td>Visual Flow Builder</td><td class="c-best">✓ Building</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-yes">✓</td></tr>
-          <tr><td>Landing Pages + UTM</td><td class="c-yes">✓ 5 pages</td><td class="c-partial">~ Basic</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>User Gamification</td><td class="c-best">✓</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>Chat Widget on Pages</td><td class="c-best">✓ Rue</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>Email Drip Sequences</td><td class="c-yes">✓ Auto</td><td class="c-yes">✓</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-partial">~</td></tr>
-          <tr><td>CMS Content Studio</td><td class="c-best">✓ 8 types</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td><td class="c-no">✗</td></tr>
-          <tr><td>Starting Price</td><td class="c-best">$0 free</td><td class="c-partial">$99/mo</td><td class="c-partial">~$200/mo</td><td class="c-partial">$70/mo</td><td class="c-yes">$0 free</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+<!-- PRICING -->
+<section class="section" id="pricing" style="border-top:1px solid var(--b)">
+  <div class="section-tag">Pricing</div>
+  <h2 class="section-title">Start recruiting smarter today</h2>
+  <p class="section-sub">Full access for 7 days, free. No charge until your trial ends.</p>
 
-  <!-- PRICING -->
-  <section id="pricing" style="background:var(--bg2); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
-    <div class="centered">
-      <div class="section-label">Pricing</div>
-      <div class="section-title">Simple pricing. No hidden fees.</div>
-      <div class="section-sub">Start free. Upgrade when you're ready to scale.</div>
-    </div>
-    <div class="pricing-grid">
-      <div class="price-card">
-        <div class="price-name">Free</div>
-        <div class="price-amount">$0<span>/mo</span></div>
-        <div class="price-desc">Try the platform</div>
-        <ul class="price-features">
-          <li>Up to 10 leads</li>
-          <li>Basic dashboard</li>
-          <li>Commission calculator</li>
-        </ul>
-        <a href="/signup" class="price-btn outline">Get Started</a>
-      </div>
-      <div class="price-card featured">
-        <div class="price-name">Recruiter</div>
-        <div class="price-amount">$97<span>/mo</span></div>
-        <div class="price-desc">For solo recruiters</div>
-        <ul class="price-features">
-          <li>Unlimited leads</li>
-          <li>Full agent directory</li>
-          <li>Rue AI agent</li>
-          <li>Daily AI content (6/day)</li>
-          <li>All 5 landing pages</li>
-          <li>90-day workflow automation</li>
-          <li>Interest scoring</li>
-          <li>Email drip sequences</li>
-          <li>Commission calculator</li>
-        </ul>
-        <a href="/signup" class="price-btn primary">Start Recruiting</a>
-      </div>
-      <div class="price-card">
-        <div class="price-name">Team Leader</div>
-        <div class="price-amount">$297<span>/mo</span></div>
-        <div class="price-desc">For recruiting teams</div>
-        <ul class="price-features">
-          <li>Everything in Recruiter</li>
-          <li>5 team seats</li>
-          <li>Shared pipeline</li>
-          <li>Team admin dashboard</li>
-          <li>Blog CMS</li>
-          <li>HeyGen video reels</li>
-          <li>Team leaderboard</li>
-        </ul>
-        <a href="/signup" class="price-btn outline">Start Free Trial</a>
-      </div>
-      <div class="price-card">
-        <div class="price-name">Regional Operator</div>
-        <div class="price-amount">$997<span>/mo</span></div>
-        <div class="price-desc">For brokerage leaders</div>
-        <ul class="price-features">
-          <li>Everything in Team Leader</li>
-          <li>10 team seats</li>
-          <li>Custom branding</li>
-          <li>Priority support</li>
-          <li>API access</li>
-          <li>White label add-on available</li>
-          <li>Social automation suite</li>
-          <li>Advanced analytics</li>
-        </ul>
-        <a href="/signup" class="price-btn outline">Contact Us</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section id="faq">
-    <div class="centered">
-      <div class="section-label">FAQ</div>
-      <div class="section-title">Questions? We've got answers.</div>
-    </div>
-    <div class="faq-grid">
-      <div class="faq-item">
-        <button class="faq-q">What is Rue? <span class="faq-arrow">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Rue is your AI recruiting agent. She lives on your landing pages, blog posts, and website — having real conversations with agents, answering their questions, and capturing their contact info directly into your pipeline. She's not a chatbot with canned responses. She's powered by real AI with access to 796K agent records.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">Do I need to be tech-savvy to use RKRT? <span class="faq-arrow">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Not at all. RKRT is built for recruiters, not developers. Everything is point-and-click. Content is AI-generated. Workflows run automatically. If you can use Instagram, you can use RKRT.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">Is RKRT only for LPT Realty? <span class="faq-arrow">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">No. RKRT is brokerage-agnostic. We serve recruiters across LPT Realty, eXp, Keller Williams, RE/MAX, Real Brokerage, Epique, Realty of America, and more. Each brokerage gets its own blog content and landing pages tailored to their strengths.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">Where does the agent data come from? <span class="faq-arrow">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">We aggregate public licensing data from state regulatory agencies (DBPR, TREC, DOS, DCP). All 796K+ records are refreshed weekly via automated syncs. We're adding all 50 states and Canada.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">How is RKRT different from Brokerkit or Courted? <span class="faq-arrow">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Brokerkit is a recruiting CRM — outreach campaigns and follow-ups. Courted is a data/analytics platform — MLS insights and predictive analytics. RKRT combines both, plus things neither has: AI content generation, social DM automation, an AI agent that captures leads on your pages, and a gamified recruiter dashboard. It's the full stack in one place.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">Can I cancel anytime? <span class="faq-arrow">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Yes. No contracts, no commitments. Cancel anytime from your dashboard. Your data stays available for 30 days after cancellation.</div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA BANNER -->
-  <div class="cta-banner">
-    <h2>Ready to recruit smarter?</h2>
-    <p>Join the recruiters who let AI do the heavy lifting. Start free — upgrade when you're ready.</p>
-    <a href="/signup" class="btn-primary">Start Recruiting Free →</a>
+  <div class="pricing-card">
+    <div class="pricing-badge">MOST POPULAR</div>
+    <div class="pricing-name">RECRUITER PLAN</div>
+    <div class="pricing-price">$97<span>/mo</span></div>
+    <div class="pricing-trial">7-day free trial &middot; Cancel anytime</div>
+    <ul class="pricing-features">
+      <li>1.7M+ agent directory</li>
+      <li>Unlimited Rue AI access</li>
+      <li>Unlimited leads &amp; pipeline</li>
+      <li>AI daily content generation</li>
+      <li>Commission calculator</li>
+      <li>5 branded landing pages</li>
+      <li>100 enrichment credits/month</li>
+      <li>Email outreach from platform</li>
+    </ul>
+    <a href="https://app.rkrt.in" class="pricing-cta">Start 7-Day Free Trial &rarr;</a>
   </div>
 
-  <!-- FOOTER -->
-  <footer>
-    <a href="/" class="nav-logo" style="font-size:16px;">RKRT</a>
+  <p class="pricing-other">Team Leader ($297/mo) and Regional Operator ($997/mo) plans available for teams.</p>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <h2>Ready to recruit<br><span class="g">smarter</span>?</h2>
+  <a href="https://app.rkrt.in" class="hero-cta">Start Your 7-Day Free Trial &rarr;</a>
+  <div class="hero-sub">No credit card charged for 7 days. Full access to everything. Cancel anytime.</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">rkrt<span class="g">.in</span></div>
     <div class="footer-links">
-      <a href="/login">Log In</a>
-      <a href="/signup">Sign Up</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#faq">FAQ</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="mailto:support@rkrt.in">Contact</a>
+      <a href="https://livin.media">Powered by LIVIN Media</a>
     </div>
-    <div style="font-size:12px; color:var(--text3);">© 2026 LIVIN Media. All rights reserved.</div>
-  </footer>
+    <div class="footer-copy">&copy; 2026 LIVIN Media. All rights reserved.</div>
+  </div>
+</footer>
 
-  <!-- FAQ TOGGLE -->
-  <script>
-    document.querySelectorAll('.faq-q').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item = btn.parentElement;
-        const a = item.querySelector('.faq-a');
-        const isOpen = item.classList.contains('open');
-        document.querySelectorAll('.faq-item.open').forEach(i => {
-          i.classList.remove('open');
-          i.querySelector('.faq-a').style.maxHeight = '0';
-        });
-        if (!isOpen) {
-          item.classList.add('open');
-          a.style.maxHeight = a.scrollHeight + 'px';
-        }
-      });
-    });
-  </script>
+<script src="/empire-track.js" data-spoke="rkrt" defer></script>
 </body>
 </html>

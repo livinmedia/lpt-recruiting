@@ -6,11 +6,7 @@ export default async function middleware(request) {
   const parts = pathname.split('/').filter(Boolean);
 
   if (pathname === '/' && !request.headers.get('host')?.startsWith('app.')) {
-    const res = await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-homepage' + url.search);
-    return new Response(res.body, {
-      status: res.status,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' }
-    });
+    return Response.redirect(new URL('/home.html', request.url), 302);
   }
 
   if (pathname === '/share' || pathname.startsWith('/share?')) {
@@ -44,6 +40,20 @@ export default async function middleware(request) {
       status: res.status,
       headers: { 'Content-Type': 'text/html; charset=utf-8' }
     });
+  }
+
+  if (pathname.startsWith('/book/')) {
+    const slug = pathname.slice(6); // strip "/book/"
+    if (slug) {
+      const existingParams = url.searchParams.toString();
+      const connector = existingParams ? '&' : '';
+      const bkUrl = `https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-booking?slug=${encodeURIComponent(slug)}${connector}${existingParams}`;
+      const res = await fetch(bkUrl);
+      return new Response(res.body, {
+        status: res.status,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+      });
+    }
   }
 
   if (pathname.startsWith('/i/')) {
@@ -80,6 +90,6 @@ export default async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
+  matcher: ['/', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
 };
 // 1773555408
