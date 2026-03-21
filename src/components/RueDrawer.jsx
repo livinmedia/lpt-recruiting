@@ -45,7 +45,7 @@ PERSONALITY:
 - When greeting the user, be warm and use their first name
 - You are their unfair advantage in recruiting. Act like it.`;
 
-export default function RueDrawer({ open, onClose, profile, leads, userId }) {
+export default function RueDrawer({ open, onClose, profile, leads, userId, autoOpen }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,6 +53,7 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
   const messagesEnd = useRef(null);
   const inputRef = useRef(null);
   const firstName = profile?.full_name?.split(" ")[0] || "there";
+  const isFirstTimeUser = (leads?.length || 0) === 0;
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -68,7 +69,7 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
     }
   }, [open]);
 
-  // Greeting on first open
+  // Greeting on first open — context-aware for new users
   useEffect(() => {
     if (open && messages.length === 0) {
       const hour = new Date().getHours();
@@ -77,13 +78,26 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
       const urgent = leads?.filter(l => l.urgency === "HIGH").length || 0;
       const needsFollowUp = leads?.filter(l => l.pipeline_stage && l.pipeline_stage !== "new" && l.pipeline_stage !== "recruited" && l.created_at && (Date.now() - new Date(l.created_at)) > 3 * 86400000).length || 0;
 
-      let greetingText = `${greeting}, ${firstName}! I'm Rue, your recruiting intelligence agent. How can I help you today?`;
+      let greetingText;
 
-      if (leadCount > 0) {
-        greetingText += `\n\nQuick glance at your pipeline: ${leadCount} leads`;
-        if (urgent > 0) greetingText += `, ${urgent} hot`;
-        if (needsFollowUp > 0) greetingText += `, ${needsFollowUp} need follow-up`;
-        greetingText += ".";
+      if (isFirstTimeUser) {
+        greetingText = `${greeting}, ${firstName}! I'm Rue, your AI recruiting agent.`;
+        if (profile?.brokerage) greetingText += ` I see you're recruiting for **${profile.brokerage}**`;
+        if (profile?.market) greetingText += ` in the **${profile.market}** market`;
+        if (profile?.brokerage || profile?.market) greetingText += " — great choice.";
+        greetingText += `\n\nI'm here to help you find, research, and recruit real estate agents. Here's what I can do right now:\n\n`;
+        greetingText += `**1.** Find top-producing agents${profile?.market ? " in " + profile.market : ""} who might be ready to switch\n`;
+        greetingText += `**2.** Draft personalized recruiting messages\n`;
+        greetingText += `**3.** Build your weekly recruiting game plan\n\n`;
+        greetingText += `Want me to find some recruiting targets to get you started?`;
+      } else {
+        greetingText = `${greeting}, ${firstName}! I'm Rue, your recruiting intelligence agent. How can I help you today?`;
+        if (leadCount > 0) {
+          greetingText += `\n\nQuick glance at your pipeline: ${leadCount} leads`;
+          if (urgent > 0) greetingText += `, ${urgent} hot`;
+          if (needsFollowUp > 0) greetingText += `, ${needsFollowUp} need follow-up`;
+          greetingText += ".";
+        }
       }
 
       setMessages([{ role: "assistant", content: greetingText, ts: Date.now() }]);
@@ -99,7 +113,8 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
 
     try {
       let sys = SYSTEM;
-      if (profile?.brokerage) sys += `\n\nUser's brokerage: ${profile.brokerage}. Market: ${profile.market || "not set"}.`;
+      sys += `\n\n[USER CONTEXT: Name: ${profile?.full_name || "Unknown"}, Brokerage: ${profile?.brokerage || "not set"}, Market: ${profile?.market || "not set"}, Plan: ${profile?.plan || "free"}]`;
+      if (isFirstTimeUser) sys += `\nThis is a new user who just completed onboarding. They have 0 leads. Be helpful, proactive, and guide them toward finding their first recruiting targets.`;
       if (leads?.length > 0) {
         sys += `\n\nPIPELINE (${leads.length} leads):\n` + leads.slice(0, 10).map(l =>
           `- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0, 20) || "?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`
@@ -159,7 +174,8 @@ export default function RueDrawer({ open, onClose, profile, leads, userId }) {
 
     try {
       let sys = SYSTEM;
-      if (profile?.brokerage) sys += `\n\nUser's brokerage: ${profile.brokerage}. Market: ${profile.market || "not set"}.`;
+      sys += `\n\n[USER CONTEXT: Name: ${profile?.full_name || "Unknown"}, Brokerage: ${profile?.brokerage || "not set"}, Market: ${profile?.market || "not set"}, Plan: ${profile?.plan || "free"}]`;
+      if (isFirstTimeUser) sys += `\nThis is a new user who just completed onboarding. They have 0 leads. Be helpful, proactive, and guide them toward finding their first recruiting targets.`;
       if (leads?.length > 0) {
         sys += `\n\nPIPELINE (${leads.length} leads):\n` + leads.slice(0, 10).map(l =>
           `- ${l.first_name} ${l.last_name} | ${l.market} | ${l.brokerage?.substring(0, 20) || "?"} | ${l.tier} | ${l.urgency} | ${l.pipeline_stage}`

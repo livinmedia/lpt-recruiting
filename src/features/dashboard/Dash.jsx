@@ -21,6 +21,7 @@ export default function Dash({
   onNavigate = () => {},
   onSelectLead = () => {},
   askRueInline = () => {},
+  onOpenRue = () => {},
   inlineLoading = false,
   chartsReady = false,
   BarChart,
@@ -76,6 +77,9 @@ export default function Dash({
   // Sorted leads by interest_score
   const scoredLeads = [...leads].filter(l => (l.interest_score || 0) > 0).sort((a, b) => (b.interest_score || 0) - (a.interest_score || 0));
 
+  const isNewUser = total === 0;
+  const hasTargets = leads.some(l => l.pipeline_stage === "outreach_sent" || l.pipeline_stage === "meeting_booked");
+
   return (
     <>
       {/* Lead Score Alert Banners */}
@@ -93,6 +97,50 @@ export default function Dash({
           <div onClick={() => dismissAlert(alert.id)} style={{ fontSize: 18, color: "rgba(255,255,255,0.8)", cursor: "pointer", flexShrink: 0, lineHeight: 1 }}>✕</div>
         </div>
       ))}
+
+      {/* Getting Started Card — shown for new users with 0 leads */}
+      {isNewUser && (
+        <div style={{ background: "linear-gradient(135deg, #0B0F17, #101828)", border: `1.5px solid ${T.a}30`, borderRadius: 14, padding: "28px 30px", marginBottom: 24 }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: T.t, marginBottom: 6 }}>Welcome to RKRT{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}!</div>
+          <div style={{ fontSize: 15, color: "#B0BCCD", marginBottom: 24, lineHeight: 1.6 }}>
+            Let's get your recruiting pipeline started. Complete these 3 steps to land your first recruit.
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+            {[
+              {
+                icon: "🔍", title: "Find Your First Targets", desc: "Search the agent directory for top producers in your market.",
+                action: () => onNavigate("agents"), color: T.a, cta: "Open Directory →",
+              },
+              {
+                icon: "💬", title: "Talk to Rue", desc: `Ask Rue to find top producers${profile?.market ? " in " + profile.market : ""} ready to switch.`,
+                action: () => onOpenRue(), color: T.bl, cta: "Open Rue →",
+              },
+              {
+                icon: "📧", title: "Draft Your First Outreach", desc: "Create a personalized recruiting message for your top target.",
+                action: () => onNavigate("pipeline"), color: T.p, cta: "Go to Pipeline →",
+              },
+            ].map((step, i) => (
+              <div
+                key={i}
+                onClick={step.action}
+                style={{
+                  background: step.color + "08", border: `1.5px solid ${step.color}25`,
+                  borderRadius: 12, padding: "22px 20px", cursor: "pointer",
+                  transition: "all 0.2s", position: "relative",
+                }}
+                onMouseOver={ev => { ev.currentTarget.style.background = step.color + "18"; ev.currentTarget.style.borderColor = step.color + "50"; ev.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseOut={ev => { ev.currentTarget.style.background = step.color + "08"; ev.currentTarget.style.borderColor = step.color + "25"; ev.currentTarget.style.transform = "translateY(0)"; }}
+              >
+                <div style={{ fontSize: 11, color: step.color, fontWeight: 800, letterSpacing: 1.5, marginBottom: 10 }}>STEP {i + 1}</div>
+                <div style={{ fontSize: 28, marginBottom: 10 }}>{step.icon}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: T.t, marginBottom: 6 }}>{step.title}</div>
+                <div style={{ fontSize: 13, color: "#B0BCCD", lineHeight: 1.5, marginBottom: 14 }}>{step.desc}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: step.color }}>{step.cta}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 🔥 Hottest Leads Podium */}
       {(() => {
@@ -113,9 +161,9 @@ export default function Dash({
               <span onClick={() => onNavigate("pipeline")} style={{ fontSize: 12, color: T.a, cursor: "pointer", fontWeight: 600 }}>View All →</span>
             </div>
             {scoredLeads.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 16px", color: T.m }}>
+              <div style={{ textAlign: "center", padding: "40px 16px", color: "#8B949E" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎯</div>
-                <div style={{ fontSize: 14, lineHeight: 1.6 }}>No lead activity yet. Share your recruiting links and content to start tracking engagement.</div>
+                <div style={{ fontSize: 14, lineHeight: 1.6, color: "#B0BCCD" }}>No lead activity yet. Share your recruiting links and content to start tracking engagement.</div>
               </div>
             ) : (
               <>
@@ -124,11 +172,11 @@ export default function Dash({
                     { label: "Total Leads", value: scoredLeads.length, color: T.a },
                     { label: "Hot Leads", value: hotCount, color: "#FF4444" },
                     { label: "Warming", value: warmCount, color: "#FF8C00" },
-                    { label: "Cold", value: coldCount, color: T.m },
+                    { label: "Cold", value: coldCount, color: "#8B949E" },
                   ].map(({ label, value, color }) => (
                     <div key={label} style={{ background: T.d, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
                       <div style={{ fontSize: 26, fontWeight: 800, color }}>{value}</div>
-                      <div style={{ fontSize: 11, color: T.m, marginTop: 3, fontWeight: 600, letterSpacing: 0.5 }}>{label}</div>
+                      <div style={{ fontSize: 11, color: "#8B949E", marginTop: 3, fontWeight: 600, letterSpacing: 0.5 }}>{label}</div>
                     </div>
                   ))}
                 </div>
@@ -150,7 +198,7 @@ export default function Dash({
                           <div style={{ fontSize: 12, color: T.s, marginBottom: 8 }}>{(l.brokerage_name || l.brokerage || "Unknown").substring(0, 22)}</div>
                           <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
                             <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: heatColor + "22", border: `1px solid ${heatColor}44`, color: heatColor, fontWeight: 700 }}>{heatIcon} {(l.heat_level || "cold").replace(/_/g, " ")}</span>
-                            {l.last_activity_at && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: T.b + "30", color: T.m, fontWeight: 600 }}>{isToday ? "Active today" : ago(l.last_activity_at)}</span>}
+                            {l.last_activity_at && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: T.b + "30", color: "#8B949E", fontWeight: 600 }}>{isToday ? "Active today" : ago(l.last_activity_at)}</span>}
                           </div>
                         </div>
                       );
@@ -169,7 +217,7 @@ export default function Dash({
                           onMouseOver={ev => ev.currentTarget.style.background = T.d}
                           onMouseOut={ev => ev.currentTarget.style.background = "transparent"}
                         >
-                          <span style={{ fontSize: 12, color: T.m, fontWeight: 800, minWidth: 22, textAlign: "center" }}>#{i + 4}</span>
+                          <span style={{ fontSize: 12, color: "#8B949E", fontWeight: 800, minWidth: 22, textAlign: "center" }}>#{i + 4}</span>
                           <span style={{ fontSize: 14, flexShrink: 0 }}>{heatIcon}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 14, fontWeight: 700, color: T.t, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.first_name} {l.last_name}</div>
@@ -177,7 +225,7 @@ export default function Dash({
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                             <div style={{ padding: "3px 9px", borderRadius: 20, background: heatColor + "22", border: `1px solid ${heatColor}44`, fontSize: 12, fontWeight: 800, color: heatColor }}>{l.interest_score || 0}</div>
-                            <div style={{ fontSize: 10, color: T.m, minWidth: 60, textAlign: "right" }}>{isToday ? "Today" : l.last_activity_at ? ago(l.last_activity_at) : "—"}</div>
+                            <div style={{ fontSize: 10, color: "#8B949E", minWidth: 60, textAlign: "right" }}>{isToday ? "Today" : l.last_activity_at ? ago(l.last_activity_at) : "—"}</div>
                           </div>
                         </div>
                       );
@@ -197,8 +245,8 @@ export default function Dash({
             key={i}
             onClick={() => askRueInline(q)}
             style={{
-              background: (c || T.bl) + "10",
-              border: `1px solid ${(c || T.bl)}20`,
+              background: (c || T.bl) + "12",
+              border: `1.5px solid ${(c || T.bl)}30`,
               borderRadius: 10,
               padding: "18px 20px",
               cursor: inlineLoading ? "wait" : "pointer",
@@ -206,10 +254,10 @@ export default function Dash({
               alignItems: "center",
               gap: 12,
               opacity: inlineLoading ? 0.5 : 1,
-              transition: "all 0.15s",
+              transition: "all 0.2s",
             }}
-            onMouseOver={(e) => { if (!inlineLoading) e.currentTarget.style.background = (c || T.bl) + "20"; }}
-            onMouseOut={(e) => { e.currentTarget.style.background = (c || T.bl) + "10"; }}
+            onMouseOver={(e) => { if (!inlineLoading) { e.currentTarget.style.background = (c || T.bl) + "28"; e.currentTarget.style.borderColor = (c || T.bl) + "50"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+            onMouseOut={(e) => { e.currentTarget.style.background = (c || T.bl) + "12"; e.currentTarget.style.borderColor = (c || T.bl) + "30"; e.currentTarget.style.transform = "translateY(0)"; }}
           >
             <span style={{ fontSize: 24 }}>{icon}</span>
             <span style={{ fontSize: 15, fontWeight: 700, color: T.t }}>{label}</span>
@@ -221,7 +269,7 @@ export default function Dash({
       {profile?.brokerage && profile.brokerage !== "LPT Realty" && (
         <div style={{ background: T.bl + "10", border: `1px solid ${T.bl}20`, borderRadius: 10, padding: "12px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 18 }}>🎯</span>
-          <div style={{ flex: 1, fontSize: 13, color: T.s }}>
+          <div style={{ flex: 1, fontSize: 13, color: "#B0BCCD" }}>
             RUE is targeting <strong style={{ color: T.t }}>{profile.brokerage}</strong> agents in <strong style={{ color: T.t }}>{profile.market || "your market"}</strong>
           </div>
           <div onClick={() => onNavigate("profile")} style={{ fontSize: 12, color: T.bl, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>Edit →</div>
@@ -239,7 +287,7 @@ export default function Dash({
           <div key={i} className="kpi-card" style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "22px 24px", display: "flex", alignItems: "center", gap: 16 }}>
             <div className="kpi-icon" style={{ width: 52, height: 52, borderRadius: 10, background: c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{ic}</div>
             <div>
-              <div className="kpi-label" style={{ fontSize: 13, color: T.s, letterSpacing: 2, fontWeight: 700 }}>{l.toUpperCase()}</div>
+              <div className="kpi-label" style={{ fontSize: 13, color: "#B0BCCD", letterSpacing: 2, fontWeight: 700 }}>{l.toUpperCase()}</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                 <span className="kpi-val" style={{ fontSize: 32, fontWeight: 800, color: T.t }}>{v}</span>
                 {s && <span className="kpi-sub" style={{ fontSize: 14, color: c, fontWeight: 600 }}>{s}</span>}
@@ -255,9 +303,9 @@ export default function Dash({
           <div
             key={i}
             onClick={action}
-            style={{ background: c + "10", border: `1px solid ${c}20`, borderRadius: 10, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s" }}
-            onMouseOver={ev => ev.currentTarget.style.background = c + "20"}
-            onMouseOut={ev => ev.currentTarget.style.background = c + "10"}
+            style={{ background: c + "12", border: `1.5px solid ${c}25`, borderRadius: 10, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s" }}
+            onMouseOver={ev => { ev.currentTarget.style.background = c + "28"; ev.currentTarget.style.borderColor = c + "50"; ev.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseOut={ev => { ev.currentTarget.style.background = c + "12"; ev.currentTarget.style.borderColor = c + "25"; ev.currentTarget.style.transform = "translateY(0)"; }}
           >
             <span style={{ fontSize: 20 }}>{ic}</span>
             <span style={{ fontSize: 14, fontWeight: 700, color: T.t }}>{label}</span>
@@ -270,7 +318,40 @@ export default function Dash({
         {/* Left: Today's Actions */}
         <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px" }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginBottom: 16 }}>📋 Today's Actions</div>
-          {(needsFollowUp.length > 0 || needsResearch.length > 0 || hasMeeting.length > 0) ? (
+          {isNewUser ? (
+            <div>
+              <div
+                onClick={() => onNavigate("agents")}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 8, background: T.a + "08", border: `1px solid ${T.a}15`, marginBottom: 8, cursor: "pointer", transition: "background 0.15s" }}
+                onMouseOver={ev => ev.currentTarget.style.background = T.a + "18"}
+                onMouseOut={ev => ev.currentTarget.style.background = T.a + "08"}
+              >
+                <span style={{ fontSize: 18 }}>🔍</span>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>Search Agent Directory</div><div style={{ fontSize: 13, color: "#B0BCCD" }}>Find top producers{profile?.market ? ` in ${profile.market}` : ""}</div></div>
+                <span style={{ fontSize: 13, color: T.a, fontWeight: 600 }}>Go →</span>
+              </div>
+              <div
+                onClick={() => onOpenRue()}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 8, background: T.bl + "08", border: `1px solid ${T.bl}15`, marginBottom: 8, cursor: "pointer", transition: "background 0.15s" }}
+                onMouseOver={ev => ev.currentTarget.style.background = T.bl + "18"}
+                onMouseOut={ev => ev.currentTarget.style.background = T.bl + "08"}
+              >
+                <span style={{ fontSize: 18 }}>💬</span>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>Ask Rue for Recruiting Intel</div><div style={{ fontSize: 13, color: "#B0BCCD" }}>Your AI agent knows your market</div></div>
+                <span style={{ fontSize: 13, color: T.bl, fontWeight: 600 }}>Chat →</span>
+              </div>
+              <div
+                onClick={() => onNavigate("addlead")}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 8, background: T.p + "08", border: `1px solid ${T.p}15`, marginBottom: 8, cursor: "pointer", transition: "background 0.15s" }}
+                onMouseOver={ev => ev.currentTarget.style.background = T.p + "18"}
+                onMouseOut={ev => ev.currentTarget.style.background = T.p + "08"}
+              >
+                <span style={{ fontSize: 18 }}>➕</span>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>Add Your First Lead</div><div style={{ fontSize: 13, color: "#B0BCCD" }}>Know someone? Add them manually</div></div>
+                <span style={{ fontSize: 13, color: T.p, fontWeight: 600 }}>Add →</span>
+              </div>
+            </div>
+          ) : (needsFollowUp.length > 0 || needsResearch.length > 0 || hasMeeting.length > 0) ? (
             <div>
               {hasMeeting.map((l, i) => (
                 <div key={`m${i}`} onClick={() => { onSelectLead(l); onNavigate("lead"); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 8, background: T.p + "08", border: `1px solid ${T.p}15`, marginBottom: 8, cursor: "pointer" }}>
@@ -295,9 +376,9 @@ export default function Dash({
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: "center", padding: "24px", color: T.m }}>
+            <div style={{ textAlign: "center", padding: "24px", color: "#8B949E" }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>✅</div>
-              <div style={{ fontSize: 15 }}>All caught up!</div>
+              <div style={{ fontSize: 15, color: "#B0BCCD" }}>All caught up!</div>
             </div>
           )}
         </div>
@@ -313,14 +394,14 @@ export default function Dash({
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={stages} layout="vertical" barSize={14}>
                     <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="l" tick={{ fontSize: 13, fill: T.s }} width={76} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="l" tick={{ fontSize: 13, fill: "#B0BCCD" }} width={76} axisLine={false} tickLine={false} />
                     <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                       {stages.map((d, i) => <Cell key={i} fill={d.c} />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: T.m, fontSize: 13 }}>Loading chart...</div>
+                <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "#8B949E", fontSize: 13 }}>Loading chart...</div>
               )}
             </div>
           </div>
@@ -332,10 +413,10 @@ export default function Dash({
               <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", alignItems: "flex-start", borderBottom: i < 7 ? `1px solid ${T.b}` : "none" }}>
                 <Dot c={T.a} />
                 <div style={{ flex: 1 }}><div style={{ fontSize: 14, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.action?.replace(/_/g, " ")}</div></div>
-                <span style={{ fontSize: 12, color: T.m, flexShrink: 0 }}>{ago(a.created_at)}</span>
+                <span style={{ fontSize: 12, color: "#8B949E", flexShrink: 0 }}>{ago(a.created_at)}</span>
               </div>
             )) : (
-              <div style={{ textAlign: "center", padding: "24px", color: T.m }}><div style={{ fontSize: 24, marginBottom: 8 }}>📋</div><div style={{ fontSize: 15 }}>Activity will appear as you work</div></div>
+              <div style={{ textAlign: "center", padding: "24px", color: "#8B949E" }}><div style={{ fontSize: 24, marginBottom: 8 }}>📋</div><div style={{ fontSize: 15, color: "#B0BCCD" }}>Activity will appear as you work</div></div>
             )}
           </div>
         </div>
@@ -343,4 +424,3 @@ export default function Dash({
     </>
   );
 }
-// build trigger 1773261493

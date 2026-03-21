@@ -256,6 +256,24 @@ export function AppProvider({ children }) {
   const [rueDrawerOpen, setRueDrawerOpen] = useState(false);
   const [inboxUnread, setInboxUnread] = useState(0);
 
+  // Auto-open Rue drawer for first-time users (0 leads, no prior Rue conversations)
+  const [rueAutoOpened, setRueAutoOpened] = useState(false);
+  useEffect(() => {
+    if (!authUser || !profile || rueAutoOpened || rueDrawerOpen) return;
+    if (leads.length > 0) return;
+    // Check if user has any prior rue conversations
+    const checkFirstTime = async () => {
+      const { count } = await supabase.from('rue_conversations').select('id', { count: 'exact', head: true }).eq('user_id', authUser.id);
+      if (count === 0 || count === null) {
+        setTimeout(() => {
+          setRueDrawerOpen(true);
+          setRueAutoOpened(true);
+        }, 2000);
+      }
+    };
+    checkFirstTime().catch(() => {});
+  }, [authUser, profile, leads, rueAutoOpened, rueDrawerOpen]);
+
   // Inbox unread count
   useEffect(() => {
     if (!authUser) return;
