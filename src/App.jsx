@@ -46,6 +46,160 @@ export default function App() {
   return <AppProvider><AppShell /></AppProvider>;
 }
 
+function AuthScreen() {
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (err) { setError(err.message); setLoading(false); }
+    else setSuccess("Signed in! Loading...");
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    const { error: err } = await supabase.auth.signUp({
+      email: email.trim(), password,
+      options: { data: { full_name: `${firstName} ${lastName}`.trim() } }
+    });
+    if (err) { setError(err.message); setLoading(false); return; }
+    setSuccess("Check your email for a confirmation link!");
+    setLoading(false);
+  };
+
+  const F = "'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+  const inputStyle = { width: "100%", padding: "14px 16px", background: T.bg, border: `1.5px solid rgba(255,255,255,0.06)`, borderRadius: 10, color: T.t, fontSize: 15, fontFamily: "inherit", outline: "none" };
+  const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, letterSpacing: 1.2, color: "#4A5568", textTransform: "uppercase", marginBottom: 7 };
+
+  const features = [
+    ["🔍", "1.7M+ Agent Directory", "Search every licensed agent by production, market, and brokerage history."],
+    ["🤖", "Rue AI Assistant", "Draft outreach, prep objections, research targets in seconds."],
+    ["📊", "Pipeline Intelligence", "Track leads, score prospects, and automate follow-ups."],
+  ];
+
+  return (
+    <div className="auth-split" style={{ display: "flex", minHeight: "100vh", fontFamily: F }}>
+      {/* LEFT: Sales pitch */}
+      <div className="auth-left" style={{ flex: "0 0 60%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", background: T.bg, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 60% at 30% 20%, rgba(0,229,160,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "relative" }}>
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 48, color: T.t }}>rkrt<span style={{ color: T.a }}>.in</span></div>
+          <h1 style={{ fontSize: 44, fontWeight: 800, lineHeight: 1.15, marginBottom: 16, letterSpacing: -0.5, color: T.t }}>
+            Recruit Smarter.<br /><span style={{ color: T.a }}>Close Faster.</span>
+          </h1>
+          <p style={{ fontSize: 18, color: T.s, lineHeight: 1.6, marginBottom: 48, maxWidth: 520 }}>
+            AI-powered recruiting intelligence for real estate brokerages. Find the right agents, craft the perfect pitch, and fill your roster.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 48 }}>
+            {features.map(([icon, title, desc], i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                <div style={{ fontSize: 24, flexShrink: 0, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, background: "rgba(0,229,160,0.08)" }}>{icon}</div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: T.t, marginBottom: 3 }}>{title}</div>
+                  <div style={{ fontSize: 13, color: T.s, lineHeight: 1.5 }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 13, color: "#4A5568", marginBottom: 20 }}>
+            <span style={{ color: T.s }}>Trusted by recruiters across Florida, Texas, New York & Connecticut</span>
+          </div>
+          <div style={{ fontSize: 12, color: "#4A5568" }}>Powered by LIVIN Media</div>
+        </div>
+      </div>
+
+      {/* RIGHT: Auth form */}
+      <div className="auth-right" style={{ flex: "0 0 40%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 48px", background: "#0E1420", borderLeft: `1px solid rgba(255,255,255,0.04)`, overflowY: "auto" }}>
+        <div style={{ marginBottom: 32 }}>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: T.t, marginBottom: 6 }}>
+            {mode === "login" ? "Welcome back" : "Get Started Free"}
+          </h2>
+          <p style={{ fontSize: 15, color: T.s, lineHeight: 1.5 }}>
+            {mode === "login" ? "Sign in to your rkrt.in account." : "Create your account. No credit card required."}
+          </p>
+        </div>
+
+        {error && <div style={{ padding: "12px 16px", borderRadius: 8, fontSize: 14, marginBottom: 18, background: "#F5656510", border: "1px solid #F5656530", color: "#F56565" }}>{error}</div>}
+        {success && <div style={{ padding: "12px 16px", borderRadius: 8, fontSize: 14, marginBottom: 18, background: "rgba(0,229,160,0.08)", border: "1px solid rgba(0,229,160,0.2)", color: T.a }}>{success}</div>}
+
+        {!success && (
+          <form onSubmit={mode === "login" ? handleLogin : handleSignup}>
+            {mode === "signup" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                <div>
+                  <label style={labelStyle}>First Name</label>
+                  <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Anthony" required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Last Name</label>
+                  <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Dazet" style={inputStyle} />
+                </div>
+              </div>
+            )}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" required style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: mode === "login" ? 8 : 20 }}>
+              <label style={labelStyle}>Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === "login" ? "••••••••" : "At least 8 characters"} required minLength={mode === "signup" ? 8 : undefined} style={inputStyle} />
+            </div>
+            {mode === "login" && <div style={{ textAlign: "right", marginBottom: 24 }}><span style={{ fontSize: 13, color: T.s, cursor: "pointer" }}>Forgot password?</span></div>}
+            <button type="submit" disabled={loading} style={{
+              width: "100%", padding: 16, borderRadius: 10, background: T.a, color: "#000", fontSize: 16,
+              fontWeight: 700, border: "none", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit",
+              opacity: loading ? 0.5 : 1, transition: "all 0.2s",
+            }}>
+              {loading ? (mode === "login" ? "Signing in..." : "Creating account...") : (mode === "login" ? "Log In" : "Start Recruiting →")}
+            </button>
+          </form>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0", color: "#4A5568", fontSize: 13 }}>
+          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.04)" }} />
+          <span>or</span>
+          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.04)" }} />
+        </div>
+
+        <div style={{ textAlign: "center", fontSize: 14, color: T.s }}>
+          {mode === "login" ? (
+            <>Don't have an account? <span onClick={() => { setMode("signup"); setError(""); setSuccess(""); }} style={{ color: T.a, fontWeight: 600, cursor: "pointer" }}>Start free →</span></>
+          ) : (
+            <>Already have an account? <span onClick={() => { setMode("login"); setError(""); setSuccess(""); }} style={{ color: T.a, fontWeight: 600, cursor: "pointer" }}>Log in</span></>
+          )}
+        </div>
+
+        <div style={{ marginTop: 28, padding: 16, background: T.bg, border: "1px solid rgba(255,255,255,0.04)", borderRadius: 10 }}>
+          <div style={{ fontSize: 13, color: T.s, marginBottom: 8, lineHeight: 1.5 }}><strong style={{ color: T.t, fontWeight: 600 }}>Free plan includes:</strong> Agent search, 5 pipeline leads, basic dashboard</div>
+          <div style={{ fontSize: 12, color: "#4A5568", lineHeight: 1.5 }}>Upgrade to <strong style={{ color: T.a, fontWeight: 600 }}>Recruiter ($97/mo)</strong> for unlimited access</div>
+        </div>
+      </div>
+
+      <style>{`
+        @media(max-width:768px){
+          .auth-split { flex-direction: column !important; }
+          .auth-left { flex: none !important; padding: 40px 24px 32px !important; }
+          .auth-left h1 { font-size: 28px !important; }
+          .auth-right { flex: none !important; padding: 32px 24px 48px !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.04); }
+        }
+        @media(max-width:480px){
+          .auth-left { padding: 28px 20px 24px !important; }
+          .auth-right { padding: 28px 20px 40px !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function AppShell() {
   const ctx = useApp();
   const {
@@ -96,7 +250,7 @@ function AppShell() {
   };
 
   if (authLoading) return <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", color: T.s, fontSize: 18, fontFamily: "'SF Pro Display',-apple-system,sans-serif" }}>Authenticating…</div>;
-  if (!authUser) return <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 20, fontFamily: "'SF Pro Display',-apple-system,sans-serif" }}><div style={{ fontSize: 24, fontWeight: 800, color: T.t }}>rkrt<span style={{ color: T.a }}>.in</span></div><a href="/login.html" style={{ padding: "14px 32px", borderRadius: 10, background: T.a, color: "#000", fontSize: 16, fontWeight: 700, textDecoration: "none" }}>Log In</a><a href="/signup.html" style={{ fontSize: 14, color: T.s, textDecoration: "none" }}>Don't have an account? Sign up</a></div>;
+  if (!authUser) return <AuthScreen />;
   if (showBetaIntake && authUser) return <BetaIntakeFlow userId={authUser.id} profile={profile} supabase={supabase} onComplete={(data) => { setProfile(p => ({ ...p, ...data })); setShowBetaIntake(false); logActivity(authUser.id, 'onboarding_complete'); }} />;
   if (showOnboarding && authUser) return <OnboardingFlow userId={authUser.id} email={authUser.email} onComplete={handleOnboardingComplete} />;
 
