@@ -53,6 +53,18 @@ export default async function middleware(request) {
     });
   }
 
+  // /team/[slug] → team blog, /team/[slug]/[article] → team article
+  if (pathname.startsWith('/team/') && !host.startsWith('app.')) {
+    const teamParts = pathname.slice(6).split('/').filter(Boolean); // strip "/team/"
+    const page = teamParts.length >= 2 ? '/team-article.html' : '/team-blog.html';
+    const pageUrl = new URL(page, request.url);
+    const res = await fetch(pageUrl);
+    return new Response(res.body, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' }
+    });
+  }
+
   if (pathname.startsWith('/r/')) {
     const slug = pathname.slice(1); // keeps "r/whatever"
     const existingParams = url.searchParams.toString();
@@ -136,6 +148,6 @@ export default async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/', '/recruit', '/article', '/article.html', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share', '/:slug([a-z0-9-]+)']
+  matcher: ['/', '/recruit', '/article', '/article.html', '/team/:path*', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share', '/:slug([a-z0-9-]+)']
 };
 // 1773555408
