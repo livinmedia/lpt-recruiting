@@ -322,7 +322,7 @@ function fmtDate(d){return new Date(d).toLocaleDateString('en-US',{month:'short'
 function renderBadge(cat){return `<span class="article-badge badge-${cat}">${(CAT_LABELS[cat]||cat||'').toUpperCase()}</span>`;}
 
 function renderCard(a){
-  const hasImg=!!a.cover_image_url||a.image_url;
+  const hasImg=!!(a.cover_image_url||a.image_url);
   const gradClass='cat-grad-'+(a.category||'industry_news');
   const svg=CAT_SVGS[a.category]||CAT_SVGS.industry_news;
   const imgContent=hasImg?`<img src="${a.cover_image_url||a.image_url}" alt="" loading="lazy">`:svg;
@@ -342,16 +342,26 @@ function renderCard(a){
   </a>`;
 }
 
+let showCount=6;
 function filterCat(cat){
   currentCat=cat;
+  showCount=6;
   document.querySelectorAll('.cat-pill').forEach(p=>p.classList.toggle('active',p.dataset.cat===cat));
-  const filtered=cat==='all'?allArticles:allArticles.filter(a=>a.category===cat);
+  renderGrid();
+}
+function renderGrid(){
+  const filtered=currentCat==='all'?allArticles:allArticles.filter(a=>a.category===currentCat);
   const grid=document.getElementById('article-grid');
   if(filtered.length===0){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--m)">No articles in this category yet.</div>';
-  }else{
-    grid.innerHTML=filtered.map(renderCard).join('');
+    return;
   }
+  const visible=filtered.slice(0,showCount);
+  let html=visible.map(renderCard).join('');
+  if(filtered.length>showCount){
+    html+=`<div style="grid-column:1/-1;text-align:center;padding:20px 0"><div onclick="showCount+=6;renderGrid();" style="display:inline-block;padding:12px 32px;border-radius:8px;background:var(--card);border:1px solid var(--b);color:var(--s);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--b)'">Load More (${filtered.length-showCount} remaining)</div></div>`;
+  }
+  grid.innerHTML=html;
 }
 
 async function loadHero(){
@@ -380,7 +390,7 @@ async function loadHero(){
 
 async function loadArticles(){
   try{
-    const r=await fetch(SUPABASE_URL+'/rest/v1/intel_articles?published=eq.true&order=published_at.desc&limit=12&select=*',{headers:H});
+    const r=await fetch(SUPABASE_URL+'/rest/v1/intel_articles?published=eq.true&order=published_at.desc&select=*',{headers:H});
     allArticles=await r.json()||[];
     filterCat('all');
   }catch(e){

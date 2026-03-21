@@ -278,12 +278,13 @@ async function loadArticle(){
     document.title=a.title+' — RKRT Intel';
     const ogT=document.querySelector('meta[property="og:title"]');if(ogT)ogT.content=a.title;
     const desc=document.querySelector('meta[name="description"]');if(desc)desc.content=a.subtitle||'';
-    if(a.cover_image_url||a.image_url){let ogI=document.querySelector('meta[property="og:image"]');if(!ogI){ogI=document.createElement('meta');ogI.setAttribute('property','og:image');document.head.appendChild(ogI);}ogI.content=a.cover_image_url||a.image_url;}
+    const _ci=a.cover_image_url||a.image_url;if(_ci){let ogI=document.querySelector('meta[property="og:image"]');if(!ogI){ogI=document.createElement('meta');ogI.setAttribute('property','og:image');document.head.appendChild(ogI);}ogI.content=_ci;}
 
     const pageUrl=window.location.href;
     const catLabel=(CAT_LABELS[a.category]||a.category||'').toUpperCase();
     const authorInitial=(a.author||'R')[0].toUpperCase();
     const safeTitle=(a.title||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const coverImg=a.cover_image_url||a.image_url||null;
 
     // Inject inline CTAs/ads into body
     let body=a.body||'<p>No content available.</p>';
@@ -316,7 +317,7 @@ async function loadArticle(){
           </div>
         </div>
       </div>
-      ${a.cover_image_url||a.image_url?'<div class="article-hero"><img src="'+a.cover_image_url||a.image_url+'" alt=""></div>':''}
+      ${coverImg?'<div class="article-hero"><img src="'+coverImg+'" alt=""></div>':''}
       <div class="article-body">${rebuilt}</div>
 
       <div class="inline-cta green">
@@ -357,7 +358,8 @@ async function loadRelated(cat,slug){
     const s=document.getElementById('related-section');
     if(d.length===0){s.style.display='none';return;}
     s.innerHTML='<h3>Related Articles</h3><div class="related-grid">'+d.map(a=>{
-      const img=a.cover_image_url||a.image_url?'<img src="'+a.cover_image_url||a.image_url+'" alt="" loading="lazy">':'<div style="font-size:24px;opacity:0.3">📄</div>';
+      const ri=a.cover_image_url||a.image_url;
+      const img=ri?'<img src="'+ri+'" alt="" loading="lazy">':'<div style="font-size:24px;opacity:0.3">📄</div>';
       return '<a href="/article?slug='+a.slug+'" class="related-card"><div class="related-card-img">'+img+'</div><div class="related-card-body"><h4>'+a.title+'</h4><span>'+(a.read_time_min||a.read_time||'3')+' min read</span></div></a>';
     }).join('')+'</div>';
   }catch(e){}
