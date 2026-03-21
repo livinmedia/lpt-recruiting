@@ -2,7 +2,7 @@ import T from '../lib/theme';
 import { trackActivity } from '../lib/track';
 
 function FloatingToolbar({ ctx }) {
-  const { loading, load, notifOpen, setNotifOpen, unreadCount, profileMenuOpen, setProfileMenuOpen, rueDrawerOpen, setRueDrawerOpen, effectiveUserId, effectiveProfile, impersonating, notifications, loadNotifications, supabase } = ctx;
+  const { loading, load, notifOpen, setNotifOpen, unreadCount, profileMenuOpen, setProfileMenuOpen, rueDrawerOpen, setRueDrawerOpen, effectiveUserId, effectiveProfile, impersonating, notifications, loadNotifications, supabase, handleSelectLead, setViewWithHistory, leads } = ctx;
   return (
     <div className="floating-toolbar" style={{ position: "fixed", bottom: 20, left: 20, zIndex: 1100, display: "flex", flexDirection: "column", gap: 4, background: "rgba(7,10,16,0.92)", border: `1px solid ${T.b}`, borderRadius: 14, padding: "8px", boxShadow: "0 8px 32px rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }}>
       {[
@@ -28,7 +28,19 @@ function FloatingToolbar({ ctx }) {
         {notifications.length === 0
           ? <div style={{ padding: 24, textAlign: 'center', color: T.s, fontSize: 13 }}>No notifications yet</div>
           : notifications.slice(0, 8).map(n => (
-            <div key={n.id} onClick={() => { supabase.from('notifications').update({ read: true }).eq('id', n.id); setNotifOpen(false); }} style={{ padding: '12px 16px', borderBottom: `1px solid ${T.b}20`, background: n.read ? 'transparent' : T.a + '10', cursor: 'pointer' }}>
+            <div key={n.id} onClick={() => {
+              supabase.from('notifications').update({ read: true }).eq('id', n.id);
+              setNotifOpen(false);
+              const leadId = n.lead_id || n.metadata?.lead_id;
+              if (leadId) {
+                const found = leads?.find(l => l.id === leadId);
+                if (found) handleSelectLead(found);
+                setViewWithHistory('lead');
+                if (!found) window.location.hash = 'lead/' + leadId;
+              } else if (n.action_url) {
+                window.location.hash = n.action_url.replace('#', '');
+              }
+            }} style={{ padding: '12px 16px', borderBottom: `1px solid ${T.b}20`, background: n.read ? 'transparent' : T.a + '10', cursor: 'pointer' }}>
               <div style={{ fontSize: 13, fontWeight: n.read ? 400 : 700, color: T.t, marginBottom: 2 }}>{n.title}</div>
               <div style={{ fontSize: 11, color: T.s, lineHeight: 1.4 }}>{n.body}</div>
               <div style={{ fontSize: 10, color: T.m, marginTop: 4 }}>{new Date(n.created_at).toLocaleDateString()}</div>
