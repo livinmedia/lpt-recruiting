@@ -102,6 +102,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
       </div>
 
       <div
+        className="progate-tiers"
         style={{
           display: 'flex',
           gap: 16,

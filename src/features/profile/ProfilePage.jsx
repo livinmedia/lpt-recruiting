@@ -317,7 +317,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
       )}
 
       {/* ── Header Card ── */}
-      <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "32px 36px", marginBottom: 16, display: "flex", alignItems: "flex-start", gap: 32, flexWrap: "wrap" }}>
+      <div className="profile-header" style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "32px 36px", marginBottom: 16, display: "flex", alignItems: "flex-start", gap: 32, flexWrap: "wrap" }}>
         {/* Avatar */}
         <div style={{ position: "relative", flexShrink: 0, textAlign: "center" }}>
           <div
@@ -359,7 +359,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
       </div>
 
       {/* ── Stats Row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+      <div className="profile-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
         {[
           { icon: "◎",  label: "Total Leads",  value: leads.length,    sub: null,                                                      color: T.bl },
           { icon: "🔥", label: "Hottest Lead", value: hottest ? `${hottest.first_name} ${hottest.last_name?.charAt(0) || ""}.` : "—", sub: hottest ? `Score ${hottest.interest_score}` : null, color: "#FF4444" },
@@ -380,7 +380,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
       {/* ── Section 1: Personal Info ── */}
       <SectionCard title="👤 Personal Info" {...sectionProps("personal")}>
         {(editing) => (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 28px" }}>
+          <div className="profile-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 28px" }}>
             <Field label="FULL NAME" value={personal.full_name} editing={editing}
               input={<input value={personal.full_name} onChange={e => setPersonal(p => ({ ...p, full_name: e.target.value }))} style={inp} />} />
             <Field label="TITLE / ROLE" value={personal.title} editing={editing}

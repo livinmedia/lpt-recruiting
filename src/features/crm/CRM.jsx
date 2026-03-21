@@ -279,7 +279,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
       {emailLead && (
         <>
           <div onClick={() => setEmailLead(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", zIndex: 900 }} />
-          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 500, background: T.side, borderLeft: `1px solid ${T.b}`, zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)", animation: "slideInRight 0.25s ease" }}>
+          <div className="email-sidebar" style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 500, background: T.side, borderLeft: `1px solid ${T.b}`, zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)", animation: "slideInRight 0.25s ease" }}>
             {/* Header */}
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.b}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: T.t, flex: 1 }}>📧 Email {emailLead.first_name} {emailLead.last_name}</span>
@@ -454,7 +454,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
         return (
           <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px", marginBottom: 12 }}>
             <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginBottom: 20 }}>🔥 Hottest Leads</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
+            <div className="crm-hottest-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
               {[["Total Leads", scoredLeads.length, T.a], ["Hot Leads", hotCount, "#FF4444"], ["Warming", warmCount, "#FF8C00"], ["Cold", coldCount, T.m]].map(([label, value, color]) => (
                 <div key={label} style={{ background: T.d, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
                   <div style={{ fontSize: 26, fontWeight: 800, color }}>{value}</div>

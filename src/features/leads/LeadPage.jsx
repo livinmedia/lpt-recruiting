@@ -379,7 +379,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
       {emailOpen && (
         <>
           <div onClick={() => setEmailOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", zIndex: 900 }} />
-          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 480, background: T.side, borderLeft: `1px solid ${T.b}`, zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)", animation: "slideInRight 0.25s ease" }}>
+          <div className="email-sidebar" style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 480, background: T.side, borderLeft: `1px solid ${T.b}`, zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)", animation: "slideInRight 0.25s ease" }}>
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.b}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: T.t, flex: 1 }}>📧 Email {lead.first_name} {lead.last_name}</span>
               <div onClick={() => setEmailOpen(false)} style={{ width: 28, height: 28, borderRadius: 6, background: T.d, border: `1px solid ${T.b}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: T.s, fontSize: 14 }}>✕</div>
@@ -475,7 +475,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
       )}
 
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+      <div className="lead-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
           <div onClick={onBack} style={{ fontSize: 14, color: T.s, cursor: "pointer", marginBottom: 8 }}>← Back to Pipeline</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: T.t }}>{lead.first_name} {lead.last_name}</div>
@@ -494,7 +494,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
       </div>
 
       {/* Rue Quick Actions */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
+      <div className="lead-actions-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
         {/* Enrich Contact — replaces Research */}
         <div
           onClick={enriching ? undefined : handleEnrich}
@@ -540,7 +540,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
       )}
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div className="lead-tabs" style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {["overview", "tasks", "notes", "activity"].map(t => (
           <div key={t} onClick={() => setTab(t)} style={{ padding: "10px 18px", borderRadius: 8, background: tab === t ? T.a + "18" : T.card, color: tab === t ? T.a : T.s, fontSize: 14, fontWeight: 600, cursor: "pointer", border: `1px solid ${tab === t ? T.a + "40" : T.b}` }}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -548,13 +548,13 @@ Write the email body. Be specific to this person — reference their brokerage, 
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
+      <div className="lead-layout" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
         {/* Main Content */}
         <div>
           {tab === "overview" && (
             <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px" }}>
               <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginBottom: 20 }}>Contact Info</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div className="lead-contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
                   <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>EMAIL</div>
                   <div onClick={lead.email ? openEmailSidebar : undefined} style={{ fontSize: 15, color: lead.email ? T.bl : T.m, cursor: lead.email ? "pointer" : "default", textDecoration: lead.email ? "underline" : "none" }}>{lead.email || "—"}</div>

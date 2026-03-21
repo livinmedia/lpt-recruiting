@@ -55,7 +55,7 @@ export default function OnboardingFlow({ userId, email, onComplete }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: T.bg, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: T.card, borderRadius: 20, padding: "48px 44px", maxWidth: 480, width: "100%", border: `1px solid ${T.b}` }}>
+      <div className="onboard-card" style={{ background: T.card, borderRadius: 20, padding: "48px 44px", maxWidth: 480, width: "100%", border: `1px solid ${T.b}` }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>👋</div>
           <div style={{ fontSize: 26, fontWeight: 800, color: T.t, marginBottom: 6 }}>Welcome to RKRT</div>

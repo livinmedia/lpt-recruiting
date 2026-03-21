@@ -183,7 +183,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
       })()}
 
       {/* Stats Bar */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+      <div className="agent-stats-bar" style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         {[["TOTAL AGENTS", TOTAL_AGENTS, T.a], ["FLORIDA", STATE_DATA.FL, T.bl], ["TEXAS", STATE_DATA.TX, "#FBBF24"], ["NEW YORK", STATE_DATA.NY, T.p], ["CONNECTICUT", STATE_DATA.CT, T.s]].map(([label, val, color]) => (
           <div key={label} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 18px", flex: 1, minWidth: 120 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color }}>{val.toLocaleString()}</div>
@@ -193,7 +193,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
       </div>
 
       {/* Full-width Filter Bar */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr 1.5fr 1fr 1fr auto", gap: 12, marginBottom: 20, alignItems: "end", background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "16px 20px" }}>
+      <div className="agent-filter-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr 1.5fr 1fr 1fr auto", gap: 12, marginBottom: 20, alignItems: "end", background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "16px 20px" }}>
         <div>
           <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 6 }}>STATE</div>
           <select value={filters.state} onChange={e => setFilters(f => ({ ...f, state: e.target.value }))} style={inp}>

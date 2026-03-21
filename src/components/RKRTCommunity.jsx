@@ -263,7 +263,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
   }
   const FILTERS = [{id:"all",label:"All"},{id:"win",label:"🏆 Wins"},{id:"question",label:"❓ Questions"},{id:"challenge",label:"📋 Check-ins"},{id:"tip",label:"💡 Tips"}];
   return (
-    <div style={{display:"grid",gridTemplateColumns:"1fr 260px",gap:24,alignItems:"start"}}>
+    <div className="community-layout" style={{display:"grid",gridTemplateColumns:"1fr 260px",gap:24,alignItems:"start"}}>
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
         <Compose currentUser={currentUser} allMembers={allMembers} supabase={supabase} onPost={loadPosts}/>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -280,7 +280,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
           </div>
         ) : posts.map(p => <PostCard key={p.id} post={p} currentUserId={currentUser?.id} allMembers={allMembers} supabase={supabase} onLikeToggle={handleLike} onCommentSubmit={loadPosts}/>)}
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      <div className="community-sidebar" style={{display:"flex",flexDirection:"column",gap:16}}>
         <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:14,padding:20}}>
           <div style={{fontSize:13,fontWeight:800,color:T.t,marginBottom:14}}>👥 Members ({allMembers.length})</div>
           {allMembers.slice(0,8).map(m => (
@@ -379,7 +379,7 @@ function ChallengesTab({ currentUser, supabase }) {
   }, [currentUser?.id]);
   if (loading) return <div style={{textAlign:"center",padding:"60px 0",color:T.s}}>Loading...</div>;
   return (
-    <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:24,alignItems:"start"}}>
+    <div className="challenges-layout" style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:24,alignItems:"start"}}>
       <div>
         <h2 style={{fontSize:22,fontWeight:800,color:T.t,margin:"0 0 20px"}}>{challenges.length} Active Challenges</h2>
         {challenges.length===0 ? (
@@ -400,7 +400,7 @@ function ChallengesTab({ currentUser, supabase }) {
           );
         })}
       </div>
-      <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:14,padding:24}}>
+      <div className="challenges-sidebar" style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:14,padding:24}}>
         <div style={{fontSize:14,fontWeight:800,color:T.t,marginBottom:4}}>{new Date().toLocaleString("default",{month:"long"})} Leaderboard</div>
         <div style={{fontSize:12,color:T.s,marginBottom:18}}>By activity score</div>
         {leaderboard.map((entry,i) => (

@@ -119,7 +119,7 @@ export default function Dash({
           <div style={{ fontSize: 15, color: "#B0BCCD", marginBottom: 24, lineHeight: 1.6 }}>
             {isTrial ? "Your trial is live — you have full access. Let's make the most of it." : "Let's get your recruiting pipeline started. Complete these 3 steps to land your first recruit."}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+          <div className="getting-started-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
             {[
               {
                 icon: "🔍", title: "Find Your First Targets", desc: "Search the agent directory for top producers in your market.",
@@ -181,7 +181,7 @@ export default function Dash({
               </div>
             ) : (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
+                <div className="hottest-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
                   {[
                     { label: "Total Leads", value: scoredLeads.length, color: T.a },
                     { label: "Hot Leads", value: hotCount, color: "#FF4444" },
@@ -195,7 +195,7 @@ export default function Dash({
                   ))}
                 </div>
                 {top3.length > 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: `repeat(${top3.length}, 1fr)`, gap: 12, marginBottom: 20 }}>
+                  <div className="hottest-podium" style={{ display: "grid", gridTemplateColumns: `repeat(${top3.length}, 1fr)`, gap: 12, marginBottom: 20 }}>
                     {top3.map((l, i) => {
                       const heatColor = HEAT_COLOR[l.heat_level] || T.b;
                       const heatIcon = HEAT_ICON[l.heat_level] || "❄️";

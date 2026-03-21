@@ -148,7 +148,7 @@ export default function Pipeline({
 
       {/* Overdue Warning */}
       {overdue.length > 0 && (
-        <div style={{ background: T.r + "10", border: `1px solid ${T.r}25`, borderRadius: 10, padding: "14px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="overdue-warning" style={{ background: T.r + "10", border: `1px solid ${T.r}25`, borderRadius: 10, padding: "14px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 20 }}>⚠️</span>
             <div>

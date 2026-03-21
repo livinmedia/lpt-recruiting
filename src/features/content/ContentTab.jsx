@@ -352,7 +352,7 @@ export default function ContentTab({ userId, userProfile }) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+      <div className="content-tabs" style={{ display: "flex", gap: 8, marginBottom: 24 }}>
         {[["links", "🔗 Recruiting Links"], ["daily", "📅 Daily Content"], ["pages", "📄 Recruiting Pages"], ...(isTeamLeader ? [["team_blog", "👥 Team Blog"]] : [])].map(([id, label]) => (
           <div
             key={id}
@@ -394,7 +394,7 @@ export default function ContentTab({ userId, userProfile }) {
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 14, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>LANDING PAGES</div>
             {landingPages.map((lp, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", background: T.d, borderRadius: 8, marginBottom: 8 }}>
+              <div key={i} className="landing-page-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", background: T.d, borderRadius: 8, marginBottom: 8 }}>
                 {/* Thumbnail preview */}
                 <div style={{ width: 120, height: 80, borderRadius: 6, overflow: "hidden", flexShrink: 0, background: "#0a0e1a", display: "flex", flexDirection: "column" }}>
                   <div style={{ flex: 1, background: lp.gradient, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
@@ -411,7 +411,7 @@ export default function ContentTab({ userId, userProfile }) {
                   <div style={{ fontSize: 13, color: T.s }}>{lp.desc}</div>
                 </div>
                 {/* URL + Copy */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <div className="lp-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={getPageUrl(lp.path)}>{getDisplayUrl(getPageUrl(lp.path))}</span>
                   <CopyButton text={getPageUrl(lp.path)} label="Copy" />
                   {isAdmin && (() => { const posted = fbPosts.some(p => p.page_slug === lp.path && p.target_brokerage === selectedBrokerage); return posted ? <span style={{ padding: "6px 12px", fontSize: 11, color: "#22C55E", fontWeight: 700, whiteSpace: "nowrap" }}>✅ Posted</span> : <div onClick={async () => { try { const res = await fetch(`${SUPABASE_URL}/functions/v1/post-to-facebook?mode=link&url=${encodeURIComponent(getPageUrl(lp.path))}&title=${encodeURIComponent(lp.fbTitle || lp.name)}&message=${encodeURIComponent(selectedBrokerage ? `Are you leaving money on the table at ${selectedBrokerage}? Find out now.` : 'Are you leaving money on the table at your brokerage? Find out now.')}&user_id=${userId}`); const d = await res.json(); if (d.success) { await supabase.from('user_fb_posts').insert({ user_id: userId, post_type: 'recruiting_link', page_name: lp.name, page_slug: lp.path, target_brokerage: selectedBrokerage, link_url: getPageUrl(lp.path), fb_results: d.results, pages_posted: d.results?.filter(r => r.status === 'posted').map(r => r.page) || [] }); setFbPosts(prev => [...prev, { page_slug: lp.path, target_brokerage: selectedBrokerage, created_at: new Date().toISOString() }]); showToast('Posted to ' + (d.results?.length || 2) + ' FB pages!'); } else { showToast('Error: ' + (d.error || 'Unknown')); } } catch (e) { showToast('Error: ' + e.message); } }} style={{ padding: "6px 12px", borderRadius: 6, background: "transparent", color: "#1877F2", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #1877F240", whiteSpace: "nowrap" }}>📘 Post to FB</div>; })()}
@@ -424,12 +424,12 @@ export default function ContentTab({ userId, userProfile }) {
           {/* Blog Link */}
           <div>
             <div style={{ fontSize: 14, color: T.m, letterSpacing: 1.5, marginBottom: 12 }}>YOUR BROKERAGE BLOG</div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: T.d, borderRadius: 8 }}>
+            <div className="blog-link-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: T.d, borderRadius: 8 }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: T.t }}>{userBrokerage} Blog</div>
                 <div style={{ fontSize: 13, color: T.s }}>AI-generated recruiting articles for your brokerage</div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div className="blog-link-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 13, color: T.bl, fontFamily: "monospace", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={userBlogUrl}>{getDisplayUrl(userBlogUrl)}</span>
                 <CopyButton text={userBlogUrl} label="Copy" />
                 <a href={userBlogUrl} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 6, background: T.bl + "15", color: T.bl, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>View →</a>
@@ -469,7 +469,7 @@ export default function ContentTab({ userId, userProfile }) {
               const filtered = dailyContent.filter(p => platformFilter === 'all' || p.platform === platformFilter);
               if (loading) return <div style={{ textAlign: "center", padding: "40px", color: T.m, background: T.card, borderRadius: 12, border: `1px solid ${T.b}` }}>Loading...</div>;
               return (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <div className="daily-content-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                 {(filtered.length > 0 ? filtered : [null, null, null]).map((item, i) => {
                   if (!item) {
                     return (

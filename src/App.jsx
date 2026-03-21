@@ -99,7 +99,7 @@ function AuthScreen() {
           <p style={{ fontSize: 18, color: T.s, lineHeight: 1.6, marginBottom: 48, maxWidth: 520 }}>
             AI-powered recruiting intelligence for real estate brokerages. Find the right agents, craft the perfect pitch, and fill your roster.
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 48 }}>
+          <div className="features-list" style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 48 }}>
             {features.map(([icon, title, desc], i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
                 <div style={{ fontSize: 24, flexShrink: 0, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, background: "rgba(0,229,160,0.08)" }}>{icon}</div>
@@ -134,7 +134,7 @@ function AuthScreen() {
         {!success && (
           <form onSubmit={mode === "login" ? handleLogin : handleSignup}>
             {mode === "signup" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              <div className="form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                 <div>
                   <label style={labelStyle}>First Name</label>
                   <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Anthony" required style={inputStyle} />
@@ -255,8 +255,8 @@ function AppShell() {
 
   return (<>
     <div style={{ minHeight: "100vh", background: T.bg, color: T.t, fontFamily: "'SF Pro Display',-apple-system,sans-serif", display: "flex", position: "relative", paddingTop: impersonating ? 42 : 0 }}>
-      {showUpgradeSuccess && <div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 9999, background: T.a, color: "#000", padding: "14px 32px", borderRadius: 10, fontSize: 15, fontWeight: 800, boxShadow: "0 4px 24px rgba(0,229,160,0.4)" }}>🎉 Welcome to RKRT.in Pro! All features unlocked.</div>}
-      {rueIntakeToast && <div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 9999, background: T.a, color: "#000", padding: "14px 32px", borderRadius: 10, fontSize: 15, fontWeight: 800, boxShadow: "0 4px 24px rgba(0,229,160,0.4)" }}>🤖 Rue is ready to coach you!</div>}
+      {showUpgradeSuccess && <div className="toast-center" style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 9999, background: T.a, color: "#000", padding: "14px 32px", borderRadius: 10, fontSize: 15, fontWeight: 800, boxShadow: "0 4px 24px rgba(0,229,160,0.4)" }}>🎉 Welcome to RKRT.in Pro! All features unlocked.</div>}
+      {rueIntakeToast && <div className="toast-center" style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 9999, background: T.a, color: "#000", padding: "14px 32px", borderRadius: 10, fontSize: 15, fontWeight: 800, boxShadow: "0 4px 24px rgba(0,229,160,0.4)" }}>🤖 Rue is ready to coach you!</div>}
       {impersonating && <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999, background: "#F59E0B", color: "#000", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, fontSize: 14, fontWeight: 700 }}>
         <span>👁 Viewing as {impersonating.full_name} ({impersonating.email}) — {impersonating.plan} plan</span>
         <span onClick={() => { setImpersonating(null); setRealUser(null); setViewWithHistory("admin"); }} style={{ padding: "4px 14px", borderRadius: 6, background: "rgba(0,0,0,0.2)", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>✕ Exit</span>
@@ -293,7 +293,7 @@ function AppShell() {
         {view === "addlead" && <AddLeadView newLead={newLead} setNewLead={setNewLead} canSaveLead={canSaveLead} savingLead={savingLead} saveLead={saveLead} onBack={() => setViewWithHistory("home")} />}
       </div>
       <RueDrawer open={rueDrawerOpen} onClose={() => setRueDrawerOpen(false)} profile={effectiveProfile} leads={leads} userId={effectiveUserId} autoOpen={leads.length === 0} />
-      {previewUrl && <div style={{ position: "fixed", top: 0, right: 0, width: "60%", height: "100vh", zIndex: 1000, background: T.card, borderLeft: `1px solid ${T.b}`, display: "flex", flexDirection: "column", boxShadow: "-4px 0 30px rgba(0,0,0,0.5)" }}>
+      {previewUrl && <div className="preview-panel" style={{ position: "fixed", top: 0, right: 0, width: "60%", height: "100vh", zIndex: 1000, background: T.card, borderLeft: `1px solid ${T.b}`, display: "flex", flexDirection: "column", boxShadow: "-4px 0 30px rgba(0,0,0,0.5)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: `1px solid ${T.b}`, flexShrink: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginRight: 12 }}>{previewUrl}</div>
           <div style={{ display: "flex", gap: 8 }}>
