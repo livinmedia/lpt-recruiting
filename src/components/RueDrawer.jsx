@@ -416,6 +416,7 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
         style={{
           position: "fixed", top: 0, right: 0, bottom: 0,
           width: 420, maxWidth: "100vw",
+          height: "100dvh",
           background: T.bg, borderLeft: `1px solid ${T.b}`,
           zIndex: 1301, display: "flex", flexDirection: "column",
           boxShadow: "-8px 0 40px rgba(0,0,0,0.5)",
@@ -580,9 +581,9 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
 
         {/* Input */}
         {!freeHitLimit && intakeMode !== null && (
-          <div style={{
-            padding: "14px 20px", borderTop: `1px solid ${T.b}`,
-            display: "flex", gap: 10, flexShrink: 0,
+          <div className="rue-input-bar" style={{
+            padding: "14px 16px", borderTop: `1px solid ${T.b}`,
+            display: "flex", gap: 8, flexShrink: 0,
             background: T.side,
           }}>
             <input
@@ -592,7 +593,7 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder={intakeMode ? "Type your answer..." : "Ask Rue anything..."}
               style={{
-                flex: 1, padding: "12px 16px", borderRadius: 10,
+                flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 10,
                 background: T.d, border: `1px solid ${T.b}`,
                 color: T.t, fontSize: 14, outline: "none",
                 fontFamily: "inherit",
@@ -601,15 +602,15 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
             <div
               onClick={sendMessage}
               style={{
-                padding: "12px 20px", borderRadius: 10,
+                width: 44, height: 44, borderRadius: 10, flexShrink: 0,
                 background: input.trim() && !loading ? T.a : T.d,
                 color: input.trim() && !loading ? "#000" : T.m,
-                fontSize: 14, fontWeight: 700,
+                fontSize: 18, fontWeight: 700,
                 cursor: input.trim() && !loading ? "pointer" : "default",
-                display: "flex", alignItems: "center",
+                display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.15s",
               }}
-            >Send</div>
+            >↑</div>
           </div>
         )}
       </div>
@@ -627,9 +628,14 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
           .rue-drawer {
             width: 100vw !important;
             border-left: none !important;
+            height: 100dvh !important;
+            height: -webkit-fill-available !important;
           }
           .rue-backdrop {
             backdrop-filter: none !important;
+          }
+          .rue-input-bar {
+            padding-bottom: env(safe-area-inset-bottom, 14px) !important;
           }
         }
       `}</style>
