@@ -121,10 +121,10 @@ function AuthScreen() {
       <div className="auth-right" style={{ flex: "0 0 40%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 48px", background: "#0E1420", borderLeft: `1px solid rgba(255,255,255,0.04)`, overflowY: "auto" }}>
         <div style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 26, fontWeight: 800, color: T.t, marginBottom: 6 }}>
-            {mode === "login" ? "Welcome back" : "Get Started Free"}
+            {mode === "login" ? "Welcome back" : "Start Your Free Trial"}
           </h2>
           <p style={{ fontSize: 15, color: T.s, lineHeight: 1.5 }}>
-            {mode === "login" ? "Sign in to your rkrt.in account." : "Create your account. No credit card required."}
+            {mode === "login" ? "Sign in to your rkrt.in account." : "7 days free. Full access. Cancel anytime."}
           </p>
         </div>
 
@@ -159,7 +159,7 @@ function AuthScreen() {
               fontWeight: 700, border: "none", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit",
               opacity: loading ? 0.5 : 1, transition: "all 0.2s",
             }}>
-              {loading ? (mode === "login" ? "Signing in..." : "Creating account...") : (mode === "login" ? "Log In" : "Start Recruiting →")}
+              {loading ? (mode === "login" ? "Signing in..." : "Creating account...") : (mode === "login" ? "Log In" : "Start 7-Day Free Trial →")}
             </button>
           </form>
         )}
@@ -172,15 +172,14 @@ function AuthScreen() {
 
         <div style={{ textAlign: "center", fontSize: 14, color: T.s }}>
           {mode === "login" ? (
-            <>Don't have an account? <span onClick={() => { setMode("signup"); setError(""); setSuccess(""); }} style={{ color: T.a, fontWeight: 600, cursor: "pointer" }}>Start free →</span></>
+            <>Don't have an account? <span onClick={() => { setMode("signup"); setError(""); setSuccess(""); }} style={{ color: T.a, fontWeight: 600, cursor: "pointer" }}>Start 7-Day Free Trial →</span></>
           ) : (
             <>Already have an account? <span onClick={() => { setMode("login"); setError(""); setSuccess(""); }} style={{ color: T.a, fontWeight: 600, cursor: "pointer" }}>Log in</span></>
           )}
         </div>
 
         <div style={{ marginTop: 28, padding: 16, background: T.bg, border: "1px solid rgba(255,255,255,0.04)", borderRadius: 10 }}>
-          <div style={{ fontSize: 13, color: T.s, marginBottom: 8, lineHeight: 1.5 }}><strong style={{ color: T.t, fontWeight: 600 }}>Free plan includes:</strong> Agent search, 5 pipeline leads, basic dashboard</div>
-          <div style={{ fontSize: 12, color: "#4A5568", lineHeight: 1.5 }}>Upgrade to <strong style={{ color: T.a, fontWeight: 600 }}>Recruiter ($97/mo)</strong> for unlimited access</div>
+          <div style={{ fontSize: 13, color: T.s, lineHeight: 1.6 }}>Start with a <strong style={{ color: T.a, fontWeight: 600 }}>7-day free trial</strong> of the Recruiter plan. Full access to 1.7M+ agents, Rue AI, and unlimited pipeline. No charge for 7 days.</div>
         </div>
       </div>
 
@@ -278,8 +277,8 @@ function AppShell() {
         </div>}
         <RueInlineChat ctx={ctx} renderRueResponse={renderRueResponse} />
         {view === "home" && <Dash leads={leads} profile={effectiveProfile} activity={activity} recentLeads={leads.slice(0, 5)} userId={effectiveUserId} onNavigate={setViewWithHistory} onSelectLead={handleSelectLead} askRueInline={askRueInline} onOpenRue={() => setRueDrawerOpen(true)} chartsReady={chartsLoaded} BarChart={BarChart} Bar={Bar} XAxis={XAxis} YAxis={YAxis} ResponsiveContainer={ResponsiveContainer} Cell={Cell} />}
-        {view === "pipeline" && <>{!authLoading && !isPro && <div style={{ background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><div><span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>⚠️ Free Plan: </span><span style={{ fontSize: 13, color: T.s }}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: '8px 16px', borderRadius: 8, background: '#F59E0B', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Upgrade →</div></div>}<Pipeline leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} search={search} setSearch={setSearch} onTriggerDraftEmail={() => setAutoDraftEmail(true)} /></>}
-        {view === "crm" && <>{!authLoading && !isPro && <div style={{ background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><div><span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>⚠️ Free Plan: </span><span style={{ fontSize: 13, color: T.s }}>{leads.length} of {limits.leadLimit} leads used · Upgrade for unlimited</span></div><div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: '8px 16px', borderRadius: 8, background: '#F59E0B', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Upgrade →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} userId={effectiveUserId} profile={effectiveProfile} onBulkDelete={(ids) => setLeads(p => p.filter(l => !ids.includes(l.id)))} /></>}
+        {view === "pipeline" && <>{!authLoading && !isPro && <div style={{ background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><div><span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>⚠️ Free Plan: </span><span style={{ fontSize: 13, color: T.s }}>{leads.length} of {limits.leadLimit} leads used · Start free trial for unlimited</span></div><div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: '8px 16px', borderRadius: 8, background: '#F59E0B', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Start Free Trial →</div></div>}<Pipeline leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} search={search} setSearch={setSearch} onTriggerDraftEmail={() => setAutoDraftEmail(true)} /></>}
+        {view === "crm" && <>{!authLoading && !isPro && <div style={{ background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><div><span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>⚠️ Free Plan: </span><span style={{ fontSize: 13, color: T.s }}>{leads.length} of {limits.leadLimit} leads used · Start free trial for unlimited</span></div><div onClick={() => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' })} style={{ padding: '8px 16px', borderRadius: 8, background: '#F59E0B', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Start Free Trial →</div></div>}<CRM leads={leads} onSelectLead={handleSelectLead} onNavigate={setViewWithHistory} askRueInline={askRueInline} userId={effectiveUserId} profile={effectiveProfile} onBulkDelete={(ids) => setLeads(p => p.filter(l => !ids.includes(l.id)))} /></>}
         {view === "agents" && <ProGate feature="Agent Directory" userId={effectiveUserId} userProfile={effectiveProfile}><AgentDirectory userId={effectiveUserId} userProfile={effectiveProfile} onAddLead={(data) => { if (data?.id) { load(); handleSelectLead(data); setViewWithHistory("lead"); } else { setNewLead(prev => ({ ...prev, ...data })); setViewWithHistory("addlead"); } }} onEnrich={(agent) => setEnrichAgent(agent)} /></ProGate>}
         {enrichAgent && <AgentEnrichment supabase={supabase} agent={enrichAgent} userId={authUser?.id} profile={profile} onClose={() => setEnrichAgent(null)} onLeadAdded={() => setEnrichAgent(null)} />}
         {view === "content" && <ContentTab userId={effectiveUserId} userProfile={effectiveProfile} />}

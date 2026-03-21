@@ -22,7 +22,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
       textColor: T.t,
       badge: null,
       features: ['Agent search (limited)', '5 pipeline leads', 'Basic dashboard'],
-      cta: 'Current Plan',
+      cta: 'Limited Preview',
       ctaAction: null,
       ctaStyle: { background: T.b, color: T.s, cursor: 'default' },
     },
@@ -42,7 +42,8 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'Revenue share projections',
         'Rue AI recruiting agent',
       ],
-      cta: 'Upgrade to Recruiter →',
+      cta: 'Start Free Trial →',
+      trialLine: '7-day free trial · Cancel anytime',
       ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.recruiter, plan: 'recruiter' }),
       ctaStyle: { background: T.a, color: '#000', cursor: 'pointer', fontWeight: 800 },
     },
@@ -61,7 +62,8 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'Blog CMS',
         'HeyGen video content',
       ],
-      cta: 'Upgrade to Team Leader →',
+      cta: 'Try Team Leader Free →',
+      trialLine: '7-day free trial · Cancel anytime',
       ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.team_leader, plan: 'team_leader' }),
       ctaStyle: { background: '#F59E0B', color: '#000', cursor: 'pointer', fontWeight: 800 },
     },
@@ -80,7 +82,8 @@ export function ProGate({ feature, userId, userProfile, children }) {
         'API access',
         'Dedicated onboarding',
       ],
-      cta: 'Upgrade to Regional →',
+      cta: 'Try Regional Free →',
+      trialLine: '7-day free trial · Cancel anytime',
       ctaAction: () => startCheckout({ priceId: STRIPE_PRICES.regional_operator, plan: 'regional_operator' }),
       ctaStyle: { background: '#1B4FFF', color: '#fff', cursor: 'pointer', fontWeight: 800 },
     },
@@ -90,7 +93,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
     <div style={{ padding: '40px 20px', textAlign: 'center' }}>
       <div style={{ fontSize: 36, marginBottom: 8 }}>🔒</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: T.t, marginBottom: 8 }}>
-        {feature} requires an upgrade
+        Start your free trial to unlock the full {feature}
       </div>
       <div
         style={{
@@ -101,7 +104,7 @@ export function ProGate({ feature, userId, userProfile, children }) {
           margin: '0 auto 36px',
         }}
       >
-        Choose the plan that fits your recruiting goals. Cancel anytime.
+        Try any plan free for 7 days. Cancel anytime.
       </div>
 
       <div
@@ -190,6 +193,11 @@ export function ProGate({ feature, userId, userProfile, children }) {
             >
               {tier.cta}
             </div>
+            {tier.trialLine && (
+              <div style={{ fontSize: 11, color: T.a, textAlign: 'center', marginTop: 8, fontWeight: 600 }}>
+                {tier.trialLine}
+              </div>
+            )}
           </div>
         ))}
       </div>

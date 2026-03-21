@@ -78,6 +78,9 @@ export default function Dash({
   const scoredLeads = [...leads].filter(l => (l.interest_score || 0) > 0).sort((a, b) => (b.interest_score || 0) - (a.interest_score || 0));
 
   const isNewUser = total === 0;
+  const isTrial = profile?.is_trial === true;
+  const trialEnds = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : null;
+  const trialDaysLeft = trialEnds ? Math.max(0, Math.ceil((trialEnds - Date.now()) / 86400000)) : 0;
   const hasTargets = leads.some(l => l.pipeline_stage === "outreach_sent" || l.pipeline_stage === "meeting_booked");
 
   return (
@@ -98,12 +101,23 @@ export default function Dash({
         </div>
       ))}
 
+      {/* Trial Status Banner */}
+      {isTrial && (
+        <div style={{ background: `linear-gradient(90deg, ${T.a}12, ${T.bl}12)`, border: `1.5px solid ${T.a}30`, borderRadius: 12, padding: "16px 22px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.t }}>🎉 Your 7-day free trial is active</div>
+            <div style={{ fontSize: 13, color: "#B0BCCD", marginTop: 2 }}>{trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} remaining — full access to all features</div>
+          </div>
+          <div style={{ padding: "8px 18px", borderRadius: 8, background: T.a, color: "#000", fontSize: 13, fontWeight: 700, cursor: "default" }}>Trial Active</div>
+        </div>
+      )}
+
       {/* Getting Started Card — shown for new users with 0 leads */}
       {isNewUser && (
         <div style={{ background: "linear-gradient(135deg, #0B0F17, #101828)", border: `1.5px solid ${T.a}30`, borderRadius: 14, padding: "28px 30px", marginBottom: 24 }}>
           <div style={{ fontSize: 22, fontWeight: 800, color: T.t, marginBottom: 6 }}>Welcome to RKRT{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}!</div>
           <div style={{ fontSize: 15, color: "#B0BCCD", marginBottom: 24, lineHeight: 1.6 }}>
-            Let's get your recruiting pipeline started. Complete these 3 steps to land your first recruit.
+            {isTrial ? "Your trial is live — you have full access. Let's make the most of it." : "Let's get your recruiting pipeline started. Complete these 3 steps to land your first recruit."}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
             {[
