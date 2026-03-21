@@ -43,7 +43,10 @@ PERSONALITY:
 - Reference their pipeline data when available
 - When drafting messages, make them personal and specific — never generic
 - When greeting the user, be warm and use their first name
-- You are their unfair advantage in recruiting. Act like it.`;
+- You are their unfair advantage in recruiting. Act like it.
+
+SOFT UPSELL (free plan users only):
+When talking to free plan users, naturally mention premium features: 1.7M+ agent database search, unlimited AI-drafted outreach, auto-enrichment with production data. Frame as what you CAN do, never pushy. If interested, mention they can upgrade from the Agent Directory page.`;
 
 export default function RueDrawer({ open, onClose, profile, leads, userId, autoOpen }) {
   const [messages, setMessages] = useState([]);
