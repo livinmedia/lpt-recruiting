@@ -27,8 +27,10 @@ a{color:inherit;text-decoration:none}
 /* NAV */
 nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--b)}
 .nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;gap:24px}
-.nav-logo{font-size:18px;font-weight:800;letter-spacing:0.3px;flex-shrink:0}
-.nav-logo .g{color:var(--green)}
+.nav-logo{display:flex;align-items:baseline;gap:2px;flex-shrink:0}
+.nav-logo-main{font-size:19px;font-weight:700;color:var(--green)}
+.nav-logo-dot{font-size:19px;font-weight:700;color:var(--s)}
+.nav-tagline{font-size:10px;color:var(--m);margin-left:8px;letter-spacing:0.3px;display:none}
 .nav-links{display:flex;align-items:center;gap:20px;flex:1}
 .nav-links a{font-size:13px;color:var(--s);font-weight:500;transition:color 0.15s;white-space:nowrap}
 .nav-links a:hover{color:var(--t)}
@@ -42,15 +44,22 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .mobile-menu.open{display:flex}
 
 /* HERO */
-.hero{padding:48px 0 40px;display:grid;grid-template-columns:1fr 0.6fr;gap:32px;align-items:center}
+.hero{padding:48px 0 40px;display:grid;grid-template-columns:1fr 0.6fr;gap:32px;align-items:center;cursor:pointer}
 .hero-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1.5px;padding:4px 12px;border-radius:20px;margin-bottom:14px}
 .hero h1{font-size:clamp(26px,3.5vw,38px);font-weight:800;line-height:1.15;margin-bottom:12px}
 .hero h1 .g{color:var(--green)}
 .hero-sub{font-size:15px;color:var(--s);line-height:1.7;margin-bottom:16px;max-width:500px}
 .hero-meta{font-size:12px;color:var(--m);display:flex;gap:14px;flex-wrap:wrap}
-.hero-visual{background:var(--card);border:1px solid var(--b);border-radius:16px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.hero-visual{border-radius:16px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
 .hero-visual img{width:100%;height:100%;object-fit:cover}
-.hero-visual-placeholder{font-size:48px;opacity:0.3}
+.hero-visual-icon{font-size:64px;opacity:0.25;position:absolute}
+
+/* COMPACT CTA */
+.compact-cta{border-radius:10px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 8px;flex-wrap:wrap;background:linear-gradient(135deg,#065F46,#10B981)}
+.compact-cta-text{font-size:14px;font-weight:600;color:#fff}
+.compact-cta-text span{color:rgba(255,255,255,0.75);font-weight:400}
+.compact-cta-btn{padding:9px 20px;border-radius:7px;background:#fff;color:#000;font-weight:700;font-size:13px;white-space:nowrap;transition:all 0.15s;flex-shrink:0}
+.compact-cta-btn:hover{filter:brightness(0.95);transform:translateY(-1px)}
 
 /* STATS STRIP */
 .stats{padding:20px 0;border-top:1px solid var(--b);border-bottom:1px solid var(--b);background:var(--bg2)}
@@ -68,33 +77,25 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .article-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:40px}
 .article-card{background:var(--card);border:1px solid var(--b);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color 0.2s,transform 0.2s;display:flex;flex-direction:column}
 .article-card:hover{border-color:rgba(255,255,255,0.12);transform:translateY(-2px)}
-.article-card-img{height:160px;background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.article-card-img{height:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
 .article-card-img img{width:100%;height:100%;object-fit:cover}
+.article-card-img .card-icon{font-size:40px;opacity:0.2;position:absolute}
 .article-card-body{padding:18px;flex:1;display:flex;flex-direction:column}
 .article-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:20px;margin-bottom:10px;width:fit-content}
+.sample-label{font-size:9px;color:var(--m);font-weight:600;letter-spacing:1px;margin-left:6px}
 .article-card h3{font-size:16px;font-weight:700;line-height:1.35;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .article-card p{font-size:13px;color:var(--s);line-height:1.6;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:12px}
 .article-card-meta{font-size:11px;color:var(--m);display:flex;gap:10px;margin-top:auto}
 
-/* CTA BANNER */
-.cta-banner{border-radius:14px;padding:36px 32px;text-align:center;margin:40px 0;position:relative;overflow:hidden}
-.cta-banner.green{background:linear-gradient(135deg,#065F46,#10B981)}
-.cta-banner.dark{background:linear-gradient(135deg,#0B1120,#1E293B);border:1px solid var(--b)}
-.cta-banner h2{font-size:clamp(20px,3vw,28px);font-weight:800;margin-bottom:10px;position:relative}
-.cta-banner p{font-size:15px;color:rgba(255,255,255,0.8);margin-bottom:20px;max-width:520px;margin-left:auto;margin-right:auto;position:relative}
-.cta-btn{display:inline-block;padding:12px 28px;border-radius:9px;font-weight:700;font-size:15px;transition:all 0.2s;position:relative}
-.cta-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
-.cta-btn.white{background:#fff;color:#000}
-.cta-btn.green{background:var(--green);color:#000}
-
-/* AGENT CTA */
-.agent-cta{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:32px;text-align:center;margin:40px 0}
-.agent-cta h3{font-size:20px;font-weight:800;margin-bottom:8px}
-.agent-cta p{font-size:14px;color:var(--s);margin-bottom:18px;max-width:480px;margin-left:auto;margin-right:auto}
+/* AGENT CTA (subtle) */
+.agent-cta{background:var(--bg2);border:1px solid var(--b);border-radius:10px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:24px 0;flex-wrap:wrap}
+.agent-cta-text h4{font-size:14px;font-weight:700;margin-bottom:2px}
+.agent-cta-text p{font-size:12px;color:var(--s);margin:0}
+.agent-cta-btn{padding:8px 18px;border-radius:7px;background:var(--green-dim);border:1px solid rgba(16,185,129,0.2);color:var(--green);font-weight:700;font-size:12px;white-space:nowrap;flex-shrink:0}
 
 /* EMAIL CAPTURE */
-.email-capture{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:32px;text-align:center;margin:40px 0}
-.email-capture h3{font-size:20px;font-weight:800;margin-bottom:6px}
+.email-capture{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:28px;text-align:center;margin:32px 0}
+.email-capture h3{font-size:18px;font-weight:800;margin-bottom:6px}
 .email-capture p{font-size:14px;color:var(--s);margin-bottom:18px}
 .email-form{display:flex;gap:10px;max-width:420px;margin:0 auto}
 .email-form input{flex:1;padding:12px 16px;border-radius:8px;background:var(--bg);border:1px solid var(--b);color:var(--t);font-size:14px;outline:none;font-family:inherit;min-width:0}
@@ -102,7 +103,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .email-form button{padding:12px 22px;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:14px;border:none;cursor:pointer;white-space:nowrap;font-family:inherit}
 
 /* TRENDING */
-.trending{margin:40px 0}
+.trending{margin:32px 0}
 .trending h3{font-size:18px;font-weight:700;margin-bottom:16px}
 .trending-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--b);cursor:pointer;transition:background 0.15s}
 .trending-item:hover{background:var(--bg2);margin:0 -8px;padding:12px 8px;border-radius:8px}
@@ -111,19 +112,27 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .trending-info span{font-size:11px;color:var(--m)}
 
 /* AD SLOT */
-.ad-slot{border:2px dashed var(--b);border-radius:12px;padding:24px;text-align:center;margin:32px 0;color:var(--m);font-size:12px}
+.ad-slot{border:2px dashed var(--b);border-radius:12px;padding:20px;text-align:center;margin:24px 0;color:var(--m);font-size:12px}
 
 /* FOOTER */
-footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:var(--bg2)}
+footer{padding:32px 0;border-top:1px solid var(--b);margin-top:40px;background:var(--bg2)}
 .footer-inner{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-.footer-logo{font-size:15px;font-weight:800}
-.footer-logo .g{color:var(--green)}
+.footer-logo{display:flex;align-items:baseline;gap:2px}
+.footer-tagline{font-size:10px;color:var(--m);margin-left:10px}
 .footer-links{display:flex;gap:20px}
 .footer-links a{font-size:12px;color:var(--m);transition:color 0.15s}
 .footer-links a:hover{color:var(--s)}
 .footer-copy{font-size:11px;color:var(--m)}
 
-/* CATEGORY COLORS */
+/* CATEGORY GRADIENTS */
+.cat-grad-industry_news{background:linear-gradient(135deg,#0a1628,#1a3050)}
+.cat-grad-brokerage_intel{background:linear-gradient(135deg,#1a1a3e,#2d1b4e)}
+.cat-grad-market_data{background:linear-gradient(135deg,#0a2f1f,#1a4a3a)}
+.cat-grad-playbook{background:linear-gradient(135deg,#2a1a3e,#3d2b5e)}
+.cat-grad-spotlight{background:linear-gradient(135deg,#3a1a2e,#5e2b4a)}
+.cat-grad-commission{background:linear-gradient(135deg,#2a1a0e,#4a3a1e)}
+
+/* BADGE COLORS */
 .badge-industry_news{background:rgba(59,130,246,0.12);color:#3B82F6}
 .badge-brokerage_intel{background:rgba(249,115,22,0.12);color:#F97316}
 .badge-market_data{background:rgba(16,185,129,0.12);color:#10B981}
@@ -141,13 +150,17 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
   .stats-inner{grid-template-columns:1fr 1fr;gap:10px}
   .article-grid{grid-template-columns:1fr}
   .cat-pills{padding:20px 0 16px}
-  .cta-banner{padding:28px 20px}
+  .compact-cta{flex-direction:column;text-align:center;padding:16px 20px}
   .email-form{flex-direction:column}
+  .agent-cta{flex-direction:column;text-align:center}
   .footer-inner{flex-direction:column;text-align:center}
   .footer-links{flex-wrap:wrap;justify-content:center}
 }
 @media(min-width:769px) and (max-width:1024px){
   .article-grid{grid-template-columns:1fr 1fr}
+}
+@media(min-width:900px){
+  .nav-tagline{display:inline}
 }
 </style>
 </head>
@@ -155,7 +168,10 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
 
 <nav>
   <div class="nav-inner">
-    <a href="/" class="nav-logo"><span style="font-weight:700;color:#10B981">rkrt</span><span style="font-weight:700;color:#94A3B8">.in</span><span style="font-size:10px;color:#10B981;letter-spacing:2px;margin-left:6px;text-transform:uppercase;border:1px solid #10B981;padding:1px 6px;border-radius:3px">INTEL</span></a>
+    <a href="/" class="nav-logo">
+      <span class="nav-logo-main">rkrt</span><span class="nav-logo-dot">.in</span>
+      <span class="nav-tagline">Real Estate Recruiting Intelligence</span>
+    </a>
     <div class="nav-links">
       <a href="#" data-cat="industry_news">News</a>
       <a href="#" data-cat="brokerage_intel">Brokerage Intel</a>
@@ -165,7 +181,7 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
     </div>
     <div class="nav-right">
       <span class="nav-sub" onclick="document.getElementById('email-section').scrollIntoView({behavior:'smooth'})">Subscribe</span>
-      <a href="https://join.rkrt.in" class="nav-cta">Try RKRT →</a>
+      <a href="https://app.rkrt.in" class="nav-cta">Try RKRT →</a>
     </div>
     <div class="hamburger" onclick="document.getElementById('mobile-menu').classList.toggle('open')">☰</div>
   </div>
@@ -174,38 +190,40 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
 <!-- Mobile Menu -->
 <div id="mobile-menu" class="mobile-menu">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b)">
-    <span style="font-size:18px;font-weight:800"><span style="font-weight:700;color:#10B981">rkrt</span><span style="font-weight:700;color:#94A3B8">.in</span><span style="font-size:10px;color:#10B981;letter-spacing:2px;margin-left:6px;text-transform:uppercase;border:1px solid #10B981;padding:1px 6px;border-radius:3px">INTEL</span></span>
+    <span style="font-size:18px"><span style="font-weight:700;color:var(--green)">rkrt</span><span style="font-weight:700;color:var(--s)">.in</span></span>
     <div onclick="document.getElementById('mobile-menu').classList.remove('open')" style="width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;background:var(--card);border:1px solid var(--b);color:var(--t)">✕</div>
   </div>
   <div style="padding:8px 0">
-    <a href="#" data-cat="industry_news" onclick="filterCat('industry_news');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">📰 News</a>
-    <a href="#" data-cat="brokerage_intel" onclick="filterCat('brokerage_intel');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">🏢 Brokerage Intel</a>
-    <a href="#" data-cat="market_data" onclick="filterCat('market_data');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">📊 Market Data</a>
-    <a href="#" data-cat="playbook" onclick="filterCat('playbook');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">📋 Playbooks</a>
-    <a href="#" data-cat="spotlight" onclick="filterCat('spotlight');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">⭐ Spotlights</a>
+    <a href="#" onclick="filterCat('industry_news');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">📰 News</a>
+    <a href="#" onclick="filterCat('brokerage_intel');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">🏢 Brokerage Intel</a>
+    <a href="#" onclick="filterCat('market_data');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">📊 Market Data</a>
+    <a href="#" onclick="filterCat('playbook');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">📋 Playbooks</a>
+    <a href="#" onclick="filterCat('spotlight');document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--t)">⭐ Spotlights</a>
     <div style="border-top:1px solid var(--b);margin:8px 0"></div>
-    <a href="https://join.rkrt.in" style="display:block;padding:14px 20px;font-size:15px;font-weight:700;color:var(--green)">Try RKRT →</a>
+    <a href="https://app.rkrt.in" style="display:block;padding:14px 20px;font-size:15px;font-weight:700;color:var(--green)">Try RKRT →</a>
     <div onclick="document.getElementById('email-section').scrollIntoView({behavior:'smooth'});document.getElementById('mobile-menu').classList.remove('open')" style="display:block;padding:14px 20px;font-size:15px;font-weight:500;color:var(--s);cursor:pointer">Subscribe to newsletter</div>
   </div>
 </div>
 
 <div class="wrap">
-
   <!-- HERO -->
-  <div class="hero" id="hero-section">
-    <a id="hero-text-link" href="#" style="display:block;cursor:pointer">
-      <div class="hero-badge badge-industry_news" id="hero-badge">LOADING...</div>
+  <a href="#" id="hero-link" class="hero" id="hero-section">
+    <div>
+      <div class="hero-badge badge-industry_news" id="hero-badge">FEATURED</div>
       <h1 id="hero-title">Real Estate Recruiting Intelligence</h1>
       <div class="hero-sub" id="hero-sub">Data-driven insights for real estate brokerages and recruiters, powered by 1.7M+ agent records.</div>
       <div class="hero-meta" id="hero-meta"></div>
-    </a>
-    <a id="hero-link" href="#">
-      <div class="hero-visual" id="hero-visual">
-        <div class="hero-visual-placeholder">📊</div>
-      </div>
-    </a>
-  </div>
+    </div>
+    <div class="hero-visual cat-grad-industry_news" id="hero-visual">
+      <div class="hero-visual-icon">📊</div>
+    </div>
+  </a>
 
+  <!-- COMPACT GREEN CTA -->
+  <div class="compact-cta">
+    <div class="compact-cta-text">Recruit smarter with AI <span>— Search 1.7M+ agents, draft outreach, track your pipeline</span></div>
+    <a href="https://app.rkrt.in" class="compact-cta-btn">Start Free Trial →</a>
+  </div>
 </div>
 
 <!-- STATS STRIP -->
@@ -219,7 +237,6 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
 </div>
 
 <div class="wrap">
-
   <!-- CATEGORY PILLS -->
   <div class="cat-pills" id="cat-pills">
     <div class="cat-pill active" data-cat="all" onclick="filterCat('all')">All</div>
@@ -234,20 +251,6 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
   <!-- ARTICLE GRID -->
   <div class="article-grid" id="article-grid">
     <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--m)">Loading articles...</div>
-  </div>
-
-  <!-- CTA BANNER -->
-  <div class="cta-banner green">
-    <h2>Recruit smarter with AI</h2>
-    <p>Search 1.7M+ agents, draft outreach, and track your pipeline — free for 7 days.</p>
-    <a href="https://join.rkrt.in" class="cta-btn white">Start 7-Day Free Trial →</a>
-  </div>
-
-  <!-- AGENT CTA -->
-  <div class="agent-cta">
-    <h3>Thinking about switching brokerages?</h3>
-    <p>Tell us what you're looking for. We'll match you with options — confidentially.</p>
-    <a href="https://join.rkrt.in" class="cta-btn green">Explore Your Options →</a>
   </div>
 
   <!-- EMAIL CAPTURE -->
@@ -267,24 +270,25 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
     <div id="trending-list"></div>
   </div>
 
-  <!-- AD SLOT 1 -->
-  <div class="ad-slot">Sponsored · <a href="mailto:hello@rkrt.in" style="color:var(--green)">Advertise with RKRT Intel</a> · Reach 50,000+ recruiters</div>
-
-  <!-- SECOND CTA -->
-  <div class="cta-banner dark">
-    <h2>Built on data from <span style="color:var(--green)">1.7M+ agents</span></h2>
-    <p>AI-powered recruiting intelligence for brokerages and teams.</p>
-    <a href="https://join.rkrt.in" class="cta-btn green">Try RKRT Free →</a>
+  <!-- AGENT CTA (subtle) -->
+  <div class="agent-cta">
+    <div class="agent-cta-text">
+      <h4>Thinking about switching brokerages?</h4>
+      <p>We'll match you with options — confidentially.</p>
+    </div>
+    <a href="https://app.rkrt.in" class="agent-cta-btn">Explore Options →</a>
   </div>
 
-  <!-- AD SLOT 2 -->
+  <!-- AD SLOT -->
   <div class="ad-slot">Sponsored · <a href="mailto:hello@rkrt.in" style="color:var(--green)">Advertise with RKRT Intel</a> · Reach 50,000+ recruiters</div>
-
 </div>
 
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo"><span style="font-weight:700;color:#10B981">rkrt</span><span style="font-weight:700;color:#94A3B8">.in</span><span style="font-size:10px;color:#10B981;letter-spacing:2px;margin-left:6px;text-transform:uppercase;border:1px solid #10B981;padding:1px 6px;border-radius:3px">INTEL</span></div>
+    <div class="footer-logo">
+      <span style="font-size:15px;font-weight:700;color:var(--green)">rkrt</span><span style="font-size:15px;font-weight:700;color:var(--s)">.in</span>
+      <span class="footer-tagline">Real Estate Recruiting Intelligence</span>
+    </div>
     <div class="footer-links">
       <a href="mailto:hello@rkrt.in">Contact</a>
       <a href="mailto:hello@rkrt.in">Advertise</a>
@@ -301,22 +305,25 @@ const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 const H={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
 
 const CAT_LABELS={industry_news:'Industry News',brokerage_intel:'Brokerage Intel',market_data:'Market Data',playbook:'Playbook',spotlight:'Spotlight',commission:'Commission'};
-const CAT_COLORS={industry_news:'blue',brokerage_intel:'coral',market_data:'green',playbook:'purple',spotlight:'pink',commission:'amber'};
+const CAT_ICONS={industry_news:'📰',brokerage_intel:'🏢',market_data:'📊',playbook:'📋',spotlight:'⭐',commission:'💰'};
 
 let allArticles=[];
 let currentCat='all';
 
-function timeAgo(d){const s=Math.floor((Date.now()-new Date(d))/1000);if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
 function fmtDate(d){return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 
 function renderBadge(cat){return `<span class="article-badge badge-${cat}">${(CAT_LABELS[cat]||cat||'').toUpperCase()}</span>`;}
 
 function renderCard(a){
-  const img=a.image_url?`<img src="${a.image_url}" alt="" loading="lazy">`:'<div style="font-size:32px;opacity:0.3">📄</div>';
+  const hasImg=!!a.image_url;
+  const gradClass='cat-grad-'+(a.category||'industry_news');
+  const icon=CAT_ICONS[a.category]||'📄';
+  const imgContent=hasImg?`<img src="${a.image_url}" alt="" loading="lazy">`:`<div class="card-icon">${icon}</div>`;
+  const sampleTag=a.verification_status==='draft'?'<span class="sample-label">SAMPLE</span>':'';
   return `<a href="/article?slug=${a.slug}" class="article-card">
-    <div class="article-card-img">${img}</div>
+    <div class="article-card-img ${gradClass}">${imgContent}</div>
     <div class="article-card-body">
-      ${renderBadge(a.category)}
+      ${renderBadge(a.category)}${sampleTag}
       <h3>${a.title||'Untitled'}</h3>
       <p>${a.subtitle||''}</p>
       <div class="article-card-meta">
@@ -352,9 +359,14 @@ async function loadHero(){
       document.getElementById('hero-sub').textContent=a.subtitle||'';
       document.getElementById('hero-meta').innerHTML=`<span>${a.read_time||'5'} min read</span><span>${a.published_at?fmtDate(a.published_at):''}</span>${a.views?'<span>'+a.views+' views</span>':''}`;
       document.getElementById('hero-link').href='/article?slug='+a.slug;
-      document.getElementById('hero-text-link').href='/article?slug='+a.slug;
+      // Update hero visual with category gradient
+      const vis=document.getElementById('hero-visual');
+      vis.className='hero-visual cat-grad-'+(a.category||'industry_news');
+      const icon=CAT_ICONS[a.category]||'📊';
       if(a.image_url){
-        document.getElementById('hero-visual').innerHTML=`<img src="${a.image_url}" alt="">`;
+        vis.innerHTML=`<img src="${a.image_url}" alt="">`;
+      }else{
+        vis.innerHTML=`<div class="hero-visual-icon">${icon}</div>`;
       }
     }
   }catch(e){console.error('Hero load error:',e);}
@@ -362,7 +374,7 @@ async function loadHero(){
 
 async function loadArticles(){
   try{
-    const r=await fetch(SUPABASE_URL+'/rest/v1/intel_articles?published=eq.true&order=published_at.desc&limit=12',{headers:H});
+    const r=await fetch(SUPABASE_URL+'/rest/v1/intel_articles?published=eq.true&order=published_at.desc&limit=12&select=*',{headers:H});
     allArticles=await r.json()||[];
     filterCat('all');
   }catch(e){
