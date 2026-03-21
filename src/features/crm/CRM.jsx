@@ -544,11 +544,11 @@ Write the email body. Be specific to this person — reference their brokerage, 
           <table className="crm-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 1050 }}>
             <thead>
               <tr>
-                <th style={{ textAlign: "center", padding: "14px 12px", background: T.side, borderBottom: `1px solid ${T.b}`, width: 40 }}>
+                <th className="crm-col-check" style={{ textAlign: "center", padding: "14px 12px", background: T.side, borderBottom: `1px solid ${T.b}`, width: 40 }}>
                   <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer", accentColor: T.a, width: 15, height: 15 }} />
                 </th>
-                {["Name", "Email", "Phone", "Market", "Brokerage", "Tier", "Urgency", "Stage", "Source", "Added", "Score"].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "14px 16px", fontSize: 12, fontWeight: 700, color: T.m, letterSpacing: 1.5, borderBottom: `1px solid ${T.b}`, whiteSpace: "nowrap", background: T.side }}>{h}</th>
+                {[["Name",""],["Email","crm-col-email"],["Phone",""],["Market","crm-col-market"],["Brokerage","crm-col-brokerage"],["Tier","crm-col-tier"],["Urgency","crm-col-urgency"],["Stage",""],["Source","crm-col-source"],["Added","crm-col-added"],["Score","crm-col-score"]].map(([h,cls]) => (
+                  <th key={h} className={cls} style={{ textAlign: "left", padding: "14px 16px", fontSize: 12, fontWeight: 700, color: T.m, letterSpacing: 1.5, borderBottom: `1px solid ${T.b}`, whiteSpace: "nowrap", background: T.side }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -560,13 +560,13 @@ Write the email body. Be specific to this person — reference their brokerage, 
                   onMouseOver={ev => { if (!selectedIds.has(l.id)) ev.currentTarget.style.background = T.d; }}
                   onMouseOut={ev => { ev.currentTarget.style.background = selectedIds.has(l.id) ? T.a + "10" : "transparent"; }}
                 >
-                  <td style={{ textAlign: "center", padding: "14px 12px" }}>
+                  <td className="crm-col-check" style={{ textAlign: "center", padding: "14px 12px" }}>
                     <input type="checkbox" checked={selectedIds.has(l.id)} onChange={() => toggleOne(l.id)} onClick={e => e.stopPropagation()} style={{ cursor: "pointer", accentColor: T.a, width: 15, height: 15 }} />
                   </td>
                   <td onClick={() => { onSelectLead(l); onNavigate("lead"); }} style={{ padding: "14px 16px", fontSize: 15, fontWeight: 600, color: T.t, cursor: "pointer", whiteSpace: "nowrap" }}>
                     {l.first_name} {l.last_name}
                   </td>
-                  <td style={{ padding: "14px 16px", fontSize: 14, color: T.bl }}>
+                  <td className="crm-col-email" style={{ padding: "14px 16px", fontSize: 14, color: T.bl }}>
                     {l.email ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span onClick={() => openEmail(l)} style={{ color: T.bl, cursor: "pointer" }}>{l.email.length > 22 ? l.email.substring(0, 22) + "…" : l.email}</span>
@@ -575,14 +575,14 @@ Write the email body. Be specific to this person — reference their brokerage, 
                     ) : "—"}
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: 14, color: T.s, whiteSpace: "nowrap" }}>{l.phone || "—"}</td>
-                  <td style={{ padding: "14px 16px", fontSize: 14, color: T.s }}>{l.market || "—"}</td>
-                  <td style={{ padding: "14px 16px", fontSize: 14, color: l.brokerage?.toLowerCase().includes("lpt") ? T.a : T.t }}>{l.brokerage?.substring(0, 22) || "—"}</td>
-                  <td style={{ padding: "14px 16px" }}><TPill t={l.tier} /></td>
-                  <td style={{ padding: "14px 16px" }}><UPill u={l.urgency} /></td>
+                  <td className="crm-col-market" style={{ padding: "14px 16px", fontSize: 14, color: T.s }}>{l.market || "—"}</td>
+                  <td className="crm-col-brokerage" style={{ padding: "14px 16px", fontSize: 14, color: l.brokerage?.toLowerCase().includes("lpt") ? T.a : T.t }}>{l.brokerage?.substring(0, 22) || "—"}</td>
+                  <td className="crm-col-tier" style={{ padding: "14px 16px" }}><TPill t={l.tier} /></td>
+                  <td className="crm-col-urgency" style={{ padding: "14px 16px" }}><UPill u={l.urgency} /></td>
                   <td style={{ padding: "14px 16px" }}><Pill text={l.pipeline_stage?.replace(/_/g, " ") || "—"} color={STAGES.find(s => s.id === l.pipeline_stage)?.c || T.s} /></td>
-                  <td style={{ padding: "14px 16px", fontSize: 13, color: T.s }}>{l.source || "Ad"}</td>
-                  <td style={{ padding: "14px 16px", fontSize: 13, color: T.m, whiteSpace: "nowrap" }}>{ago(l.created_at)}</td>
-                  <td style={{ padding: "14px 12px" }}>
+                  <td className="crm-col-source" style={{ padding: "14px 16px", fontSize: 13, color: T.s }}>{l.source || "Ad"}</td>
+                  <td className="crm-col-added" style={{ padding: "14px 16px", fontSize: 13, color: T.m, whiteSpace: "nowrap" }}>{ago(l.created_at)}</td>
+                  <td className="crm-col-score" style={{ padding: "14px 12px" }}>
                     {(l.interest_score || 0) > 0 && (
                       <span style={{ padding: "2px 7px", borderRadius: 20, background: (HEAT_COLOR[l.heat_level] || T.b) + "22", border: `1px solid ${(HEAT_COLOR[l.heat_level] || T.b)}44`, fontSize: 11, fontWeight: 800, color: HEAT_COLOR[l.heat_level] || T.m }}>{l.interest_score}</span>
                     )}

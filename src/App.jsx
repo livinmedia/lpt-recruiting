@@ -224,6 +224,7 @@ function AppShell() {
   } = ctx;
 
   const [chartsLoaded, setChartsLoaded] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useEffect(() => { rechartsReady.then(() => { setChartsLoaded(true); setChartsReady(true); }); }, []);
 
   const renderRueResponse = (text) => {
@@ -263,15 +264,58 @@ function AppShell() {
       </div>}
       <RueIntakeModal ctx={ctx} />
       <GlobalStyles />
-      {sidebarOpen && <div onClick={() => { setSidebarOpen(false); setProfileMenuOpen(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 999 }} />}
+      {mobileMenuOpen && <div onClick={() => setMobileMenuOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1199 }} />}
+      {mobileMenuOpen && (
+        <div className="mobile-nav-menu" style={{ display: "none", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1200, flexDirection: "column", background: T.bg, overflowY: "auto" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: `1px solid ${T.b}` }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.t }}>rkrt<span style={{ color: T.a }}>.in</span></div>
+            <div onClick={() => setMobileMenuOpen(false)} style={{ width: 40, height: 40, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", background: T.card, border: `1px solid ${T.b}`, color: T.t }}>✕</div>
+          </div>
+          <div style={{ flex: 1, padding: "8px 0" }}>
+            {[
+              ["home", "⬡", "Dashboard"],
+              ["pipeline", "◎", "Pipeline"],
+              ["crm", "📋", "CRM"],
+              ["agents", "🔍", "Find Agents"],
+              ["content", "📝", "Content Hub"],
+              ["inbox", "📬", "Inbox"],
+              ["community", "💬", "Community"],
+              ...(effectiveProfile?.team_id ? [["team", "👥", "Team"]] : []),
+              ["profile", "👤", "Profile"],
+            ].map(([id, ic, label]) => (
+              <div key={id} onClick={() => { setViewWithHistory(id); setMobileMenuOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", cursor: "pointer", background: view === id ? T.am : "transparent", borderLeft: view === id ? `3px solid ${T.a}` : "3px solid transparent" }}>
+                <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{ic}</span>
+                <span style={{ fontSize: 15, fontWeight: view === id ? 700 : 500, color: view === id ? T.a : T.t }}>{label}</span>
+                {id === "inbox" && ctx.inboxUnread > 0 && <span style={{ marginLeft: "auto", minWidth: 20, height: 20, borderRadius: 10, background: T.a, color: "#000", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>{ctx.inboxUnread > 99 ? "99+" : ctx.inboxUnread}</span>}
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop: `1px solid ${T.b}`, padding: "8px 0" }}>
+            <div onClick={() => { ctx.setNotifOpen(o => !o); setMobileMenuOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", cursor: "pointer" }}>
+              <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>🔔</span>
+              <span style={{ fontSize: 15, color: T.t }}>Notifications</span>
+              {ctx.unreadCount > 0 && <span style={{ marginLeft: "auto", minWidth: 20, height: 20, borderRadius: 10, background: "#EF4444", color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>{ctx.unreadCount > 9 ? "9+" : ctx.unreadCount}</span>}
+            </div>
+            <div onClick={() => { setRueDrawerOpen(true); setMobileMenuOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", cursor: "pointer" }}>
+              <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>🤖</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: T.a }}>Ask Rue</span>
+            </div>
+            <div onClick={() => { supabase.auth.signOut().then(() => { window.location.href = "/login"; }); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", cursor: "pointer" }}>
+              <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>🚪</span>
+              <span style={{ fontSize: 15, color: T.r }}>Logout</span>
+            </div>
+          </div>
+        </div>
+      )}
       {notifOpen && <div onClick={() => setNotifOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1099 }} />}
       {profileMenuOpen && <div onClick={() => setProfileMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1099 }} />}
       <ProfileMenu ctx={ctx} />
       <Sidebar ctx={ctx} />
       <div className="main-scroll" style={{ flex: 1, overflow: "auto", padding: (view === "lead" || view === "addlead") ? "0 0 80px 0" : "24px 32px 80px 32px" }}>
+        {(view === "lead" || view === "addlead") && <div className="hamburger-btn" onClick={() => setMobileMenuOpen(v => !v)} style={{ display: "none", width: 44, height: 44, borderRadius: 8, alignItems: "center", justifyContent: "center", fontSize: 22, cursor: "pointer", background: T.card, border: `1px solid ${T.b}`, color: T.t, flexShrink: 0, margin: "12px 16px 0" }}>{mobileMenuOpen ? "✕" : "☰"}</div>}
         {view !== "lead" && view !== "addlead" && <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div className="hamburger-btn" onClick={() => setSidebarOpen(v => !v)} style={{ display: "none", width: 44, height: 44, borderRadius: 8, alignItems: "center", justifyContent: "center", fontSize: 22, cursor: "pointer", background: T.card, border: `1px solid ${T.b}`, color: T.t, flexShrink: 0 }}>☰</div>
+            <div className="hamburger-btn" onClick={() => setMobileMenuOpen(v => !v)} style={{ display: "none", width: 44, height: 44, borderRadius: 8, alignItems: "center", justifyContent: "center", fontSize: 22, cursor: "pointer", background: T.card, border: `1px solid ${T.b}`, color: T.t, flexShrink: 0 }}>{mobileMenuOpen ? "✕" : "☰"}</div>
           </div>
           {effectiveProfile?.brokerage && view === "home" && <div style={{ fontSize: 13, color: T.s, padding: "6px 12px", borderRadius: 6, background: T.card, border: `1px solid ${T.b}` }}>🏢 <span style={{ color: T.t, fontWeight: 600 }}>{effectiveProfile.brokerage}</span> · {effectiveProfile.market || "No market set"}</div>}
         </div>}

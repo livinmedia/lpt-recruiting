@@ -17,11 +17,12 @@ select option{background:${T.card};color:${T.t}}
   .content-grid{grid-template-columns:repeat(2,1fr)!important}
 }
 @media(max-width:768px){
-.app-sidebar{position:fixed!important;left:0!important;top:0!important;bottom:0!important;transform:translateX(-100%);transition:transform 0.25s ease;z-index:1000;width:72px!important;height:100vh}
-.app-sidebar.open{transform:translateX(0)!important}
-.main-scroll{padding:14px 16px!important}
+.app-sidebar{display:none!important}
+.floating-toolbar{display:none!important}
+.main-scroll{padding:14px 16px 80px!important}
 .hamburger-btn{display:flex!important}
 .page-header{flex-direction:column!important;align-items:flex-start!important}
+.mobile-nav-menu{display:flex!important}
 .kpi-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
 .kpi-card{padding:12px!important;gap:8px!important;min-width:0!important}
 .kpi-icon{width:36px!important;height:36px!important;font-size:16px!important;flex-shrink:0!important}
@@ -98,6 +99,11 @@ select option{background:${T.card};color:${T.t}}
 .crm-hottest-stats{grid-template-columns:1fr 1fr!important;gap:8px!important}
 .overdue-warning{flex-direction:column!important;align-items:stretch!important;gap:10px!important}
 .toast-center{left:16px!important;right:16px!important;transform:none!important;text-align:center!important}
+.crm-table .crm-col-email,.crm-table .crm-col-market,.crm-table .crm-col-brokerage,.crm-table .crm-col-tier,.crm-table .crm-col-urgency,.crm-table .crm-col-source,.crm-table .crm-col-added,.crm-table .crm-col-score,.crm-table .crm-col-check{display:none!important}
+.crm-table{min-width:0!important}
+.agent-filter-grid{grid-template-columns:1fr!important}
+.agent-filter-grid>div:last-child{grid-column:1!important}
+.content-tabs>div{min-width:60px!important}
 }`}</style>
   );
 }
