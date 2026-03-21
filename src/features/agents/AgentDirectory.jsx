@@ -233,8 +233,34 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
         {loading ? "Searching..." : `${total.toLocaleString()} agents found`}
       </div>
 
+      {/* Mobile Card View */}
+      <div className="leads-mobile" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {agents.length > 0 ? agents.map((a, i) => (
+          <div key={a.id ?? i} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: T.t }}>{agentName(a)}</div>
+                <div style={{ fontSize: 13, color: T.s, marginTop: 2 }}>{a.brokerage_name || "—"}</div>
+              </div>
+              <span style={{ fontSize: 12, padding: "4px 8px", borderRadius: 4, background: a.license_status === "Active" ? T.a + "18" : T.r + "18", color: a.license_status === "Active" ? T.a : T.r, flexShrink: 0 }}>{a.license_status}</span>
+            </div>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", fontSize: 13, color: T.m, marginBottom: 10 }}>
+              {a.state && <span style={{ fontWeight: 600, color: T.t }}>{a.state}</span>}
+              {a.city && <span>{a.city}</span>}
+              {a.license_number && <span style={{ fontFamily: "monospace" }}>#{a.license_number}</span>}
+              {a.original_license_date && <span>Since {new Date(a.original_license_date).getFullYear()}</span>}
+            </div>
+            {onEnrich && <button onClick={(e) => { e.stopPropagation(); onEnrich(a); }} style={{ width: "100%", fontSize: 13, padding: "10px", background: "rgba(34,211,238,0.15)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>🔍 Enrich Contact</button>}
+          </div>
+        )) : (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: T.m }}>
+            {loading ? "Loading..." : "No agents found. Try adjusting your filters."}
+          </div>
+        )}
+      </div>
+
       {/* Results Table */}
-      <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden" }}>
+      <div className="leads-desktop" style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
             <thead>

@@ -635,7 +635,7 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
             backdrop-filter: none !important;
           }
           .rue-input-bar {
-            padding-bottom: env(safe-area-inset-bottom, 14px) !important;
+            padding: 12px 16px env(safe-area-inset-bottom, 12px) 16px !important;
           }
         }
       `}</style>

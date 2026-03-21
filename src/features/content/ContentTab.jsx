@@ -532,7 +532,7 @@ export default function ContentTab({ userId, userProfile }) {
                         )}
 
                         {/* Action buttons */}
-                        <div style={{ marginTop: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <div className="content-action-btns" style={{ marginTop: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
                           <CopyButton text={(() => { const shareUrl = `https://rkrt.in/share?id=${item.id}&ref=${userId || ''}`; const withShare = content.replace(/https:\/\/rkrt\.in\/[^\s)]+/g, shareUrl); const final = withShare.includes(shareUrl) ? withShare : withShare + '\n\n' + shareUrl; return final + (hashtags ? '\n\n' + hashtags : ''); })()} label="Copy Post" style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center" }} />
                           {item.image_url && (
                             <div onClick={() => downloadImage(item.image_url, `rkrt-post-${item.content_date || new Date().toISOString().split('T')[0]}.png`)} style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, flex: 1, textAlign: "center", background: T.bl + "18", color: T.bl, border: `1px solid ${T.bl}40`, cursor: "pointer" }}>

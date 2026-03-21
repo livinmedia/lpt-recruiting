@@ -104,6 +104,8 @@ select option{background:${T.card};color:${T.t}}
 .agent-filter-grid{grid-template-columns:1fr!important}
 .agent-filter-grid>div:last-child{grid-column:1!important}
 .content-tabs>div{min-width:60px!important}
+.content-action-btns{flex-direction:column!important}
+.content-action-btns>*{min-width:0!important;width:100%!important;text-align:center!important;white-space:nowrap!important}
 }`}</style>
   );
 }

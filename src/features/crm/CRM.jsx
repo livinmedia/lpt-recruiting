@@ -538,8 +538,31 @@ Write the email body. Be specific to this person — reference their brokerage, 
         <div style={{ fontSize: 11, color: T.m, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8, paddingLeft: 4 }}>ALL LEADS</div>
       )}
 
+      {/* Mobile Card View */}
+      <div className="leads-mobile" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {crmLeads.length > 0 ? crmLeads.map((l, i) => (
+          <div
+            key={i}
+            onClick={() => { onSelectLead(l); onNavigate("lead"); }}
+            style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 16px", cursor: "pointer" }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.t }}>{l.first_name} {l.last_name}</div>
+              <Pill text={l.pipeline_stage?.replace(/_/g, " ") || "—"} color={STAGES.find(s => s.id === l.pipeline_stage)?.c || T.s} />
+            </div>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              {l.phone && <a href={`tel:${l.phone}`} onClick={e => e.stopPropagation()} style={{ fontSize: 13, color: T.bl, textDecoration: "none" }}>📱 {l.phone}</a>}
+              {l.brokerage && <span style={{ fontSize: 13, color: T.s }}>{l.brokerage.substring(0, 20)}</span>}
+              {(l.interest_score || 0) > 0 && <span style={{ padding: "2px 7px", borderRadius: 20, background: (HEAT_COLOR[l.heat_level] || T.b) + "22", border: `1px solid ${(HEAT_COLOR[l.heat_level] || T.b)}44`, fontSize: 11, fontWeight: 800, color: HEAT_COLOR[l.heat_level] || T.m }}>{l.interest_score}</span>}
+            </div>
+          </div>
+        )) : (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: T.m, fontSize: 16 }}>No leads found</div>
+        )}
+      </div>
+
       {/* Main Table */}
-      <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden" }}>
+      <div className="leads-desktop" style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table className="crm-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 1050 }}>
             <thead>
