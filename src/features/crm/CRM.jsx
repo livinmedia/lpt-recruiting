@@ -491,9 +491,40 @@ Write the email body. Be specific to this person — reference their brokerage, 
         );
       })()}
 
-      {/* 🔥 Hot Leads Pinned */}
+      {/* 🔥 Hot Leads Pinned — Mobile Cards */}
       {hotLeads.length > 0 && (
-        <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
+        <div className="leads-mobile" style={{ marginBottom: 12 }}>
+          <div style={{ padding: "12px 0 8px 4px", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#FF4444", letterSpacing: 1.2 }}>🔥 HOT LEADS</span>
+            <span style={{ fontSize: 12, color: T.m }}>— top {hotLeads.length}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {hotLeads.map((l, i) => {
+              const heatColor = HEAT_COLOR[l.heat_level] || T.b;
+              const heatIcon = HEAT_ICON[l.heat_level] || "❄️";
+              return (
+                <div key={i} onClick={() => { onSelectLead(l); onNavigate("lead"); }} style={{ background: T.card, border: `1px solid ${T.b}`, borderLeft: `3px solid ${heatColor}`, borderRadius: 10, padding: "12px 14px", cursor: "pointer" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                      <span style={{ fontSize: 14 }}>{heatIcon}</span>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: heatColor }}>{l.interest_score}</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: T.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.first_name} {l.last_name}</div>
+                      <div style={{ fontSize: 12, color: T.s }}>{(l.brokerage_name || l.brokerage || "—").substring(0, 26)}</div>
+                    </div>
+                    <Pill text={l.pipeline_stage?.replace(/_/g, " ") || "—"} color={STAGES.find(s => s.id === l.pipeline_stage)?.c || T.s} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 Hot Leads Pinned — Desktop Table */}
+      {hotLeads.length > 0 && (
+        <div className="leads-desktop" style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.b}`, background: T.side, display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#FF4444", letterSpacing: 1.2 }}>🔥 HOT LEADS</span>
             <span style={{ fontSize: 12, color: T.m }}>— top {hotLeads.length} by engagement score</span>
