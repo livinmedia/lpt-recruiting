@@ -121,9 +121,14 @@ export default async function middleware(request) {
   }
 
   // Catch-all: treat any unmatched single-segment path as an article slug
-  // (serves article.html, which reads slug from URL path)
+  // Fetch and serve article.html directly so URL stays as /slug
   if (!host.startsWith('app.') && parts.length === 1 && !pathname.includes('.')) {
-    return Response.redirect(new URL('/article.html', request.url), 302);
+    const articlePageUrl = new URL('/article.html', request.url);
+    const res = await fetch(articlePageUrl);
+    return new Response(res.body, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' }
+    });
   }
 }
 
