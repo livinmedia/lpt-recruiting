@@ -583,8 +583,8 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
         {!freeHitLimit && intakeMode !== null && (
           <div className="rue-input-bar" style={{
             padding: "14px 16px", borderTop: `1px solid ${T.b}`,
-            display: "flex", gap: 8, flexShrink: 0,
-            background: T.side,
+            display: "flex", flexWrap: "wrap", gap: 8, flexShrink: 0,
+            background: "#070A10",
           }}>
             <input
               ref={inputRef}
@@ -601,6 +601,7 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
             />
             <div
               onClick={sendMessage}
+              className="rue-send-btn"
               style={{
                 width: 44, height: 44, borderRadius: 10, flexShrink: 0,
                 background: input.trim() && !loading ? T.a : T.d,
@@ -610,7 +611,7 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.15s",
               }}
-            >↑</div>
+            ><span className="rue-send-icon">↑</span><span className="rue-send-text" style={{ display: "none" }}>Send to Rue →</span></div>
           </div>
         )}
       </div>
@@ -635,8 +636,27 @@ Keep it sharp and actionable — no fluff. Use their specific brokerage and mark
             backdrop-filter: none !important;
           }
           .rue-input-bar {
+            position: sticky !important;
+            bottom: 0 !important;
             padding: 12px 16px env(safe-area-inset-bottom, 12px) 16px !important;
+            background: #070A10 !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            z-index: 10;
           }
+          .rue-input-bar input {
+            width: 100% !important;
+            flex: none !important;
+          }
+          .rue-send-btn {
+            width: 100% !important;
+            height: 44px !important;
+            border-radius: 10px !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+          }
+          .rue-send-icon { display: none !important; }
+          .rue-send-text { display: inline !important; }
         }
       `}</style>
     </>
