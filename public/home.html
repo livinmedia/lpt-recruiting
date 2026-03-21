@@ -73,18 +73,27 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;background:rg
 .small-card p{font-size:13px;color:var(--s);line-height:1.6}
 
 /* PRICING */
-.pricing-card{max-width:440px;margin:0 auto;background:var(--card);border:2px solid var(--green);border-radius:20px;padding:40px 36px;text-align:center;position:relative;box-shadow:0 0 40px var(--green-glow)}
-.pricing-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-size:11px;font-weight:800;letter-spacing:1.5px;padding:5px 16px;border-radius:20px}
-.pricing-name{font-size:14px;font-weight:700;color:var(--green);letter-spacing:1px;margin-top:8px}
-.pricing-price{font-size:52px;font-weight:900;margin:8px 0 4px}
-.pricing-price span{font-size:16px;font-weight:400;color:var(--s)}
-.pricing-trial{font-size:14px;color:var(--green);font-weight:600;margin-bottom:24px}
-.pricing-features{text-align:left;margin-bottom:28px}
-.pricing-features li{display:flex;align-items:flex-start;gap:8px;font-size:14px;color:var(--s);margin-bottom:10px;list-style:none}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:0 auto}
+.pricing-card{background:var(--card);border:1px solid var(--b);border-radius:20px;padding:36px 28px;text-align:center;position:relative;display:flex;flex-direction:column}
+.pricing-card.featured{border:2px solid var(--green);box-shadow:0 0 40px var(--green-glow)}
+.pricing-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:800;letter-spacing:1.5px;padding:4px 14px;border-radius:20px;white-space:nowrap}
+.pricing-badge.green{background:var(--green);color:#000}
+.pricing-badge.blue{background:#3B82F6;color:#fff}
+.pricing-name{font-size:13px;font-weight:700;letter-spacing:1px;margin-top:6px}
+.pricing-name.g{color:var(--green)}
+.pricing-name.y{color:#F59E0B}
+.pricing-name.b{color:#3B82F6}
+.pricing-price{font-size:44px;font-weight:900;margin:8px 0 4px}
+.pricing-price span{font-size:15px;font-weight:400;color:var(--s)}
+.pricing-trial{font-size:13px;color:var(--green);font-weight:600;margin-bottom:20px}
+.pricing-features{text-align:left;margin-bottom:24px;flex:1}
+.pricing-features li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--s);margin-bottom:9px;list-style:none;line-height:1.4}
 .pricing-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
-.pricing-cta{display:block;padding:16px;border-radius:10px;background:var(--green);color:#000;font-weight:700;font-size:16px;transition:all 0.2s}
+.pricing-cta{display:block;padding:14px;border-radius:10px;font-weight:700;font-size:14px;transition:all 0.2s;text-align:center}
 .pricing-cta:hover{filter:brightness(1.1);transform:translateY(-1px)}
-.pricing-other{font-size:13px;color:var(--m);margin-top:40px;text-align:center}
+.pricing-cta.green{background:var(--green);color:#000}
+.pricing-cta.yellow{background:#F59E0B;color:#000}
+.pricing-cta.blue{background:#3B82F6;color:#fff}
 
 /* HOW IT WORKS */
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
@@ -120,6 +129,7 @@ footer{padding:40px;border-top:1px solid var(--b);background:var(--bg2)}
   .features-grid{grid-template-columns:1fr}
   .small-grid{grid-template-columns:1fr}
   .steps{grid-template-columns:1fr 1fr;gap:16px}
+  .pricing-grid{grid-template-columns:1fr;max-width:400px}
   .pricing-card{padding:32px 24px}
   .footer-inner{flex-direction:column;text-align:center}
 }
@@ -249,25 +259,60 @@ footer{padding:40px;border-top:1px solid var(--b);background:var(--bg2)}
   <h2 class="section-title">Start recruiting smarter today</h2>
   <p class="section-sub">Full access for 7 days, free. No charge until your trial ends.</p>
 
-  <div class="pricing-card">
-    <div class="pricing-badge">MOST POPULAR</div>
-    <div class="pricing-name">RECRUITER PLAN</div>
-    <div class="pricing-price">$97<span>/mo</span></div>
-    <div class="pricing-trial">7-day free trial &middot; Cancel anytime</div>
-    <ul class="pricing-features">
-      <li>1.7M+ agent directory</li>
-      <li>Unlimited Rue AI access</li>
-      <li>Unlimited leads &amp; pipeline</li>
-      <li>AI daily content generation</li>
-      <li>Commission calculator</li>
-      <li>5 branded landing pages</li>
-      <li>100 enrichment credits/month</li>
-      <li>Email outreach from platform</li>
-    </ul>
-    <a href="https://app.rkrt.in" class="pricing-cta">Start 7-Day Free Trial &rarr;</a>
-  </div>
+  <div class="pricing-grid">
+    <!-- RECRUITER -->
+    <div class="pricing-card featured">
+      <div class="pricing-badge green">MOST POPULAR</div>
+      <div class="pricing-name g">RECRUITER</div>
+      <div class="pricing-price">$97<span>/mo</span></div>
+      <div class="pricing-trial">7-day free trial &middot; Cancel anytime</div>
+      <ul class="pricing-features">
+        <li>1.7M+ agent directory</li>
+        <li>Unlimited Rue AI access</li>
+        <li>Unlimited leads &amp; pipeline</li>
+        <li>AI daily content generation</li>
+        <li>Commission calculator</li>
+        <li>5 branded landing pages</li>
+        <li>100 enrichment credits/month</li>
+        <li>Email outreach from platform</li>
+      </ul>
+      <a href="https://app.rkrt.in" class="pricing-cta green">Start 7-Day Free Trial &rarr;</a>
+    </div>
 
-  <p class="pricing-other">Team Leader ($297/mo) and Regional Operator ($997/mo) plans available for teams.</p>
+    <!-- TEAM LEADER -->
+    <div class="pricing-card">
+      <div class="pricing-badge blue">5 SEATS</div>
+      <div class="pricing-name y">TEAM LEADER</div>
+      <div class="pricing-price">$297<span>/mo</span></div>
+      <div class="pricing-trial">7-day free trial &middot; Cancel anytime</div>
+      <ul class="pricing-features">
+        <li>Everything in Recruiter</li>
+        <li>5 team member seats</li>
+        <li>Shared pipeline view</li>
+        <li>Team admin dashboard</li>
+        <li>Blog CMS</li>
+        <li>HeyGen video content</li>
+      </ul>
+      <a href="https://app.rkrt.in" class="pricing-cta yellow">Try Team Leader Free &rarr;</a>
+    </div>
+
+    <!-- REGIONAL OPERATOR -->
+    <div class="pricing-card">
+      <div class="pricing-badge blue">10 SEATS</div>
+      <div class="pricing-name b">REGIONAL OPERATOR</div>
+      <div class="pricing-price">$997<span>/mo</span></div>
+      <div class="pricing-trial">7-day free trial &middot; Cancel anytime</div>
+      <ul class="pricing-features">
+        <li>Everything in Team Leader</li>
+        <li>10 seats</li>
+        <li>Custom domain &amp; branding</li>
+        <li>Priority support</li>
+        <li>API access</li>
+        <li>Dedicated onboarding</li>
+      </ul>
+      <a href="https://app.rkrt.in" class="pricing-cta blue">Try Regional Free &rarr;</a>
+    </div>
+  </div>
 </section>
 
 <!-- FINAL CTA -->
