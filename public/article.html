@@ -101,10 +101,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .article-body th{background:var(--card);font-weight:700;font-size:12px;letter-spacing:0.5px;color:var(--s)}
 
 /* DATA HIGHLIGHT CARDS */
-.data-highlight{display:flex;gap:14px;margin:24px 0;flex-wrap:wrap}
-.dh-item{flex:1;min-width:120px;background:var(--card);border:1px solid var(--b);border-radius:10px;padding:18px 16px;text-align:center}
-.dh-num{font-size:28px;font-weight:800;color:var(--green);line-height:1.1;margin-bottom:4px}
-.dh-label{font-size:12px;color:var(--s);line-height:1.4}
+.data-highlight{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0}
+.dh-item{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:22px 18px;text-align:center}
+.dh-num{font-size:32px;font-weight:800;color:var(--green);line-height:1.1;margin-bottom:8px;letter-spacing:-0.5px}
+.dh-label{font-size:13px;color:var(--s);line-height:1.5;border-top:1px solid var(--b);padding-top:8px;margin-top:4px}
 
 /* INLINE CTA */
 .inline-cta{border-radius:12px;padding:24px;margin:28px 0;text-align:center}
@@ -169,7 +169,7 @@ footer{padding:28px 0;border-top:1px solid var(--b);margin-top:40px;background:v
   .share-btns{gap:4px}
   .footer-inner{flex-direction:column;text-align:center}
   .author-bar{flex-wrap:wrap}
-  .data-highlight{flex-direction:column}
+  .data-highlight{grid-template-columns:1fr 1fr!important}
   .dh-item{min-width:0}
 }
 </style>
@@ -266,7 +266,7 @@ function shareEmail(t,u){window.location.href='mailto:?subject='+encodeURICompon
 function copyLink(u){navigator.clipboard.writeText(u);const b=document.getElementById('copy-btn');if(b){b.textContent='✓';setTimeout(()=>b.textContent='🔗',1500);}}
 
 async function loadArticle(){
-  const slug=new URLSearchParams(window.location.search).get('slug');
+  const slug=new URLSearchParams(window.location.search).get('slug')||window.location.pathname.split('/').filter(Boolean).pop();
   if(!slug){document.getElementById('article-content').innerHTML='<div class="loading-state">No article specified. <a href="/" style="color:var(--green)">Back to home &rarr;</a></div>';return;}
 
   try{
@@ -360,7 +360,7 @@ async function loadRelated(cat,slug){
     s.innerHTML='<h3>Related Articles</h3><div class="related-grid">'+d.map(a=>{
       const ri=a.cover_image_url||a.image_url;
       const img=ri?'<img src="'+ri+'" alt="" loading="lazy">':'<div style="font-size:24px;opacity:0.3">📄</div>';
-      return '<a href="/article?slug='+a.slug+'" class="related-card"><div class="related-card-img">'+img+'</div><div class="related-card-body"><h4>'+a.title+'</h4><span>'+(a.read_time_min||a.read_time||'3')+' min read</span></div></a>';
+      return '<a href="/'+a.slug+'" class="related-card"><div class="related-card-img">'+img+'</div><div class="related-card-body"><h4>'+a.title+'</h4><span>'+(a.read_time_min||a.read_time||'3')+' min read</span></div></a>';
     }).join('')+'</div>';
   }catch(e){}
 }
@@ -371,7 +371,7 @@ async function loadSidebarTrending(){
     const d=await r.json()||[];
     const el=document.getElementById('sb-trending');
     if(d.length===0){el.innerHTML='<div style="font-size:12px;color:var(--m)">No trending articles yet.</div>';return;}
-    el.innerHTML=d.map((a,i)=>'<a href="/article?slug='+a.slug+'" class="sb-trending-item"><div class="sb-trending-num">'+(i+1)+'</div><div><div class="sb-trending-title">'+a.title+'</div><div class="sb-trending-meta">'+(a.views||0)+' views · '+(a.read_time_min||a.read_time||'3')+' min</div></div></a>').join('');
+    el.innerHTML=d.map((a,i)=>'<a href="/'+a.slug+'" class="sb-trending-item"><div class="sb-trending-num">'+(i+1)+'</div><div><div class="sb-trending-title">'+a.title+'</div><div class="sb-trending-meta">'+(a.views||0)+' views · '+(a.read_time_min||a.read_time||'3')+' min</div></div></a>').join('');
   }catch(e){document.getElementById('sb-trending').innerHTML='<div style="font-size:12px;color:var(--m)">—</div>';}
 }
 

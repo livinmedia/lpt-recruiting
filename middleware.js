@@ -23,9 +23,22 @@ export default async function middleware(request) {
     return Response.redirect(new URL('/recruit.html', request.url), 302);
   }
 
-  // /article → article page
+  // /article?slug=xxx → 301 redirect to clean URL /xxx
   if (pathname === '/article' && !host.startsWith('app.')) {
-    return Response.redirect(new URL('/article.html' + url.search, request.url), 302);
+    const slug = url.searchParams.get('slug');
+    if (slug) {
+      return Response.redirect(new URL('/' + slug, request.url), 301);
+    }
+    return Response.redirect(new URL('/', request.url), 302);
+  }
+
+  // /article.html?slug=xxx → 301 redirect to clean URL /xxx
+  if (pathname === '/article.html' && !host.startsWith('app.')) {
+    const slug = url.searchParams.get('slug');
+    if (slug) {
+      return Response.redirect(new URL('/' + slug, request.url), 301);
+    }
+    return Response.redirect(new URL('/', request.url), 302);
   }
 
   if (pathname === '/share' || pathname.startsWith('/share?')) {
@@ -93,11 +106,11 @@ export default async function middleware(request) {
     const params = new URLSearchParams();
     params.set('section', section);
     if (post) params.set('post', post);
-    
+
     const supabaseUrl = `https://usknntguurefeyzusbdh.supabase.co/functions/v1/serve-blog?${params.toString()}`;
     const response = await fetch(supabaseUrl);
     const html = await response.text();
-    
+
     return new Response(html, {
       status: response.status,
       headers: {
@@ -106,9 +119,15 @@ export default async function middleware(request) {
       }
     });
   }
+
+  // Catch-all: treat any unmatched single-segment path as an article slug
+  // (serves article.html, which reads slug from URL path)
+  if (!host.startsWith('app.') && parts.length === 1 && !pathname.includes('.')) {
+    return Response.redirect(new URL('/article.html', request.url), 302);
+  }
 }
 
 export const config = {
-  matcher: ['/', '/recruit', '/article', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share']
+  matcher: ['/', '/recruit', '/article', '/article.html', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share', '/:slug([a-z0-9-]+)']
 };
 // 1773555408

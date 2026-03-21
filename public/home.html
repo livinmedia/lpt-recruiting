@@ -327,7 +327,7 @@ function renderCard(a){
   const svg=CAT_SVGS[a.category]||CAT_SVGS.industry_news;
   const imgContent=hasImg?`<img src="${a.cover_image_url||a.image_url}" alt="" loading="lazy">`:svg;
   const sampleTag=a.verification_status==='draft'?'<span class="sample-label">SAMPLE</span>':'';
-  return `<a href="/article?slug=${a.slug}" class="article-card">
+  return `<a href="/${a.slug}" class="article-card">
     <div class="article-card-img ${gradClass}">${imgContent}</div>
     <div class="article-card-body">
       ${renderBadge(a.category)}${sampleTag}
@@ -375,7 +375,7 @@ async function loadHero(){
       document.getElementById('hero-title').innerHTML=a.title||'RKRT Intel';
       document.getElementById('hero-sub').textContent=a.subtitle||'';
       document.getElementById('hero-meta').innerHTML=`<span>${a.read_time||'5'} min read</span><span>${a.published_at?fmtDate(a.published_at):''}</span>${a.views?'<span>'+a.views+' views</span>':''}`;
-      document.getElementById('hero-link').href='/article?slug='+a.slug;
+      document.getElementById('hero-link').href='/'+a.slug;
       // Update hero visual with category gradient
       const vis=document.getElementById('hero-visual');
       vis.className='hero-visual cat-grad-'+(a.category||'industry_news');
@@ -404,7 +404,7 @@ async function loadTrending(){
     const d=await r.json()||[];
     const list=document.getElementById('trending-list');
     if(d.length===0){document.getElementById('trending-section').style.display='none';return;}
-    list.innerHTML=d.map((a,i)=>`<a href="/article?slug=${a.slug}" class="trending-item">
+    list.innerHTML=d.map((a,i)=>`<a href="/${a.slug}" class="trending-item">
       <div class="trending-num">${i+1}</div>
       <div class="trending-info">
         <h4>${a.title||'Untitled'}</h4>
