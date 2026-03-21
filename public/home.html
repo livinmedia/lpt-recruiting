@@ -155,7 +155,7 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
 
 <nav>
   <div class="nav-inner">
-    <a href="/" class="nav-logo">rkrt<span class="g">.intel</span></a>
+    <a href="/" class="nav-logo"><span style="font-weight:700;color:#10B981">rkrt</span><span style="font-weight:700;color:#94A3B8">.in</span><span style="font-size:10px;color:#10B981;letter-spacing:2px;margin-left:6px;text-transform:uppercase;border:1px solid #10B981;padding:1px 6px;border-radius:3px">INTEL</span></a>
     <div class="nav-links">
       <a href="#" data-cat="industry_news">News</a>
       <a href="#" data-cat="brokerage_intel">Brokerage Intel</a>
@@ -174,7 +174,7 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
 <!-- Mobile Menu -->
 <div id="mobile-menu" class="mobile-menu">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b)">
-    <span style="font-size:18px;font-weight:800">rkrt<span style="color:var(--green)">.intel</span></span>
+    <span style="font-size:18px;font-weight:800"><span style="font-weight:700;color:#10B981">rkrt</span><span style="font-weight:700;color:#94A3B8">.in</span><span style="font-size:10px;color:#10B981;letter-spacing:2px;margin-left:6px;text-transform:uppercase;border:1px solid #10B981;padding:1px 6px;border-radius:3px">INTEL</span></span>
     <div onclick="document.getElementById('mobile-menu').classList.remove('open')" style="width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;background:var(--card);border:1px solid var(--b);color:var(--t)">✕</div>
   </div>
   <div style="padding:8px 0">
@@ -193,12 +193,12 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
 
   <!-- HERO -->
   <div class="hero" id="hero-section">
-    <div>
+    <a id="hero-text-link" href="#" style="display:block;cursor:pointer">
       <div class="hero-badge badge-industry_news" id="hero-badge">LOADING...</div>
       <h1 id="hero-title">Real Estate Recruiting Intelligence</h1>
       <div class="hero-sub" id="hero-sub">Data-driven insights for real estate brokerages and recruiters, powered by 1.7M+ agent records.</div>
       <div class="hero-meta" id="hero-meta"></div>
-    </div>
+    </a>
     <a id="hero-link" href="#">
       <div class="hero-visual" id="hero-visual">
         <div class="hero-visual-placeholder">📊</div>
@@ -284,7 +284,7 @@ footer{padding:32px 0;border-top:1px solid var(--b);margin-top:48px;background:v
 
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo">rkrt<span class="g">.intel</span></div>
+    <div class="footer-logo"><span style="font-weight:700;color:#10B981">rkrt</span><span style="font-weight:700;color:#94A3B8">.in</span><span style="font-size:10px;color:#10B981;letter-spacing:2px;margin-left:6px;text-transform:uppercase;border:1px solid #10B981;padding:1px 6px;border-radius:3px">INTEL</span></div>
     <div class="footer-links">
       <a href="mailto:hello@rkrt.in">Contact</a>
       <a href="mailto:hello@rkrt.in">Advertise</a>
@@ -352,6 +352,7 @@ async function loadHero(){
       document.getElementById('hero-sub').textContent=a.subtitle||'';
       document.getElementById('hero-meta').innerHTML=`<span>${a.read_time||'5'} min read</span><span>${a.published_at?fmtDate(a.published_at):''}</span>${a.views?'<span>'+a.views+' views</span>':''}`;
       document.getElementById('hero-link').href='/article?slug='+a.slug;
+      document.getElementById('hero-text-link').href='/article?slug='+a.slug;
       if(a.image_url){
         document.getElementById('hero-visual').innerHTML=`<img src="${a.image_url}" alt="">`;
       }

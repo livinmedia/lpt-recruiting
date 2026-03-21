@@ -18,15 +18,44 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--t);line-height:1.6;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-.wrap{max-width:740px;margin:0 auto;padding:0 24px}
 
 /* NAV */
 nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--b)}
 .nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
-.nav-logo{font-size:17px;font-weight:800}
-.nav-logo .g{color:var(--green)}
+.nav-logo{font-size:17px;font-weight:800;display:flex;align-items:center}
 .nav-back{font-size:13px;color:var(--s);display:flex;align-items:center;gap:6px}
 .nav-back:hover{color:var(--t)}
+
+/* 2-COL LAYOUT */
+.page-wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+.two-col{display:grid;grid-template-columns:1fr 340px;gap:40px;align-items:start}
+.main-col{min-width:0}
+.sidebar{position:sticky;top:68px;display:flex;flex-direction:column;gap:20px;padding-top:40px}
+
+/* SIDEBAR WIDGETS */
+.sb-card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:20px;overflow:hidden}
+.sb-card h4{font-size:14px;font-weight:700;margin-bottom:12px}
+.sb-cta-card{background:linear-gradient(135deg,#065F46,#0F7B5F);border:none;text-align:center}
+.sb-cta-card h4{font-size:16px;margin-bottom:4px}
+.sb-cta-card p{font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:14px}
+.sb-cta-btn{display:block;padding:10px;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:13px;text-align:center;transition:filter 0.15s}
+.sb-cta-btn:hover{filter:brightness(1.1)}
+.sb-trending-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)}
+.sb-trending-item:last-child{border-bottom:none}
+.sb-trending-num{font-size:18px;font-weight:800;color:var(--green);min-width:24px;text-align:center;flex-shrink:0}
+.sb-trending-title{font-size:13px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sb-trending-meta{font-size:10px;color:var(--m);margin-top:2px}
+.sb-email-input{width:100%;padding:9px 12px;border-radius:7px;background:var(--bg);border:1px solid var(--b);color:var(--t);font-size:13px;outline:none;font-family:inherit;margin-bottom:8px}
+.sb-email-input:focus{border-color:var(--green)}
+.sb-email-btn{width:100%;padding:9px;border-radius:7px;background:var(--green);color:#000;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit}
+.sb-ad{border:2px dashed var(--b);border-radius:10px;padding:16px;text-align:center;color:var(--m);font-size:11px}
+.sb-ad a{color:var(--green)}
+.sb-agent{text-align:center}
+.sb-agent p{font-size:12px;color:var(--s);margin-bottom:10px;line-height:1.5}
+.sb-agent-btn{display:block;padding:9px;border-radius:7px;background:var(--green-dim);border:1px solid rgba(16,185,129,0.2);color:var(--green);font-weight:700;font-size:12px;text-align:center}
+.sb-cat-link{display:block;padding:6px 0;font-size:13px;color:var(--s);border-bottom:1px solid var(--b);transition:color 0.15s}
+.sb-cat-link:last-child{border-bottom:none}
+.sb-cat-link:hover{color:var(--green)}
 
 /* ARTICLE */
 .article-header{padding:40px 0 32px}
@@ -39,8 +68,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .badge-spotlight{background:rgba(236,72,153,0.12);color:#EC4899}
 .badge-commission{background:rgba(245,158,11,0.12);color:#F59E0B}
 .meta-text{font-size:12px;color:var(--m)}
-.article-title{font-size:clamp(26px,4vw,38px);font-weight:800;line-height:1.15;margin-bottom:12px}
-.article-subtitle{font-size:17px;color:var(--s);line-height:1.7;margin-bottom:24px}
+.article-title{font-size:clamp(26px,4vw,36px);font-weight:800;line-height:1.15;margin-bottom:12px}
+.article-subtitle{font-size:16px;color:var(--s);line-height:1.7;margin-bottom:24px}
 
 /* AUTHOR BAR */
 .author-bar{display:flex;align-items:center;gap:12px;padding:16px 0;border-top:1px solid var(--b);border-bottom:1px solid var(--b);margin-bottom:32px}
@@ -53,7 +82,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .share-btn:hover{color:var(--t);border-color:rgba(255,255,255,0.12)}
 
 /* HERO IMAGE */
-.article-hero{width:100%;border-radius:14px;margin-bottom:32px;overflow:hidden;max-height:420px;background:var(--card);display:flex;align-items:center;justify-content:center}
+.article-hero{width:100%;border-radius:14px;margin-bottom:32px;overflow:hidden;max-height:400px;background:var(--card);display:flex;align-items:center;justify-content:center}
 .article-hero img{width:100%;height:100%;object-fit:cover}
 
 /* BODY */
@@ -65,11 +94,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .article-body li{margin-bottom:8px}
 .article-body strong{color:var(--t)}
 .article-body a{color:var(--green);text-decoration:underline}
-.article-body blockquote{border-left:3px solid var(--green);padding:12px 18px;margin:18px 0;background:var(--green-dim);border-radius:0 8px 8px 0;font-style:italic;color:var(--s)}
+.article-body blockquote{border-left:3px solid var(--green);padding:14px 20px;margin:24px 0;background:var(--green-dim);border-radius:0 10px 10px 0;font-style:italic;color:var(--s);font-size:17px;line-height:1.7}
 .article-body img{max-width:100%;border-radius:10px;margin:18px 0}
 .article-body table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px}
 .article-body th,.article-body td{padding:10px 14px;border:1px solid var(--b);text-align:left}
 .article-body th{background:var(--card);font-weight:700;font-size:12px;letter-spacing:0.5px;color:var(--s)}
+
+/* DATA HIGHLIGHT CARDS */
+.data-highlight{display:flex;gap:14px;margin:24px 0;flex-wrap:wrap}
+.dh-item{flex:1;min-width:120px;background:var(--card);border:1px solid var(--b);border-radius:10px;padding:18px 16px;text-align:center}
+.dh-num{font-size:28px;font-weight:800;color:var(--green);line-height:1.1;margin-bottom:4px}
+.dh-label{font-size:12px;color:var(--s);line-height:1.4}
 
 /* INLINE CTA */
 .inline-cta{border-radius:12px;padding:24px;margin:28px 0;text-align:center}
@@ -106,15 +141,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 .related-card h4{font-size:14px;font-weight:700;line-height:1.35;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .related-card span{font-size:11px;color:var(--m)}
 
-/* EMAIL */
-.email-capture{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:28px;text-align:center;margin:40px 0}
-.email-capture h3{font-size:18px;font-weight:800;margin-bottom:6px}
-.email-capture p{font-size:14px;color:var(--s);margin-bottom:16px}
-.email-form{display:flex;gap:10px;max-width:400px;margin:0 auto}
-.email-form input{flex:1;padding:10px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--b);color:var(--t);font-size:14px;outline:none;font-family:inherit;min-width:0}
-.email-form input:focus{border-color:var(--green)}
-.email-form button{padding:10px 20px;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:14px;border:none;cursor:pointer;white-space:nowrap;font-family:inherit}
-
 /* BOTTOM BANNER */
 .bottom-banner{background:linear-gradient(135deg,#0B1120,#1E293B);border:1px solid var(--b);border-radius:14px;padding:32px;text-align:center;margin:40px 0}
 .bottom-banner h2{font-size:22px;font-weight:800;margin-bottom:16px}
@@ -123,25 +149,28 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);backdrop-fi
 /* FOOTER */
 footer{padding:28px 0;border-top:1px solid var(--b);margin-top:40px;background:var(--bg2)}
 .footer-inner{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-.footer-logo{font-size:15px;font-weight:800}
-.footer-logo .g{color:var(--green)}
+.footer-logo{font-size:15px;font-weight:800;display:flex;align-items:center}
 .footer-links{display:flex;gap:20px}
 .footer-links a{font-size:12px;color:var(--m)}
 .footer-copy{font-size:11px;color:var(--m)}
 
-/* LOADING */
 .loading-state{text-align:center;padding:80px 0;color:var(--m)}
 
+@media(max-width:900px){
+  .two-col{grid-template-columns:1fr;gap:0}
+  .sidebar{position:static;padding-top:20px}
+}
 @media(max-width:768px){
-  .wrap{padding:0 16px}
+  .page-wrap{padding:0 16px}
   .article-title{font-size:24px}
   .article-subtitle{font-size:15px}
   .related-grid{grid-template-columns:1fr}
   .inline-ad{flex-direction:column}
-  .email-form{flex-direction:column}
   .share-btns{gap:4px}
   .footer-inner{flex-direction:column;text-align:center}
   .author-bar{flex-wrap:wrap}
+  .data-highlight{flex-direction:column}
+  .dh-item{min-width:0}
 }
 </style>
 </head>
@@ -149,24 +178,78 @@ footer{padding:28px 0;border-top:1px solid var(--b);margin-top:40px;background:v
 
 <nav>
   <div class="nav-inner">
-    <a href="/" class="nav-logo">rkrt<span class="g">.intel</span></a>
-    <a href="/" class="nav-back">← All Articles</a>
+    <a href="/" class="nav-logo"><span style="font-weight:700;color:#10B981">rkrt</span><span style="font-weight:700;color:#94A3B8">.in</span><span style="font-size:10px;color:#10B981;letter-spacing:2px;margin-left:6px;text-transform:uppercase;border:1px solid #10B981;padding:1px 6px;border-radius:3px">INTEL</span></a>
+    <a href="/" class="nav-back">&larr; All Articles</a>
   </div>
 </nav>
 
-<div class="wrap">
-  <div id="article-content" class="loading-state">Loading article...</div>
+<div class="page-wrap">
+  <div class="two-col">
+    <!-- MAIN COLUMN -->
+    <div class="main-col" id="article-content" class="loading-state">
+      <div style="text-align:center;padding:80px 0;color:var(--m)">Loading article...</div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <!-- Try RKRT CTA -->
+      <div class="sb-card sb-cta-card">
+        <h4>Search 1.7M+ Agents</h4>
+        <p>AI-powered recruiting intelligence for brokerages and teams.</p>
+        <a href="https://app.rkrt.in" class="sb-cta-btn">Start 7-Day Free Trial &rarr;</a>
+      </div>
+
+      <!-- Trending -->
+      <div class="sb-card">
+        <h4>Trending This Week</h4>
+        <div id="sb-trending"><div style="font-size:12px;color:var(--m)">Loading...</div></div>
+      </div>
+
+      <!-- Email Capture -->
+      <div class="sb-card">
+        <h4>Get Weekly Intel</h4>
+        <form onsubmit="return handleSbSub(event)">
+          <input type="email" id="sb-email" class="sb-email-input" placeholder="you@email.com" required>
+          <button type="submit" id="sb-email-btn" class="sb-email-btn">Subscribe</button>
+        </form>
+        <div id="sb-email-msg" style="font-size:12px;margin-top:6px;display:none"></div>
+      </div>
+
+      <!-- Ad Slot -->
+      <div class="sb-ad">
+        Sponsored<br><a href="mailto:hello@rkrt.in">Advertise with RKRT Intel</a><br>Reach 50,000+ recruiters
+      </div>
+
+      <!-- Agent CTA -->
+      <div class="sb-card sb-agent">
+        <h4>Thinking about switching?</h4>
+        <p>We'll match you with brokerages &mdash; confidentially.</p>
+        <a href="https://app.rkrt.in" class="sb-agent-btn">Explore Options &rarr;</a>
+      </div>
+
+      <!-- Categories -->
+      <div class="sb-card">
+        <h4>Categories</h4>
+        <a href="/?cat=industry_news" class="sb-cat-link">Industry News</a>
+        <a href="/?cat=brokerage_intel" class="sb-cat-link">Brokerage Intel</a>
+        <a href="/?cat=market_data" class="sb-cat-link">Market Data</a>
+        <a href="/?cat=playbook" class="sb-cat-link">Playbooks</a>
+        <a href="/?cat=spotlight" class="sb-cat-link">Spotlights</a>
+        <a href="/?cat=commission" class="sb-cat-link">Commission</a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo">rkrt<span class="g">.intel</span></div>
+    <div class="footer-logo"><span style="font-weight:700;color:#10B981">rkrt</span><span style="font-weight:700;color:#94A3B8">.in</span><span style="font-size:10px;color:#10B981;letter-spacing:2px;margin-left:6px;text-transform:uppercase;border:1px solid #10B981;padding:1px 6px;border-radius:3px">INTEL</span></div>
     <div class="footer-links">
       <a href="/">Home</a>
       <a href="mailto:hello@rkrt.in">Contact</a>
       <a href="#">Privacy</a>
     </div>
-    <div class="footer-copy">Powered by LIVIN Media · © 2026</div>
+    <div class="footer-copy">Powered by LIVIN Media &middot; &copy; 2026</div>
   </div>
 </footer>
 
@@ -174,61 +257,45 @@ footer{padding:28px 0;border-top:1px solid var(--b);margin-top:40px;background:v
 const SUPABASE_URL='https://usknntguurefeyzusbdh.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
 const H={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
-
 const CAT_LABELS={industry_news:'Industry News',brokerage_intel:'Brokerage Intel',market_data:'Market Data',playbook:'Playbook',spotlight:'Spotlight',commission:'Commission'};
 
 function fmtDate(d){return new Date(d).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});}
-
-function shareX(title,url){window.open('https://x.com/intent/tweet?text='+encodeURIComponent(title)+'&url='+encodeURIComponent(url),'_blank','width=550,height=420');}
-function shareLI(url){window.open('https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(url),'_blank','width=600,height=500');}
-function shareEmail(title,url){window.location.href='mailto:?subject='+encodeURIComponent(title)+'&body='+encodeURIComponent(url);}
-function copyLink(url){navigator.clipboard.writeText(url);const b=document.getElementById('copy-btn');if(b){b.textContent='✓';setTimeout(()=>b.textContent='🔗',1500);}}
+function shareX(t,u){window.open('https://x.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(u),'_blank','width=550,height=420');}
+function shareLI(u){window.open('https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(u),'_blank','width=600,height=500');}
+function shareEmail(t,u){window.location.href='mailto:?subject='+encodeURIComponent(t)+'&body='+encodeURIComponent(u);}
+function copyLink(u){navigator.clipboard.writeText(u);const b=document.getElementById('copy-btn');if(b){b.textContent='✓';setTimeout(()=>b.textContent='🔗',1500);}}
 
 async function loadArticle(){
-  const params=new URLSearchParams(window.location.search);
-  const slug=params.get('slug');
-  if(!slug){document.getElementById('article-content').textContent='No article specified.';return;}
+  const slug=new URLSearchParams(window.location.search).get('slug');
+  if(!slug){document.getElementById('article-content').innerHTML='<div class="loading-state">No article specified. <a href="/" style="color:var(--green)">Back to home &rarr;</a></div>';return;}
 
   try{
     const r=await fetch(SUPABASE_URL+'/rest/v1/intel_articles?slug=eq.'+encodeURIComponent(slug)+'&published=eq.true',{headers:H});
     const d=await r.json();
-    if(!d||!d[0]){document.getElementById('article-content').innerHTML='<div class="loading-state">Article not found. <a href="/" style="color:var(--green)">Back to home →</a></div>';return;}
+    if(!d||!d[0]){document.getElementById('article-content').innerHTML='<div class="loading-state">Article not found. <a href="/" style="color:var(--green)">Back to home &rarr;</a></div>';return;}
     const a=d[0];
 
-    // Set page title and OG
     document.title=a.title+' — RKRT Intel';
-    const ogTitle=document.querySelector('meta[property="og:title"]');if(ogTitle)ogTitle.content=a.title;
+    const ogT=document.querySelector('meta[property="og:title"]');if(ogT)ogT.content=a.title;
     const desc=document.querySelector('meta[name="description"]');if(desc)desc.content=a.subtitle||'';
-    if(a.image_url){
-      const ogImg=document.querySelector('meta[property="og:image"]');
-      if(ogImg)ogImg.content=a.image_url;else{const m=document.createElement('meta');m.setAttribute('property','og:image');m.content=a.image_url;document.head.appendChild(m);}
-    }
+    if(a.image_url){let ogI=document.querySelector('meta[property="og:image"]');if(!ogI){ogI=document.createElement('meta');ogI.setAttribute('property','og:image');document.head.appendChild(ogI);}ogI.content=a.image_url;}
 
     const pageUrl=window.location.href;
     const catLabel=(CAT_LABELS[a.category]||a.category||'').toUpperCase();
     const authorInitial=(a.author||'R')[0].toUpperCase();
+    const safeTitle=(a.title||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
 
-    // Build body with inline CTAs and ads
+    // Inject inline CTAs/ads into body
     let body=a.body||'<p>No content available.</p>';
-    const paragraphs=body.split('</p>');
-    let rebuilt='';
-    for(let i=0;i<paragraphs.length;i++){
-      rebuilt+=paragraphs[i]+(i<paragraphs.length-1?'</p>':'');
-      // After 2nd paragraph: sponsored product ad
-      if(i===1){
-        rebuilt+=`<div class="inline-ad"><div class="inline-ad-icon">🔍</div><div class="inline-ad-body"><div class="inline-ad-label">SPONSORED</div><h4>Search 1.7M+ Real Estate Agents</h4><p>Find top producers by market, brokerage, and production. AI-powered enrichment pulls contact info instantly.</p><a href="https://join.rkrt.in">Try RKRT Free →</a></div></div>`;
-      }
-      // After 5th paragraph: agent CTA
-      if(i===4){
-        rebuilt+=`<div class="inline-cta dark"><h3>Thinking about your next move?</h3><p>Tell us what you're looking for. We'll match you with brokerage options — confidentially.</p><a href="https://join.rkrt.in" class="green-btn">Explore Options →</a></div>`;
-      }
-      // After 8th paragraph: commission calculator ad
-      if(i===7){
-        rebuilt+=`<div class="inline-ad"><div class="inline-ad-icon">🧮</div><div class="inline-ad-body"><div class="inline-ad-label">SPONSORED</div><h4>Commission Calculator</h4><p>See exactly how much more you could earn. Compare your current split to top brokerages side-by-side.</p><a href="https://join.rkrt.in">Calculate Now →</a></div></div>`;
-      }
+    const pp=body.split('</p>');let rebuilt='';
+    for(let i=0;i<pp.length;i++){
+      rebuilt+=pp[i]+(i<pp.length-1?'</p>':'');
+      if(i===1)rebuilt+='<div class="inline-ad"><div class="inline-ad-icon">🔍</div><div class="inline-ad-body"><div class="inline-ad-label">SPONSORED</div><h4>Search 1.7M+ Real Estate Agents</h4><p>Find top producers by market, brokerage, and production. AI-powered enrichment pulls contact info instantly.</p><a href="https://app.rkrt.in">Try RKRT Free &rarr;</a></div></div>';
+      if(i===4)rebuilt+='<div class="inline-cta dark"><h3>Thinking about your next move?</h3><p>Tell us what you\'re looking for. We\'ll match you with brokerage options — confidentially.</p><a href="https://app.rkrt.in" class="green-btn">Explore Options &rarr;</a></div>';
+      if(i===7)rebuilt+='<div class="inline-ad"><div class="inline-ad-icon">🧮</div><div class="inline-ad-body"><div class="inline-ad-label">SPONSORED</div><h4>Commission Calculator</h4><p>See exactly how much more you could earn. Compare your current split to top brokerages side-by-side.</p><a href="https://app.rkrt.in">Calculate Now &rarr;</a></div></div>';
     }
 
-    const html=`
+    document.getElementById('article-content').innerHTML=`
       <div class="article-header">
         <div class="article-meta">
           <span class="badge badge-${a.category}">${catLabel}</span>
@@ -240,123 +307,89 @@ async function loadArticle(){
         ${a.subtitle?'<div class="article-subtitle">'+a.subtitle+'</div>':''}
         <div class="author-bar">
           <div class="author-avatar">${authorInitial}</div>
-          <div class="author-info">
-            <div class="author-name">${a.author||'RKRT Intel'}</div>
-            <div class="author-sub">RKRT Intel Research</div>
-          </div>
+          <div class="author-info"><div class="author-name">${a.author||'RKRT Intel'}</div><div class="author-sub">RKRT Intel Research</div></div>
           <div class="share-btns">
-            <div class="share-btn" title="Share on X" onclick="shareX('${(a.title||'').replace(/'/g,"\\'")}','${pageUrl}')">𝕏</div>
+            <div class="share-btn" title="Share on X" onclick="shareX('${safeTitle}','${pageUrl}')">𝕏</div>
             <div class="share-btn" title="Share on LinkedIn" onclick="shareLI('${pageUrl}')">in</div>
-            <div class="share-btn" title="Email" onclick="shareEmail('${(a.title||'').replace(/'/g,"\\'")}','${pageUrl}')">✉</div>
+            <div class="share-btn" title="Email" onclick="shareEmail('${safeTitle}','${pageUrl}')">✉</div>
             <div class="share-btn" title="Copy link" id="copy-btn" onclick="copyLink('${pageUrl}')">🔗</div>
           </div>
         </div>
       </div>
-
       ${a.image_url?'<div class="article-hero"><img src="'+a.image_url+'" alt=""></div>':''}
-
       <div class="article-body">${rebuilt}</div>
 
-      <!-- Mid CTA -->
       <div class="inline-cta green">
         <h3>Want to recruit from this data?</h3>
         <p>RKRT gives you the tools to find, reach, and close agents — powered by AI.</p>
-        <a href="https://join.rkrt.in" class="white">Start 7-Day Free Trial →</a>
+        <a href="https://app.rkrt.in" class="white">Start 7-Day Free Trial &rarr;</a>
       </div>
 
       ${a.tags&&a.tags.length?'<div class="article-tags">'+a.tags.map(t=>'<span class="tag">'+t+'</span>').join('')+'</div>':''}
 
-      <!-- Email capture -->
-      <div class="email-capture">
-        <h3>Get this kind of analysis every week</h3>
-        <p>Recruiting intel, market data, and brokerage movements — every Tuesday.</p>
-        <form class="email-form" onsubmit="return handleSub(event)">
-          <input type="email" id="sub-email" placeholder="you@email.com" required>
-          <button type="submit" id="sub-btn">Subscribe</button>
-        </form>
-        <div id="sub-msg" style="font-size:13px;margin-top:10px;display:none"></div>
-      </div>
-
-      <!-- Sponsored brokerage ad -->
-      <div class="inline-ad">
-        <div class="inline-ad-icon">🏢</div>
-        <div class="inline-ad-body">
-          <div class="inline-ad-label">SPONSORED</div>
-          <h4>Advertise Your Brokerage on RKRT Intel</h4>
-          <p>Reach 50,000+ real estate recruiters and decision-makers with targeted placements.</p>
-          <a href="mailto:hello@rkrt.in">Learn More →</a>
-        </div>
-      </div>
-
-      <!-- Related -->
       <div class="related" id="related-section"></div>
 
-      <!-- Bottom Banner -->
       <div class="bottom-banner">
         <h2>Built on data from <span style="color:var(--green)">1.7M+ agents</span></h2>
-        <a href="https://join.rkrt.in">Try RKRT Free →</a>
+        <a href="https://app.rkrt.in">Try RKRT Free &rarr;</a>
       </div>
 
-      <!-- End CTA -->
       <div class="inline-cta green" style="margin-bottom:0">
         <h3>Get ahead of the movement</h3>
-        <p>The best recruiters don't wait for agents to switch — they see it coming. RKRT gives you the edge.</p>
-        <a href="https://join.rkrt.in" class="white">Start 7-Day Free Trial →</a>
+        <p>The best recruiters don't wait for agents to switch — they see it coming.</p>
+        <a href="https://app.rkrt.in" class="white">Start 7-Day Free Trial &rarr;</a>
       </div>
     `;
 
-    document.getElementById('article-content').innerHTML=html;
-    document.getElementById('article-content').classList.remove('loading-state');
-
     // Increment views
-    try{
-      await fetch(SUPABASE_URL+'/rest/v1/intel_articles?slug=eq.'+encodeURIComponent(slug),{
-        method:'PATCH',headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},
-        body:JSON.stringify({views:(a.views||0)+1})
-      });
-    }catch(e){}
+    try{await fetch(SUPABASE_URL+'/rest/v1/intel_articles?slug=eq.'+encodeURIComponent(slug),{method:'PATCH',headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({views:(a.views||0)+1})});}catch(e){}
 
-    // Load related
     loadRelated(a.category,a.slug);
   }catch(e){
-    document.getElementById('article-content').innerHTML='<div class="loading-state">Error loading article. <a href="/" style="color:var(--green)">Back to home →</a></div>';
+    document.getElementById('article-content').innerHTML='<div class="loading-state">Error loading article. <a href="/" style="color:var(--green)">Back to home &rarr;</a></div>';
   }
 }
 
-async function loadRelated(category,currentSlug){
+async function loadRelated(cat,slug){
   try{
-    const r=await fetch(SUPABASE_URL+'/rest/v1/intel_articles?category=eq.'+encodeURIComponent(category)+'&slug=neq.'+encodeURIComponent(currentSlug)+'&published=eq.true&limit=3&order=published_at.desc',{headers:H});
+    const r=await fetch(SUPABASE_URL+'/rest/v1/intel_articles?category=eq.'+encodeURIComponent(cat)+'&slug=neq.'+encodeURIComponent(slug)+'&published=eq.true&limit=3&order=published_at.desc',{headers:H});
     const d=await r.json()||[];
-    const section=document.getElementById('related-section');
-    if(d.length===0){section.style.display='none';return;}
-    section.innerHTML='<h3>Related Articles</h3><div class="related-grid">'+d.map(a=>{
+    const s=document.getElementById('related-section');
+    if(d.length===0){s.style.display='none';return;}
+    s.innerHTML='<h3>Related Articles</h3><div class="related-grid">'+d.map(a=>{
       const img=a.image_url?'<img src="'+a.image_url+'" alt="" loading="lazy">':'<div style="font-size:24px;opacity:0.3">📄</div>';
       return '<a href="/article?slug='+a.slug+'" class="related-card"><div class="related-card-img">'+img+'</div><div class="related-card-body"><h4>'+a.title+'</h4><span>'+(a.read_time||'3')+' min read</span></div></a>';
     }).join('')+'</div>';
   }catch(e){}
 }
 
-async function handleSub(e){
+async function loadSidebarTrending(){
+  try{
+    const r=await fetch(SUPABASE_URL+'/rest/v1/intel_articles?published=eq.true&order=views.desc&limit=5',{headers:H});
+    const d=await r.json()||[];
+    const el=document.getElementById('sb-trending');
+    if(d.length===0){el.innerHTML='<div style="font-size:12px;color:var(--m)">No trending articles yet.</div>';return;}
+    el.innerHTML=d.map((a,i)=>'<a href="/article?slug='+a.slug+'" class="sb-trending-item"><div class="sb-trending-num">'+(i+1)+'</div><div><div class="sb-trending-title">'+a.title+'</div><div class="sb-trending-meta">'+(a.views||0)+' views · '+(a.read_time||'3')+' min</div></div></a>').join('');
+  }catch(e){document.getElementById('sb-trending').innerHTML='<div style="font-size:12px;color:var(--m)">—</div>';}
+}
+
+async function handleSbSub(e){
   e.preventDefault();
-  const email=document.getElementById('sub-email').value.trim();
+  const email=document.getElementById('sb-email').value.trim();
   if(!email)return false;
-  const btn=document.getElementById('sub-btn');const msg=document.getElementById('sub-msg');
+  const btn=document.getElementById('sb-email-btn'),msg=document.getElementById('sb-email-msg');
   btn.textContent='...';btn.disabled=true;
   try{
-    await fetch(SUPABASE_URL+'/rest/v1/intel_subscribers',{
-      method:'POST',headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({email,source:'intel_article'})
-    });
+    await fetch(SUPABASE_URL+'/rest/v1/intel_subscribers',{method:'POST',headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email,source:'intel_article_sidebar'})});
     msg.style.display='block';msg.style.color='var(--green)';msg.textContent='✓ Subscribed!';
-    document.getElementById('sub-email').value='';
-  }catch(err){
-    msg.style.display='block';msg.style.color='#F43F5E';msg.textContent='Error. Try again.';
-  }
+    document.getElementById('sb-email').value='';
+  }catch(err){msg.style.display='block';msg.style.color='#F43F5E';msg.textContent='Error. Try again.';}
   btn.textContent='Subscribe';btn.disabled=false;
   return false;
 }
 
 loadArticle();
+loadSidebarTrending();
 </script>
 <script src="/empire-track.js" data-spoke="rkrt-intel" defer></script>
 </body>
