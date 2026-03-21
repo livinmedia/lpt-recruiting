@@ -112,6 +112,21 @@ export default function Dash({
         </div>
       )}
 
+      {/* Team Blog Card — for team_leader and regional_operator */}
+      {(profile?.plan === "team_leader" || profile?.plan === "regional_operator" || profile?.role === "owner") && profile?.team_id && (
+        <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "20px 24px", marginBottom: 20, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 28 }}>📰</div>
+          <div style={{ flex: 1, minWidth: 150 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.t }}>Your Team Blog</div>
+            <div style={{ fontSize: 13, color: T.s }}>{profile?.brokerage || "Your team"} · Recruiting content powered by RKRT</div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <div onClick={() => onNavigate("content")} style={{ padding: "8px 16px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Write Article</div>
+            <div onClick={() => window.open(`https://rkrt.in/team/${(profile?.brokerage || "team").toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")}`, "_blank")} style={{ padding: "8px 16px", borderRadius: 8, background: T.a, color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>View Blog →</div>
+          </div>
+        </div>
+      )}
+
       {/* Getting Started Card — shown for new users with 0 leads */}
       {isNewUser && (
         <div style={{ background: "linear-gradient(135deg, #0B0F17, #101828)", border: `1.5px solid ${T.a}30`, borderRadius: 14, padding: "28px 30px", marginBottom: 24 }}>

@@ -225,7 +225,13 @@ function AppShell() {
 
   const [chartsLoaded, setChartsLoaded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [teamBlogSlug, setTeamBlogSlug] = useState(null);
   useEffect(() => { rechartsReady.then(() => { setChartsLoaded(true); setChartsReady(true); }); }, []);
+  useEffect(() => {
+    if (effectiveProfile?.team_id && (effectiveProfile?.plan === "team_leader" || effectiveProfile?.plan === "regional_operator" || effectiveProfile?.role === "owner")) {
+      supabase.from("team_blogs").select("slug").eq("team_id", effectiveProfile.team_id).eq("active", true).maybeSingle().then(({ data }) => { if (data?.slug) setTeamBlogSlug(data.slug); });
+    }
+  }, [effectiveProfile?.team_id, effectiveProfile?.plan]);
 
   const renderRueResponse = (text) => {
     if (!text) return null;
@@ -281,9 +287,10 @@ function AppShell() {
               ["inbox", "📬", "Inbox"],
               ["community", "💬", "Community"],
               ...(effectiveProfile?.team_id ? [["team", "👥", "Team"]] : []),
+              ...(teamBlogSlug ? [["blog", "📰", "My Blog"]] : []),
               ["profile", "👤", "Profile"],
             ].map(([id, ic, label]) => (
-              <div key={id} onClick={() => { setViewWithHistory(id); setMobileMenuOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", cursor: "pointer", background: view === id ? T.am : "transparent", borderLeft: view === id ? `3px solid ${T.a}` : "3px solid transparent" }}>
+              <div key={id} onClick={() => { if (id === "blog" && teamBlogSlug) { window.open(`https://rkrt.in/team/${teamBlogSlug}`, "_blank"); setMobileMenuOpen(false); return; } setViewWithHistory(id); setMobileMenuOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", cursor: "pointer", background: view === id ? T.am : "transparent", borderLeft: view === id ? `3px solid ${T.a}` : "3px solid transparent" }}>
                 <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{ic}</span>
                 <span style={{ fontSize: 15, fontWeight: view === id ? 700 : 500, color: view === id ? T.a : T.t }}>{label}</span>
                 {id === "inbox" && ctx.inboxUnread > 0 && <span style={{ marginLeft: "auto", minWidth: 20, height: 20, borderRadius: 10, background: T.a, color: "#000", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>{ctx.inboxUnread > 99 ? "99+" : ctx.inboxUnread}</span>}
@@ -310,7 +317,7 @@ function AppShell() {
       {notifOpen && <div onClick={() => setNotifOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1099 }} />}
       {profileMenuOpen && <div onClick={() => setProfileMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1099 }} />}
       <ProfileMenu ctx={ctx} />
-      <Sidebar ctx={ctx} />
+      <Sidebar ctx={{...ctx, teamBlogSlug}} />
       <div className="main-scroll" style={{ flex: 1, overflow: "auto", padding: (view === "lead" || view === "addlead") ? "0 0 80px 0" : "24px 32px 80px 32px" }}>
         {(view === "lead" || view === "addlead") && <div className="hamburger-btn" onClick={() => setMobileMenuOpen(v => !v)} style={{ display: "none", width: 44, height: 44, borderRadius: 8, alignItems: "center", justifyContent: "center", fontSize: 22, cursor: "pointer", background: T.card, border: `1px solid ${T.b}`, color: T.t, flexShrink: 0, margin: "12px 16px 0" }}>{mobileMenuOpen ? "✕" : "☰"}</div>}
         {view !== "lead" && view !== "addlead" && <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 10 }}>
