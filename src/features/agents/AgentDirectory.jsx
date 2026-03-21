@@ -184,9 +184,9 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
 
       {/* Stats Bar */}
       <div className="agent-stats-bar" style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        {[["TOTAL AGENTS", TOTAL_AGENTS, T.a], ["FLORIDA", STATE_DATA.FL, T.bl], ["TEXAS", STATE_DATA.TX, "#FBBF24"], ["NEW YORK", STATE_DATA.NY, T.p], ["CONNECTICUT", STATE_DATA.CT, T.s]].map(([label, val, color]) => (
+        {[["TOTAL AGENTS", TOTAL_AGENTS.toLocaleString(), T.a], ["COVERAGE", "Nationwide", T.bl], ["RESULTS", total > 0 ? total.toLocaleString() + " found" : "Search above", T.p]].map(([label, val, color]) => (
           <div key={label} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 18px", flex: 1, minWidth: 120 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color }}>{val.toLocaleString()}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color }}>{val}</div>
             <div style={{ fontSize: 11, color: T.m, letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>{label}</div>
           </div>
         ))}
