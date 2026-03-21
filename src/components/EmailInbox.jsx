@@ -12,6 +12,7 @@ const T = {
 };
 
 const SUPABASE_FN = "https://usknntguurefeyzusbdh.supabase.co/functions/v1";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ";
 
 const timeAgo = (d) => {
   if (!d) return "";
@@ -168,7 +169,7 @@ RULES:
 - Do NOT use placeholders like [Name] or [Company]`;
       const res = await fetch(SUPABASE_FN + "/rue-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": ANON_KEY },
         body: JSON.stringify({ system: "You are Rue, a recruiting email assistant. Write natural, personalized emails. NEVER use placeholders. NEVER hallucinate names or details not provided. Only reference information explicitly given to you.", messages: [{ role: "user", content: prompt }], user_id: userId, save: false }),
       });
       const data = await res.json();
@@ -200,7 +201,7 @@ RULES:
 
       const res = await fetch(SUPABASE_FN + "/rue-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": ANON_KEY },
         body: JSON.stringify({
           system: "You are Rue, a recruiting email assistant. Write personalized outreach emails. NEVER use placeholders. If asked to generate a subject line, put it as the FIRST line in format 'Subject: ...' followed by a blank line before the body.",
           messages: [{ role: "user", content: prompt }],

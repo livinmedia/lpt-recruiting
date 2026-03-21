@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
-import { supabase, logActivity } from '../../lib/supabase';
+import { supabase, logActivity, SUPABASE_ANON_KEY } from '../../lib/supabase';
 import { Pill, UPill, TPill } from '../../components/ui/Pill';
 import { CopyButton } from '../../components/ui/CopyButton';
 
@@ -130,7 +130,7 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
     try {
       await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-drip", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({ lead_id: lead.id, regenerate }),
       });
       await loadDripEmails();
@@ -223,7 +223,7 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
     try {
       const res = await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/enrich-agent-ai", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({ lead_id: lead.id, user_id: userId }),
       });
       const json = await res.json();
@@ -272,7 +272,7 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
     try {
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
           system: "You are Rue, a recruiting email coach. Give brief, actionable advice. 2-3 bullet points max.",
           messages: [{ role: "user", content: `I'm emailing ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}. Score: ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"}). Stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}. ${lead.activity_summary ? `Activity: ${JSON.stringify(lead.activity_summary)}.` : ""} What approach should I take?` }],
@@ -330,7 +330,7 @@ EMAIL SUBJECT: ${autoSubject}
 Write the email body. Be specific to this person — reference their brokerage, market, or situation. Make it feel like I actually know them. No generic recruiting spam.`;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
           system: "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.\n\nCRITICAL RULES:\n- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.\n- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"\n- Use SPECIFIC details about the lead and recruiter provided\n- Keep it conversational and direct — like a real person texting a colleague\n- Short paragraphs, 150-250 words max\n- End with a clear, low-pressure CTA\n- Do NOT include a subject line in the body — just write the email body\n- Sign off with the recruiter's actual name",
           messages: [{ role: "user", content: draftPrompt }],
@@ -349,7 +349,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
     try {
       await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/send-email", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({ type: "user_outreach", to: emailTo, subject: emailSubject, body: emailBody, lead_id: lead.id, user_id: userId }),
       });
       if (lead.id && userId) {

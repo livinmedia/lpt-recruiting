@@ -6,7 +6,7 @@ import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
 import { Pill, UPill, TPill } from '../../components/ui/Pill';
-import { supabase } from '../../lib/supabase';
+import { supabase, SUPABASE_ANON_KEY } from '../../lib/supabase';
 import { trackActivity } from '../../lib/track';
 
 const HEAT_COLOR = { cold: "#2A3345", warming: "#3B82F6", interested: "#F59E0B", hot: "#f97316", on_fire: "#F43F5E" };
@@ -108,7 +108,7 @@ export default function CRM({
       const content = `I'm about to email ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}. Their engagement score is ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"}). Pipeline stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}. ${lead.activity_summary ? `Activity: ${JSON.stringify(lead.activity_summary)}.` : ""} What approach should I take? What should I mention or avoid?`;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
           system: "You are Rue, a recruiting email coach. Give brief, actionable advice for this specific email. Be concise — 2-3 bullet points max.",
           messages: [{ role: "user", content }],
@@ -191,7 +191,7 @@ EMAIL SUBJECT: ${autoSubject}
 Write the email body. Be specific to this person — reference their brokerage, market, or situation. Make it feel like I actually know them. No generic recruiting spam.`;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
           system: "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.\n\nCRITICAL RULES:\n- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.\n- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"\n- Use SPECIFIC details about the lead and recruiter provided\n- Keep it conversational and direct — like a real person texting a colleague\n- Short paragraphs, 150-250 words max\n- End with a clear, low-pressure CTA\n- Do NOT include a subject line in the body — just write the email body\n- Sign off with the recruiter's actual name",
           messages: [{ role: "user", content: draftPrompt }],

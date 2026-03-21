@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isPro } from '../lib/utils';
-import { startCheckout } from '../lib/supabase';
+import { startCheckout, SUPABASE_ANON_KEY } from '../lib/supabase';
 import { STRIPE_PRICES } from '../lib/constants';
 
 const FREE_MESSAGE_LIMIT = 10;
@@ -134,12 +134,13 @@ export default function RueDrawer({ open, onClose, profile, leads, userId, autoO
       if (convId) body.conversation_id = convId;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify(body)
       });
 
       if (!r.ok) {
-        setMessages(p => [...p, { role: "assistant", content: `API error ${r.status}. Please try again.`, ts: Date.now() }]);
+        const errBody = await r.text().catch(() => "");
+        setMessages(p => [...p, { role: "assistant", content: `Error ${r.status}: ${errBody || "Request failed"}`, ts: Date.now() }]);
         setLoading(false);
         return;
       }
@@ -148,7 +149,7 @@ export default function RueDrawer({ open, onClose, profile, leads, userId, autoO
       const reply = d.content || "Sorry, I couldn't process that.";
       setMessages(p => [...p, { role: "assistant", content: reply, ts: Date.now() }]);
     } catch (e) {
-      setMessages(p => [...p, { role: "assistant", content: "Connection error. Try again.", ts: Date.now() }]);
+      setMessages(p => [...p, { role: "assistant", content: `Error: ${e.message || "Connection failed"}`, ts: Date.now() }]);
     }
     setLoading(false);
   };
@@ -192,15 +193,15 @@ export default function RueDrawer({ open, onClose, profile, leads, userId, autoO
       if (convId) qbody.conversation_id = convId;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify(qbody)
       });
-      if (!r.ok) { setMessages(p => [...p, { role: "assistant", content: `API error ${r.status}`, ts: Date.now() }]); setLoading(false); return; }
+      if (!r.ok) { const errBody = await r.text().catch(() => ""); setMessages(p => [...p, { role: "assistant", content: `Error ${r.status}: ${errBody || "Request failed"}`, ts: Date.now() }]); setLoading(false); return; }
       const d = await r.json();
       if (d.conversation_id) setConvId(d.conversation_id);
       setMessages(p => [...p, { role: "assistant", content: d.content || "No response.", ts: Date.now() }]);
     } catch (e) {
-      setMessages(p => [...p, { role: "assistant", content: "Connection error.", ts: Date.now() }]);
+      setMessages(p => [...p, { role: "assistant", content: `Error: ${e.message || "Connection failed"}`, ts: Date.now() }]);
     }
     setLoading(false);
   };

@@ -137,7 +137,7 @@ export function AppProvider({ children }) {
     const newHistory = [userMsg];
     setInlineChatHistory(newHistory);
     try {
-      const r = await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ system: buildRueSys(), messages: newHistory, user_id: effectiveUserId }) });
+      const r = await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat", { method: "POST", headers: { "Content-Type": "application/json", "apikey": RUE_KEY }, body: JSON.stringify({ system: buildRueSys(), messages: newHistory, user_id: effectiveUserId }) });
       if (!r.ok) { const err = await r.text(); setInlineResponse(`Error ${r.status} — ${err}`); setInlineLoading(false); return; }
       const d = await r.json();
       const reply = d.content || "No response.";
@@ -156,7 +156,7 @@ export function AppProvider({ children }) {
     try {
       const body = { system: buildRueSys(), messages: newHistory, user_id: effectiveUserId };
       if (rueConvId) body.conversation_id = rueConvId;
-      const r = await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const r = await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat", { method: "POST", headers: { "Content-Type": "application/json", "apikey": RUE_KEY }, body: JSON.stringify(body) });
       if (!r.ok) { const err = await r.text(); setInlineResponse(`Error ${r.status} — ${err}`); setInlineLoading(false); return; }
       const d = await r.json();
       const reply = d.content || "No response.";

@@ -128,7 +128,7 @@ export default function ContentTab({ userId, userProfile }) {
     try {
       const res = await fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
         body: JSON.stringify({
           system: "You are Rue, an AI content writer for a real estate recruiting team blog. Write engaging, professional blog posts that attract agents to join the team. Use markdown formatting. Write 400-600 words.",
           messages: [{ role: "user", content: `Write a blog post about: ${postSubject}\n\nContext from the team: ${postContext || "No additional context provided."}\n\nTeam name: ${teamSlug || 'our team'}. Make it compelling for real estate agents considering joining a team. Use a conversational but professional tone.` }],
