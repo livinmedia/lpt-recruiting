@@ -486,21 +486,30 @@ a:hover{text-decoration:underline}
 
   function showSuccess(){
     document.getElementById('rsvpForm').style.display='none';
-    document.getElementById('rsvpSuccess').style.display='block';
+    const successEl=document.getElementById('rsvpSuccess');
+    // If virtual event, show meeting link in success state
+    if(currentEvent&&currentEvent.location_type==='virtual'&&currentEvent.virtual_link){
+      const linkHtml='<div style="background:#064E3B;padding:14px 16px;border-radius:8px;margin:14px 0;text-align:center;"><div style="color:#94A3B8;font-size:10px;letter-spacing:1px;margin-bottom:4px;">MEETING LINK</div><a href="'+currentEvent.virtual_link+'" style="color:#10B981;font-size:14px;font-weight:700;word-break:break-all;text-decoration:none;">'+currentEvent.virtual_link+'</a></div>';
+      const existingHtml=successEl.innerHTML;
+      successEl.innerHTML=existingHtml.replace('</p>','</p>'+linkHtml);
+    }
+    successEl.style.display='block';
     const floatEl=document.getElementById('floatingRegister');
     if(floatEl) floatEl.style.display='none';
   }
 
   function buildCalendarLinks(ev){
     const title=ev.title||'';
-    const desc=(ev.summary||'').substring(0,500);
-    const loc=ev.is_virtual?'Online':(ev.address||ev.venue_name||ev.city||'');
-    const startISO=ev.start_time||'';
-    const endISO=ev.end_time||ev.start_time||'';
+    const desc=(ev.description||'').replace(/<[^>]+>/g,'').substring(0,500);
+    const isVirtual=ev.location_type==='virtual';
+    const loc=isVirtual?'Online':(ev.location_address||[ev.city,ev.state].filter(Boolean).join(', ')||'');
+    const startISO=new Date(ev.start_time).toISOString();
+    const endISO=ev.end_time?new Date(ev.end_time).toISOString():startISO;
 
     // Google Calendar
-    const gcalStart=startISO.replace(/[-:]/g,'').replace('.000','');
-    const gcalEnd=endISO.replace(/[-:]/g,'').replace('.000','');
+    const gcalFmt=s=>s.replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+    const gcalStart=gcalFmt(startISO);
+    const gcalEnd=gcalFmt(endISO);
     const gcalUrl='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+gcalStart+'/'+gcalEnd+'&details='+encodeURIComponent(desc)+'&location='+encodeURIComponent(loc);
     document.getElementById('gcalLink').href=gcalUrl;
 
