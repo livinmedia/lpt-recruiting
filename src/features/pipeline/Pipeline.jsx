@@ -76,6 +76,7 @@ export default function Pipeline({
     const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
     try {
       const recruitName = `${recruitedLead.first_name} ${recruitedLead.last_name}`.trim();
+      const senderName = userProfile?.full_name || 'A recruiter';
 
       // Step 1: Insert content record
       setPostingStatus("Creating post...");
@@ -84,28 +85,34 @@ export default function Pipeline({
         platform: 'facebook',
         content_type: 'social_proof',
         headline: `🎉 Welcome ${recruitName} to the team!`,
-        body: `${userProfile?.full_name || 'A recruiter'} just recruited ${recruitName} using RKRT! Welcome to the team. #RKRT #Recruiting #RealEstate`,
+        body: `🎉 ${senderName} just recruited ${recruitName} using RKRT! Welcome to the team.\n\nReady to level up your recruiting? 👉 https://app.rkrt.in`,
         hashtags: ['#RKRT', '#Recruiting', '#RealEstate', '#NewAgent'],
         is_posted: false,
         user_id: userId,
         content_source: 'social_proof',
+        landing_page_slug: 'join',
       }).select('id').single();
       if (insertErr) throw insertErr;
+      const contentId = inserted?.id;
+      console.log('[Social Proof] Content inserted, id:', contentId);
 
-      // Step 2: Generate celebration image
+      // Step 2: Generate celebration image (must complete before FB post)
       setPostingStatus("Generating image...");
       try {
-        await fetch(`${SUPA_URL}/functions/v1/generate-social-proof`, {
+        console.log('[Social Proof] Calling generate-social-proof...');
+        const imgRes = await fetch(`${SUPA_URL}/functions/v1/generate-social-proof`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_name: userProfile?.full_name || '',
+            user_name: senderName,
             lead_name: recruitName,
-            content_id: inserted?.id,
+            content_id: contentId,
           }),
         });
+        const imgData = await imgRes.text().catch(() => '');
+        console.log('[Social Proof] Image gen response:', imgRes.status, imgData);
       } catch (e) {
-        console.error('Image gen failed, posting without image:', e);
+        console.error('[Social Proof] Image gen failed, posting without image:', e);
       }
 
       // Step 3: Post to Facebook
