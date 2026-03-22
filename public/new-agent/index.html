@@ -204,7 +204,7 @@ async function submitLead(){
   const messageParts=['Page: New Agent'];
   if(market)messageParts.push('Market: '+market);
   if(status)messageParts.push('Status: '+status);
-  const body={name,email,phone,message:messageParts.join('\n'),cta_clicked:'new-agent',utm_source:utm.utm_source||null,utm_campaign:utm.utm_campaign||null,user_agent:navigator.userAgent||null};
+  const body={name,email,phone,city:market,message:messageParts.join('\n'),cta_clicked:'new-agent',utm_source:utm.utm_source||null,utm_campaign:utm.utm_campaign||null,user_agent:navigator.userAgent||null};
   try{const r=await fetch(`${SUPA}/landing_page_submissions`,{method:'POST',headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
     if(r.ok){document.getElementById('formFields').style.display='none';document.getElementById('formSuccess').style.display='block';if(typeof fbq!=='undefined')fbq('track','Lead')}
     else{const err=await r.text().catch(()=>'');console.error('Submit error:',r.status,err);btn.textContent='Error — try again';btn.disabled=false}}

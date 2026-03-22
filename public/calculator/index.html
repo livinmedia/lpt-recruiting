@@ -264,7 +264,7 @@ async function submitLead(){
   messageParts.push(`Calculator: ${deals} deals/yr @ $${price.toLocaleString()} avg, ${rate}% commission`);
   messageParts.push(`Split: ${document.getElementById('split').value}/${100-document.getElementById('split').value}`);
   messageParts.push(`Fees: $${num(document.getElementById('deskFee').value)}/mo desk + $${num(document.getElementById('otherFees').value)}/mo other`);
-  const body={name,email,phone,brokerage,message:messageParts.join('\n'),cta_clicked:'calculator',utm_source:utm.utm_source||null,utm_campaign:utm.utm_campaign||null,user_agent:navigator.userAgent||null};
+  const body={name,email,phone,brokerage,city:market,message:messageParts.join('\n'),cta_clicked:'calculator',utm_source:utm.utm_source||null,utm_campaign:utm.utm_campaign||null,user_agent:navigator.userAgent||null};
   try{const r=await fetch(`${SUPA}/landing_page_submissions`,{method:'POST',headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
     if(r.ok){document.getElementById('formFields').style.display='none';document.getElementById('formSuccess').style.display='block';if(typeof fbq!=='undefined')fbq('track','Lead')}
     else{const err=await r.text().catch(()=>'');console.error('Submit error:',r.status,err);btn.textContent='Error — try again';btn.disabled=false}}

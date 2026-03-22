@@ -248,14 +248,14 @@ Write the email body. Be specific to this person — reference their brokerage, 
         "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.",
         "",
         "CRITICAL RULES:",
-        "- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.",
+        "- NEVER use placeholders like [Name], [Your Brokerage], [X years], [Your name], etc.",
         "- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"",
         "- Use SPECIFIC details about the lead and recruiter provided",
         "- Keep it conversational and direct — like a real person texting a colleague",
         "- Short paragraphs, 150-250 words max",
         "- End with a clear, low-pressure CTA",
         "- Do NOT include a subject line in the body — just write the email body",
-        "- Sign off with the recruiter's actual name",
+        `- Sign off with "${profile?.full_name || "the recruiter"}" — NEVER use [Your name] or any placeholder`,
       ];
       if (ctx?.is_same_brokerage) {
         systemRules.push("- CRITICAL: The lead is at the SAME brokerage as the recruiter. NEVER badmouth or compare brokerages. Focus on team benefits, mentorship, leads, or culture instead.");

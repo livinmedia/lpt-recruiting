@@ -145,7 +145,8 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
         await supabase.from("lead_drip_emails").delete().eq("lead_id", lead.id).eq("rue_generated", true);
       }
 
-      const dripSystemRules = ["You are Rue, a recruiting email strategist. You respond ONLY with valid JSON arrays. No markdown, no explanation, just the JSON."];
+      const dripSystemRules = ["You are Rue, a recruiting email strategist. You respond ONLY with valid JSON arrays. No markdown, no explanation, just the JSON.",
+        `CRITICAL: Sign off every email with "${userProfile?.full_name || "the recruiter"}" — NEVER use [Your name], [Your Name], or any placeholder.`];
       if (routingCtx?.is_same_brokerage) {
         dripSystemRules.push("CRITICAL: The lead is at the SAME brokerage as the recruiter. NEVER reference the brokerage negatively. Focus on team benefits, mentorship, culture, leads.");
       }
@@ -435,14 +436,14 @@ Write the email body. Be specific to this person — reference their brokerage, 
         "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.",
         "",
         "CRITICAL RULES:",
-        "- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.",
+        "- NEVER use placeholders like [Name], [Your Brokerage], [X years], [Your name], etc.",
         "- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"",
         "- Use SPECIFIC details about the lead and recruiter provided",
         "- Keep it conversational and direct — like a real person texting a colleague",
         "- Short paragraphs, 150-250 words max",
         "- End with a clear, low-pressure CTA",
         "- Do NOT include a subject line in the body — just write the email body",
-        "- Sign off with the recruiter's actual name",
+        `- Sign off with "${userProfile?.full_name || "the recruiter"}" — NEVER use [Your name] or any placeholder`,
       ];
       if (routingCtx?.is_same_brokerage) {
         systemRules.push("- CRITICAL: The lead is at the SAME brokerage as the recruiter. NEVER badmouth or compare brokerages. Focus on team benefits, mentorship, leads, or culture instead.");
@@ -511,9 +512,26 @@ Write the email body. Be specific to this person — reference their brokerage, 
       : `${lead.first_name}, quick thought for you`;
   };
 
+  // Build sender profile block for Rue prompts
+  const getSenderProfileBlock = () => {
+    const p = userProfile;
+    if (!p) return "";
+    const lines = [`\nSENDER PROFILE (the recruiter writing this email):`,
+      `- Name: ${p.full_name || "Unknown"}`,
+      `- Brokerage: ${p.brokerage || "LPT Realty"}`,
+      `- Email: ${p.rkrt_email || p.email || ""}`,
+      `- Market: ${p.market || "nationwide"}`,
+    ];
+    if (p.title) lines.push(`- Title: ${p.title}`);
+    if (p.booking_slug) lines.push(`- Booking link: https://rkrt.in/book/${p.booking_slug}`);
+    lines.push(`- IMPORTANT: Sign off emails with "${p.full_name || "the recruiter"}" — NEVER use [Your name] or any placeholder.`);
+    return lines.join("\n");
+  };
+
   // Build routing context block for Rue prompts
   const getRoutingPromptBlock = () => {
-    if (!routingCtx) return "";
+    let block = getSenderProfileBlock();
+    if (!routingCtx) return block;
     const lines = [`\nROUTING CONTEXT:`, `- User's plan: ${routingCtx.plan_name || "free"}`, `- Same brokerage as lead: ${routingCtx.is_same_brokerage ? "YES" : "NO"}`, `- Recommended action: ${routingCtx.recommended_action || "unknown"}`];
     const angleMap = {
       recruit_to_brokerage: "Pitch leaving their brokerage to join the user's brokerage. Highlight brokerage benefits.",
@@ -529,7 +547,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
     if (routingCtx.is_same_brokerage) {
       lines.push(`- IMPORTANT: NEVER reference the lead's brokerage negatively — they are at the SAME brokerage as the user.`);
     }
-    return lines.join("\n");
+    return block + "\n" + lines.join("\n");
   };
 
   // Rue prompts for this lead
