@@ -450,10 +450,15 @@ Write the email body. Be specific to this person — reference their brokerage, 
         const MEDAL_BORDER = ["#FFD700", "#C0C0C0", "#CD7F32"];
         const MEDAL_GLOW = ["rgba(255,215,0,0.25)", "rgba(192,192,192,0.15)", "rgba(205,127,50,0.15)"];
         const MEDAL_SCORE_SIZE = [48, 36, 36];
-        if (scoredLeads.length === 0) return null;
         return (
           <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "24px 26px", marginBottom: 12 }}>
             <div style={{ fontSize: 18, fontWeight: 700, color: T.t, marginBottom: 20 }}>🔥 Hottest Leads</div>
+            {scoredLeads.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 16px", color: "#8B949E" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🎯</div>
+                <div style={{ fontSize: 14, lineHeight: 1.6, color: "#B0BCCD" }}>No lead activity yet. Share your recruiting links and content to start tracking engagement.</div>
+              </div>
+            ) : (<>
             <div className="crm-hottest-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
               {[["Total Leads", scoredLeads.length, T.a], ["Hot Leads", hotCount, "#FF4444"], ["Warming", warmCount, "#FF8C00"], ["Cold", coldCount, T.m]].map(([label, value, color]) => (
                 <div key={label} style={{ background: T.d, border: `1px solid ${T.b}`, borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
@@ -487,6 +492,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
                 })}
               </div>
             )}
+            </>)}
           </div>
         );
       })()}
