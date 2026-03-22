@@ -380,7 +380,19 @@ export default function ContentTab({ userId, userProfile }) {
   return (
     <div>
       {/* Header */}
-      <style>{`@keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(0,229,160,0.3)}50%{box-shadow:0 0 20px rgba(0,229,160,0.6)}}`}</style>
+      <style>{`
+        @keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(0,229,160,0.3)}50%{box-shadow:0 0 20px rgba(0,229,160,0.6)}}
+        @media (max-width: 768px) {
+          .content-tabs { flex-wrap: wrap !important; }
+          .content-tabs > div { flex: 1 1 45% !important; text-align: center !important; padding: 10px 12px !important; font-size: 13px !important; }
+          .landing-page-row { flex-direction: column !important; }
+          .landing-page-row > div:first-child { width: 100% !important; height: 120px !important; }
+          .lp-actions { width: 100% !important; justify-content: flex-start !important; }
+          .blog-link-row { flex-direction: column !important; gap: 10px !important; }
+          .blog-link-actions { width: 100% !important; }
+          .daily-content-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 24, fontWeight: 800, color: T.t, marginBottom: 8 }}>Content Hub</div>
         <div style={{ fontSize: 14, color: T.s }}>Recruiting content, landing pages, and daily posts</div>
@@ -402,7 +414,7 @@ export default function ContentTab({ userId, userProfile }) {
       {/* Recruiting Links Tab */}
       {contentTab === "links" && (
         <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 12, padding: "28px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <div className="content-links-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
             <div style={{ fontSize: 18, fontWeight: 700, color: T.t }}>🎯 Recruiting Links</div>
             <select
               value={selectedBrokerage}

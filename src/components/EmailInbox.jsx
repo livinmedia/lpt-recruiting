@@ -270,10 +270,19 @@ RULES:
   const goBack = () => { setMainView("list"); setSelectedThread(null); setComposing(false); setReplyText(""); };
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 100px)", background: T.bg, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.b}` }}>
+    <div className="inbox-wrap" style={{ display: "flex", height: "calc(100vh - 100px)", background: T.bg, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.b}` }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .inbox-wrap { flex-direction: column !important; height: auto !important; min-height: calc(100vh - 100px); }
+          .inbox-sidebar { width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--b, rgba(255,255,255,0.06)) !important; flex-direction: row !important; overflow-x: auto !important; padding: 8px !important; gap: 6px !important; }
+          .inbox-sidebar > div:first-child { display: none !important; }
+          .inbox-sidebar > div:nth-child(2) { display: flex !important; flex-direction: row !important; gap: 6px !important; padding: 0 !important; white-space: nowrap; }
+          .inbox-sidebar button { width: auto !important; margin-left: 0 !important; border-radius: 20px !important; padding: 8px 14px !important; font-size: 12px !important; white-space: nowrap !important; }
+        }
+      `}</style>
 
       {/* LEFT SIDEBAR — 240px */}
-      <div style={{ width: 240, background: T.d, borderRight: `1px solid ${T.b}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      <div className="inbox-sidebar" style={{ width: 240, background: T.d, borderRight: `1px solid ${T.b}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
         <div style={{ padding: "16px 10px 8px" }}>
           <button onClick={() => { setMainView("compose"); setSelectedThread(null); setNewTo(""); setNewSubject(""); setNewBody(""); }} style={{ width: "100%", padding: "13px 0", fontSize: 14, fontWeight: 700, borderRadius: 16, background: `linear-gradient(135deg, ${T.a}, ${T.green})`, color: "#000", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, justifyContent: "center", boxShadow: `0 2px 14px ${T.aGlow}`, transition: "opacity 0.15s" }} onMouseEnter={e => e.currentTarget.style.opacity = "0.88"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>✏️ Compose</button>
         </div>

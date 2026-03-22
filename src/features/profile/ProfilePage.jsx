@@ -312,6 +312,10 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
         @keyframes spin { to { transform: rotate(360deg); } }
         .avatar-wrap:hover .cam-overlay { opacity: 1 !important; }
         input:focus, select:focus, textarea:focus { border-color: ${T.a} !important; }
+        @media (max-width: 768px) {
+          .profile-booking-grid { grid-template-columns: 1fr !important; }
+          .profile-booking-grid > div > div[style*="display: flex"][style*="gap: 6"] { flex-wrap: wrap !important; }
+        }
       `}</style>
 
       {/* Toast */}
@@ -717,13 +721,13 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
             </div>
 
             {/* Availability settings */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 28px", marginBottom: 20 }}>
+            <div className="profile-booking-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 28px", marginBottom: 20 }}>
               {/* Slot duration */}
               <div>
                 <label style={lbl}>SLOT DURATION</label>
                 <div style={{ display: "flex", gap: 6 }}>
                   {[15, 30, 60].map(d => (
-                    <div key={d} onClick={() => setBookingAvail(b => ({ ...b, slot_duration: d }))} style={{ padding: "8px 16px", borderRadius: 8, background: bookingAvail.slot_duration === d ? T.a + "20" : "transparent", border: `1px solid ${bookingAvail.slot_duration === d ? T.a : T.b}`, color: bookingAvail.slot_duration === d ? T.a : T.s, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    <div key={d} onClick={() => setBookingAvail(b => ({ ...b, slot_duration: d }))} style={{ padding: "8px 16px", borderRadius: 8, background: bookingAvail.slot_duration === d ? T.a + "20" : "transparent", border: `1px solid ${bookingAvail.slot_duration === d ? T.a : T.b}`, color: bookingAvail.slot_duration === d ? T.a : T.s, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", minWidth: 70, textAlign: "center" }}>
                       {d} min
                     </div>
                   ))}
@@ -763,7 +767,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
                 <label style={lbl}>MEETING TYPE</label>
                 <div style={{ display: "flex", gap: 6 }}>
                   {[{ v: "video", l: "Video Call" }, { v: "phone", l: "Phone" }, { v: "in_person", l: "In Person" }].map(({ v, l }) => (
-                    <div key={v} onClick={() => setBookingAvail(b => ({ ...b, meeting_type: v }))} style={{ padding: "8px 14px", borderRadius: 8, background: bookingAvail.meeting_type === v ? T.a + "20" : "transparent", border: `1px solid ${bookingAvail.meeting_type === v ? T.a : T.b}`, color: bookingAvail.meeting_type === v ? T.a : T.s, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    <div key={v} onClick={() => setBookingAvail(b => ({ ...b, meeting_type: v }))} style={{ padding: "8px 14px", borderRadius: 8, background: bookingAvail.meeting_type === v ? T.a + "20" : "transparent", border: `1px solid ${bookingAvail.meeting_type === v ? T.a : T.b}`, color: bookingAvail.meeting_type === v ? T.a : T.s, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", minWidth: 70, textAlign: "center" }}>
                       {l}
                     </div>
                   ))}
@@ -786,7 +790,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
                 {[{ d: 1, l: "Mon" }, { d: 2, l: "Tue" }, { d: 3, l: "Wed" }, { d: 4, l: "Thu" }, { d: 5, l: "Fri" }, { d: 6, l: "Sat" }, { d: 0, l: "Sun" }].map(({ d, l }) => {
                   const active = (bookingAvail.available_days || []).includes(d);
                   return (
-                    <div key={d} onClick={() => setBookingAvail(b => ({ ...b, available_days: active ? b.available_days.filter(x => x !== d) : [...(b.available_days || []), d] }))} style={{ padding: "8px 14px", borderRadius: 8, background: active ? T.a + "20" : "transparent", border: `1px solid ${active ? T.a : T.b}`, color: active ? T.a : T.s, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    <div key={d} onClick={() => setBookingAvail(b => ({ ...b, available_days: active ? b.available_days.filter(x => x !== d) : [...(b.available_days || []), d] }))} style={{ padding: "8px 10px", borderRadius: 8, background: active ? T.a + "20" : "transparent", border: `1px solid ${active ? T.a : T.b}`, color: active ? T.a : T.s, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", minWidth: 40, textAlign: "center" }}>
                       {l}
                     </div>
                   );

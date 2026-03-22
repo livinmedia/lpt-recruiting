@@ -479,6 +479,12 @@ export default function RKRTCommunity({ userId, profile, supabase }) {
   if (!supabase) return <div style={{padding:40,color:T.s,textAlign:"center"}}>Loading...</div>;
   return (
     <div style={{color:T.t,fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+      <style>{`
+        @media (max-width: 768px) {
+          .community-layout { grid-template-columns: 1fr !important; }
+          .community-layout > div:last-child { display: none !important; }
+        }
+      `}</style>
       <div style={{height:52,borderBottom:`1px solid ${T.b}`,background:T.side,display:"flex",alignItems:"center",padding:"0 4px",marginBottom:24,borderRadius:"12px 12px 0 0",position:"sticky",top:0,zIndex:100}}>
         <div style={{fontSize:13,fontWeight:800,color:T.a,marginRight:20,letterSpacing:0.5,paddingLeft:16,flexShrink:0}}>RKRT <span style={{color:T.s,fontWeight:400}}>Community</span></div>
         <div style={{display:"flex",height:"100%",flex:1,overflowX:"auto"}}>
