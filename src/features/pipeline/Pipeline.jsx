@@ -72,11 +72,15 @@ export default function Pipeline({
     if (!recruitedLead || !userId) return;
     try {
       await supabase.from("daily_content").insert({
+        content_date: new Date().toISOString().split('T')[0],
+        platform: 'facebook',
         content_type: 'social_proof',
-        headline: `New recruit by ${userProfile?.full_name || 'a recruiter'}!`,
-        body: `🎉 ${userProfile?.full_name || 'A recruiter'} just recruited a new agent using RKRT! Welcome to the team. #RKRT #Recruiting #RealEstate`,
-        status: 'pending_approval',
+        headline: '🎉 New Agent Recruited via RKRT!',
+        body: `${userProfile?.full_name || 'A recruiter'} just recruited a new agent using RKRT! Welcome to the team. #RKRT #Recruiting #RealEstate`,
+        hashtags: ['#RKRT', '#Recruiting', '#RealEstate', '#NewAgent'],
+        is_posted: false,
         user_id: userId,
+        content_source: 'social_proof',
       });
     } catch (err) {
       console.error("Social proof post error:", err);
