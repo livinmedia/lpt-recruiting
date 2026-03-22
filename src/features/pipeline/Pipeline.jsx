@@ -68,23 +68,48 @@ export default function Pipeline({
     }
   };
 
+  const [postingRecruited, setPostingRecruited] = useState(false);
   const handleRecruitedPost = async () => {
-    if (!recruitedLead || !userId) return;
+    if (!recruitedLead || !userId || postingRecruited) return;
+    setPostingRecruited(true);
     try {
-      await supabase.from("daily_content").insert({
+      const recruitName = `${recruitedLead.first_name} ${recruitedLead.last_name}`.trim();
+      const { data: inserted, error: insertErr } = await supabase.from("daily_content").insert({
         content_date: new Date().toISOString().split('T')[0],
         platform: 'facebook',
         content_type: 'social_proof',
-        headline: '🎉 New Agent Recruited via RKRT!',
-        body: `${userProfile?.full_name || 'A recruiter'} just recruited a new agent using RKRT! Welcome to the team. #RKRT #Recruiting #RealEstate`,
+        headline: `🎉 Welcome ${recruitName} to the team!`,
+        body: `${userProfile?.full_name || 'A recruiter'} just recruited ${recruitName} using RKRT! Welcome to the team. #RKRT #Recruiting #RealEstate`,
         hashtags: ['#RKRT', '#Recruiting', '#RealEstate', '#NewAgent'],
         is_posted: false,
         user_id: userId,
         content_source: 'social_proof',
-      });
+      }).select('id').single();
+      if (insertErr) throw insertErr;
+
+      // Post immediately to Facebook (system + user pages)
+      const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
+      const { data: { session } } = await supabase.auth.getSession();
+      if (inserted?.id && session?.access_token) {
+        const res = await fetch(`${SUPA_URL}/functions/v1/post-to-facebook?mode=post&id=${inserted.id}`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        });
+        const fbData = await res.json().catch(() => ({}));
+        if (res.ok && !fbData.error) {
+          setStageToast("Posted to Facebook! 🎉");
+        } else {
+          setStageToast("Saved — Facebook post pending review");
+        }
+      } else {
+        setStageToast("Saved — Facebook post pending review");
+      }
+      setTimeout(() => setStageToast(null), 3500);
     } catch (err) {
       console.error("Social proof post error:", err);
+      setStageToast("Failed to create post");
+      setTimeout(() => setStageToast(null), 3000);
     }
+    setPostingRecruited(false);
     setRecruitedLead(null);
   };
 
@@ -348,8 +373,8 @@ export default function Pipeline({
             <div style={{ fontSize: 22, fontWeight: 800, color: T.t, marginBottom: 8 }}>Congrats!</div>
             <div style={{ fontSize: 15, color: T.s, marginBottom: 24, lineHeight: 1.6 }}>{recruitedLead.first_name} {recruitedLead.last_name} moved to Recruited. Want to share this win?</div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <div onClick={handleRecruitedPost} style={{ padding: "12px 20px", borderRadius: 8, background: "#1877F2", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>📘 Post to Facebook</div>
-              <div onClick={() => setRecruitedLead(null)} style={{ padding: "12px 20px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Skip</div>
+              <div onClick={handleRecruitedPost} style={{ padding: "12px 20px", borderRadius: 8, background: postingRecruited ? "#1877F280" : "#1877F2", color: "#fff", fontSize: 14, fontWeight: 700, cursor: postingRecruited ? "wait" : "pointer", opacity: postingRecruited ? 0.7 : 1 }}>{postingRecruited ? "Posting..." : "📘 Post to Facebook"}</div>
+              <div onClick={() => { if (!postingRecruited) setRecruitedLead(null); }} style={{ padding: "12px 20px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 14, fontWeight: 600, cursor: postingRecruited ? "wait" : "pointer" }}>Skip</div>
             </div>
           </div>
         </>
