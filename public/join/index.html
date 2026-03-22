@@ -330,8 +330,10 @@ function getUTM() {
 async function submitLead() {
   const fname = document.getElementById('fname').value.trim();
   const phone = document.getElementById('phone').value.trim();
+  const email = document.getElementById('email').value.trim();
   if (!fname) { document.getElementById('fname').style.borderColor = '#F43F5E'; return; }
   if (!phone) { document.getElementById('phone').style.borderColor = '#F43F5E'; return; }
+  if (!email) { document.getElementById('email').style.borderColor = '#F43F5E'; return; }
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
@@ -339,30 +341,31 @@ async function submitLead() {
 
   const utm = getUTM();
   const frustration = document.getElementById('frustration').value;
-  const source = utm.utm_source 
-    ? `${utm.utm_source}${utm.utm_campaign ? ' / ' + utm.utm_campaign : ''}`
-    : document.referrer.includes('facebook') ? 'Facebook Ad'
-    : document.referrer.includes('instagram') ? 'Instagram Ad'
-    : document.referrer.includes('youtube') ? 'YouTube'
-    : 'Landing Page';
+  const lname = document.getElementById('lname').value.trim();
+  const name = [fname, lname].filter(Boolean).join(' ');
+  const brokerage = document.getElementById('brokerage').value.trim() || null;
+  const market = document.getElementById('market').value.trim() || null;
+
+  const messageParts = ['Page: Join'];
+  if (brokerage) messageParts.push('Current brokerage: ' + brokerage);
+  if (market) messageParts.push('Market: ' + market);
+  if (frustration) messageParts.push('Biggest frustration: ' + frustration);
 
   const body = {
-    first_name: fname,
-    last_name: document.getElementById('lname').value.trim() || null,
+    name: name,
+    email: email,
     phone: phone,
-    email: document.getElementById('email').value.trim() || null,
-    brokerage: document.getElementById('brokerage').value.trim() || null,
-    market: document.getElementById('market').value.trim() || null,
-    source: source,
-    pipeline_stage: 'new',
-    tier: 'New',
-    urgency: 'MEDIUM',
-    notes: frustration ? `Biggest frustration: ${frustration}` : null,
-    pain_points: frustration ? [frustration] : [],
+    brokerage: brokerage,
+    message: messageParts.join('\n'),
+    cta_clicked: 'join',
+    utm_source: utm.utm_source || null,
+    utm_medium: utm.utm_medium || null,
+    utm_campaign: utm.utm_campaign || null,
+    user_agent: navigator.userAgent || null,
   };
 
   try {
-    const r = await fetch(`${SUPA}/leads`, {
+    const r = await fetch(`${SUPA}/landing_page_submissions`, {
       method: 'POST',
       headers: {
         'apikey': KEY,
@@ -376,7 +379,6 @@ async function submitLead() {
     if (r.ok) {
       document.getElementById('formFields').style.display = 'none';
       document.getElementById('formSuccess').style.display = 'block';
-      // Fire FB conversion event
       if (typeof fbq !== 'undefined') fbq('track', 'Lead');
     } else {
       const err = await r.text();

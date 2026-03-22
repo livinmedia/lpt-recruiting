@@ -249,15 +249,26 @@ function getUTM(){const p=new URLSearchParams(window.location.search);return{utm
 async function submitLead(){
   const fname=document.getElementById('fname').value.trim();
   const phone=document.getElementById('phone').value.trim();
-  if(!fname||!phone){if(!fname)document.getElementById('fname').style.borderColor='var(--red)';if(!phone)document.getElementById('phone').style.borderColor='var(--red)';return}
+  const email=document.getElementById('email').value.trim();
+  if(!fname||!phone||!email){if(!fname)document.getElementById('fname').style.borderColor='var(--red)';if(!phone)document.getElementById('phone').style.borderColor='var(--red)';if(!email)document.getElementById('email').style.borderColor='var(--red)';return}
   const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='Submitting...';
   const utm=getUTM();
+  const lname=document.getElementById('lname').value.trim();
+  const name=[fname,lname].filter(Boolean).join(' ');
+  const brokerage=document.getElementById('brokerage').value.trim()||null;
+  const market=document.getElementById('market').value.trim()||null;
   const price=num(document.getElementById('avgPrice').value),deals=num(document.getElementById('deals').value),rate=parseFloat(document.getElementById('rate').value);
-  const body={first_name:fname,last_name:document.getElementById('lname').value.trim()||null,phone,email:document.getElementById('email').value.trim()||null,brokerage:document.getElementById('brokerage').value.trim()||null,market:document.getElementById('market').value.trim()||null,source:utm.utm_source?`${utm.utm_source}${utm.utm_campaign?' / '+utm.utm_campaign:''}`:'Calculator Page',pipeline_stage:'new',tier:'New',urgency:'MEDIUM',production_volume:price*deals*(rate/100),transaction_count:deals||null,avg_sale_price:price||null,notes:`From calculator: ${deals} deals/yr @ $${price.toLocaleString()} avg, ${rate}% commission. Brokerage split: ${document.getElementById('split').value}/${100-document.getElementById('split').value}. Current fees: $${num(document.getElementById('deskFee').value)}/mo desk + $${num(document.getElementById('otherFees').value)}/mo other.`,pain_points:['Commission split too low','Paying too much in fees']};
-  try{const r=await fetch(`${SUPA}/leads`,{method:'POST',headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
+  const messageParts=['Page: Calculator'];
+  if(brokerage)messageParts.push('Current brokerage: '+brokerage);
+  if(market)messageParts.push('Market: '+market);
+  messageParts.push(`Calculator: ${deals} deals/yr @ $${price.toLocaleString()} avg, ${rate}% commission`);
+  messageParts.push(`Split: ${document.getElementById('split').value}/${100-document.getElementById('split').value}`);
+  messageParts.push(`Fees: $${num(document.getElementById('deskFee').value)}/mo desk + $${num(document.getElementById('otherFees').value)}/mo other`);
+  const body={name,email,phone,brokerage,message:messageParts.join('\n'),cta_clicked:'calculator',utm_source:utm.utm_source||null,utm_campaign:utm.utm_campaign||null,user_agent:navigator.userAgent||null};
+  try{const r=await fetch(`${SUPA}/landing_page_submissions`,{method:'POST',headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
     if(r.ok){document.getElementById('formFields').style.display='none';document.getElementById('formSuccess').style.display='block';if(typeof fbq!=='undefined')fbq('track','Lead')}
-    else{btn.textContent='Error — try again';btn.disabled=false}}
-  catch(e){btn.textContent='Error — try again';btn.disabled=false}
+    else{const err=await r.text().catch(()=>'');console.error('Submit error:',r.status,err);btn.textContent='Error — try again';btn.disabled=false}}
+  catch(e){console.error('Submit error:',e);btn.textContent='Error — try again';btn.disabled=false}
 }
 document.getElementById('phone').addEventListener('input',function(e){let v=e.target.value.replace(/\D/g,'');if(v.length>10)v=v.slice(0,10);if(v.length>=6)v=`(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;else if(v.length>=3)v=`(${v.slice(0,3)}) ${v.slice(3)}`;e.target.value=v});
 document.querySelectorAll('.fi').forEach(el=>el.addEventListener('focus',()=>el.style.borderColor=''));
