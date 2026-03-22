@@ -327,8 +327,8 @@ a:hover{text-decoration:underline}
     // OG tags
     document.title=ev.title+' — RKRT Events';
     setMeta('og:title',ev.title);
-    setMeta('og:description',ev.summary||ev.title);
-    setMeta('description',ev.summary||ev.title);
+    setMeta('og:description',(ev.description||ev.title).replace(/<[^>]+>/g,'').substring(0,150));
+    setMeta('description',(ev.description||ev.title).replace(/<[^>]+>/g,'').substring(0,150));
     if(ev.cover_image_url) setMeta('og:image',ev.cover_image_url);
     setMeta('og:url',window.location.href);
 
@@ -362,16 +362,17 @@ a:hover{text-decoration:underline}
     // Location
     const locEl=document.getElementById('eventLocation');
     const locIcon=document.getElementById('locationIcon');
-    if(ev.is_virtual){
+    if(ev.location_type==='virtual'){
       locIcon.innerHTML='&#128249;';
-      locEl.innerHTML='<strong>Virtual Event</strong>Link provided after registration';
+      locEl.innerHTML='<strong>Virtual Event</strong><br>Link provided after registration';
     }else{
-      locEl.innerHTML='<strong>'+(ev.venue_name||'In Person')+'</strong>'+(ev.address||ev.city||'');
+      locIcon.innerHTML='&#128205;';
+      locEl.innerHTML='<strong>'+(ev.location_address||'In Person')+'</strong>'+(ev.city?'<br>'+ev.city+(ev.state?', '+ev.state:''):'');
     }
 
     // Host
     const hostEl=document.getElementById('eventHost');
-    const hostName=team?team.team_name:'RKRT Intel';
+    const hostName=team?(team.name||team.team_name):'RKRT Intel';
     hostEl.innerHTML='<strong>'+hostName+'</strong><span class="powered-by">Powered by <span>RKRT</span></span>';
 
     // Description
@@ -466,11 +467,9 @@ a:hover{text-decoration:underline}
           body:JSON.stringify({
             name:name,
             email:email,
-            phone:phone||null,
             brokerage:brokerage||null,
             market:market||null,
-            source:'event_rsvp',
-            source_detail:ev.slug
+            source:'event_'+ev.slug
           })
         }).catch(()=>{});// Ignore duplicate
 
