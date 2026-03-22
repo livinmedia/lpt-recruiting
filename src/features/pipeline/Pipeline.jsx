@@ -69,11 +69,16 @@ export default function Pipeline({
   };
 
   const [postingRecruited, setPostingRecruited] = useState(false);
+  const [postingStatus, setPostingStatus] = useState("");
   const handleRecruitedPost = async () => {
     if (!recruitedLead || !userId || postingRecruited) return;
     setPostingRecruited(true);
+    const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
     try {
       const recruitName = `${recruitedLead.first_name} ${recruitedLead.last_name}`.trim();
+
+      // Step 1: Insert content record
+      setPostingStatus("Creating post...");
       const { data: inserted, error: insertErr } = await supabase.from("daily_content").insert({
         content_date: new Date().toISOString().split('T')[0],
         platform: 'facebook',
@@ -87,8 +92,24 @@ export default function Pipeline({
       }).select('id').single();
       if (insertErr) throw insertErr;
 
-      // Post immediately to Facebook (system + user pages)
-      const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
+      // Step 2: Generate celebration image
+      setPostingStatus("Generating image...");
+      try {
+        await fetch(`${SUPA_URL}/functions/v1/generate-social-proof`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_name: userProfile?.full_name || '',
+            lead_name: recruitName,
+            content_id: inserted?.id,
+          }),
+        });
+      } catch (e) {
+        console.error('Image gen failed, posting without image:', e);
+      }
+
+      // Step 3: Post to Facebook
+      setPostingStatus("Posting to Facebook...");
       const { data: { session } } = await supabase.auth.getSession();
       if (inserted?.id && session?.access_token) {
         const res = await fetch(`${SUPA_URL}/functions/v1/post-to-facebook?mode=post&id=${inserted.id}`, {
@@ -110,6 +131,7 @@ export default function Pipeline({
       setTimeout(() => setStageToast(null), 3000);
     }
     setPostingRecruited(false);
+    setPostingStatus("");
     setRecruitedLead(null);
   };
 
@@ -192,6 +214,18 @@ export default function Pipeline({
 
   return (
     <>
+      <style>{`
+        @media (max-width: 768px) {
+          .ask-rue-grid { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+          .pipe-stats { grid-template-columns: repeat(2,1fr) !important; }
+          .pipe-toolbar { flex-direction: column !important; }
+          .pipe-toolbar input { width: 100% !important; }
+          .pipe-spacer { display: none !important; }
+          .kanban-wrap { flex-direction: column !important; overflow: visible !important; }
+          .kanban-wrap > div { min-width: 100% !important; }
+          .overdue-warning { flex-direction: column !important; gap: 10px !important; text-align: center; }
+        }
+      `}</style>
       {/* Rue Quick Actions */}
       <div className="ask-rue-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${ruePrompts.length},1fr)`, gap: 12, marginBottom: 20 }}>
         {ruePrompts.map(([icon, label, q, c], i) => (
@@ -373,7 +407,7 @@ export default function Pipeline({
             <div style={{ fontSize: 22, fontWeight: 800, color: T.t, marginBottom: 8 }}>Congrats!</div>
             <div style={{ fontSize: 15, color: T.s, marginBottom: 24, lineHeight: 1.6 }}>{recruitedLead.first_name} {recruitedLead.last_name} moved to Recruited. Want to share this win?</div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <div onClick={handleRecruitedPost} style={{ padding: "12px 20px", borderRadius: 8, background: postingRecruited ? "#1877F280" : "#1877F2", color: "#fff", fontSize: 14, fontWeight: 700, cursor: postingRecruited ? "wait" : "pointer", opacity: postingRecruited ? 0.7 : 1 }}>{postingRecruited ? "Posting..." : "📘 Post to Facebook"}</div>
+              <div onClick={handleRecruitedPost} style={{ padding: "12px 20px", borderRadius: 8, background: postingRecruited ? "#1877F280" : "#1877F2", color: "#fff", fontSize: 14, fontWeight: 700, cursor: postingRecruited ? "wait" : "pointer", opacity: postingRecruited ? 0.7 : 1 }}>{postingRecruited ? (postingStatus || "Posting...") : "📘 Post to Facebook"}</div>
               <div onClick={() => { if (!postingRecruited) setRecruitedLead(null); }} style={{ padding: "12px 20px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 14, fontWeight: 600, cursor: postingRecruited ? "wait" : "pointer" }}>Skip</div>
             </div>
           </div>

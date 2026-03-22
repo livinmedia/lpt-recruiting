@@ -311,7 +311,22 @@ Write the email body. Be specific to this person — reference their brokerage, 
 
   return (
     <>
-      <style>{`@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+      <style>{`
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @media (max-width: 768px) {
+          .ask-rue-grid { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+          .crm-toolbar { flex-direction: column !important; }
+          .crm-toolbar input { width: 100% !important; }
+          .crm-spacer { display: none !important; }
+          .crm-hottest-stats { grid-template-columns: repeat(2,1fr) !important; }
+          .leads-desktop { display: none !important; }
+          .leads-mobile { display: flex !important; }
+          .email-sidebar { width: 100vw !important; }
+        }
+        @media (min-width: 769px) {
+          .leads-mobile { display: none !important; }
+        }
+      `}</style>
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (

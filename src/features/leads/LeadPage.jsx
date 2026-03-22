@@ -562,7 +562,17 @@ Write the email body. Be specific to this person — reference their brokerage, 
 
   return (
     <div>
-      <style>{`@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+      <style>{`
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @media (max-width: 768px) {
+          .email-sidebar { width: 100vw !important; }
+          .lead-header { flex-direction: column !important; gap: 12px !important; }
+          .lead-actions-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .lead-layout { grid-template-columns: 1fr !important; }
+          .lead-contact-grid { grid-template-columns: 1fr !important; }
+          .lead-tabs { flex-wrap: wrap !important; }
+        }
+      `}</style>
 
       {/* Email Sidebar */}
       {emailOpen && (

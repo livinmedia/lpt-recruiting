@@ -85,6 +85,17 @@ export default function Dash({
 
   return (
     <>
+      <style>{`
+        @media (max-width: 768px) {
+          .ask-rue-grid { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+          .kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .quick-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .two-col { grid-template-columns: 1fr !important; }
+          .getting-started-grid { grid-template-columns: 1fr !important; }
+          .hottest-stats { grid-template-columns: repeat(2,1fr) !important; }
+          .hottest-podium { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
       {/* Lead Score Alert Banners */}
       {scoreAlerts.map(alert => (
         <div key={alert.id} style={{ marginBottom: 12, borderRadius: 10, padding: "14px 18px", background: "linear-gradient(90deg, #F43F5E, #f97316)", display: "flex", alignItems: "center", gap: 12 }}>
