@@ -53,6 +53,18 @@ export default async function middleware(request) {
     });
   }
 
+  // /events, /events/[city], /events/[city]/[slug]
+  if ((pathname === '/events' || pathname.startsWith('/events/')) && !host.startsWith('app.')) {
+    const eventParts = pathname.slice(7).split('/').filter(Boolean); // strip "/events/"
+    const page = eventParts.length >= 2 ? '/event-detail.html' : '/events.html';
+    const pageUrl = new URL(page, request.url);
+    const res = await fetch(pageUrl);
+    return new Response(res.body, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' }
+    });
+  }
+
   // /team/[slug] → team blog, /team/[slug]/[article] → team article
   if (pathname.startsWith('/team/') && !host.startsWith('app.')) {
     const teamParts = pathname.slice(6).split('/').filter(Boolean); // strip "/team/"
@@ -148,6 +160,6 @@ export default async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/', '/recruit', '/article', '/article.html', '/team/:path*', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share', '/:slug([a-z0-9-]+)']
+  matcher: ['/', '/recruit', '/article', '/article.html', '/events', '/events/:path*', '/team/:path*', '/(lpt-realty|exp-realty|keller-williams|remax|real-brokerage|epique|realty-of-america|listing-power-teams)/:path*', '/share', '/r/:path*', '/book/:path*', '/i/:path*', '/calculator', '/join', '/why-switch', '/new-agent', '/revenue-share', '/:slug([a-z0-9-]+)']
 };
 // 1773555408

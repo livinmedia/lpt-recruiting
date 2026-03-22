@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event — RKRT</title>
+<meta name="description" content="Event details and registration — RKRT Events">
+<meta property="og:title" content="Event — RKRT">
+<meta property="og:description" content="Event details and registration">
+<meta property="og:type" content="website">
+<meta property="og:image" content="">
+<meta property="og:url" content="">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0B1120;color:#E2E8F0;line-height:1.6;min-height:100vh}
+a{color:#60A5FA;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(11,17,32,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.nav-logo span{color:#10B981}
+.nav-back{font-size:14px;color:#94A3B8;transition:color .2s}
+.nav-back:hover{color:#fff;text-decoration:none}
+
+/* COVER */
+.cover{width:100%;height:300px;position:relative;overflow:hidden;display:flex;align-items:flex-end}
+.cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cover-overlay{position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(11,17,32,.85))}
+.cover-badge{position:absolute;top:20px;left:20px;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;color:#fff;text-transform:capitalize;z-index:2}
+.cover-gradient{position:absolute;inset:0}
+
+/* LAYOUT */
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+.layout{display:grid;grid-template-columns:1fr 380px;gap:40px;margin-top:-40px;position:relative;z-index:2;padding-bottom:80px}
+
+/* LEFT */
+.event-title{font-size:28px;font-weight:700;color:#fff;line-height:1.3;margin-bottom:20px}
+.meta-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;font-size:15px;color:#CBD5E1}
+.meta-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center;margin-top:2px}
+.meta-text strong{color:#fff;display:block;font-weight:600}
+.divider{border:none;border-top:1px solid rgba(255,255,255,.08);margin:28px 0}
+.section-heading{font-size:18px;font-weight:700;color:#fff;margin-bottom:16px}
+.event-description{color:#CBD5E1;font-size:15px;line-height:1.75}
+.event-description h1,.event-description h2,.event-description h3{color:#fff;margin:20px 0 10px}
+.event-description p{margin-bottom:12px}
+.event-description ul,.event-description ol{margin:12px 0;padding-left:24px}
+.event-description li{margin-bottom:6px}
+.event-description a{color:#60A5FA}
+.host-card{display:flex;align-items:center;gap:16px;padding:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;margin-top:12px}
+.host-avatar{width:48px;height:48px;border-radius:50%;background:#1E293B;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#10B981;flex-shrink:0}
+.host-name{font-size:15px;font-weight:600;color:#fff}
+.host-sub{font-size:13px;color:#94A3B8;margin-top:2px}
+.powered-by{font-size:12px;color:#64748B;margin-top:12px}
+.powered-by span{color:#10B981;font-weight:600}
+
+/* RIGHT — RSVP CARD */
+.rsvp-card{background:#131B2E;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px;position:sticky;top:80px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.rsvp-heading{font-size:20px;font-weight:700;color:#fff;margin-bottom:20px}
+.progress-wrap{margin-bottom:20px}
+.progress-label{font-size:13px;color:#94A3B8;margin-bottom:8px;display:flex;justify-content:space-between}
+.progress-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:#10B981;transition:width .6s ease}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;font-weight:500;color:#94A3B8;margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:10px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{border-color:#10B981}
+.form-group input::placeholder{color:#475569}
+.form-group select option{background:#1E293B;color:#fff}
+.btn-register{width:100%;padding:14px;background:#10B981;color:#fff;font-size:15px;font-weight:600;border:none;border-radius:10px;cursor:pointer;transition:background .2s;margin-top:6px}
+.btn-register:hover{background:#059669}
+.btn-register:disabled{opacity:.5;cursor:not-allowed}
+.required-star{color:#EF4444}
+
+/* SUCCESS STATE */
+.rsvp-success{text-align:center;padding:20px 0}
+.rsvp-success .checkmark{width:56px;height:56px;background:rgba(16,185,129,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px}
+.rsvp-success h3{font-size:20px;font-weight:700;color:#fff;margin-bottom:8px}
+.rsvp-success p{font-size:14px;color:#94A3B8;margin-bottom:20px}
+.cal-links{display:flex;flex-direction:column;gap:8px}
+.cal-link{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:#CBD5E1;font-size:13px;font-weight:500;transition:background .2s;cursor:pointer}
+.cal-link:hover{background:rgba(255,255,255,.1);text-decoration:none}
+
+/* SHARE */
+.share-section{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06)}
+.share-section h4{font-size:13px;font-weight:600;color:#94A3B8;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.share-buttons{display:flex;gap:8px}
+.share-btn{flex:1;padding:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:#CBD5E1;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+.share-btn:hover{background:rgba(255,255,255,.1);color:#fff;text-decoration:none}
+
+/* LOADING / ERROR */
+.loading-state{text-align:center;padding:120px 24px}
+.loading-state .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:#10B981;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state p{color:#94A3B8;font-size:15px}
+.error-state{text-align:center;padding:120px 24px}
+.error-state h2{font-size:24px;color:#fff;margin-bottom:12px}
+.error-state p{color:#94A3B8;font-size:15px;margin-bottom:24px}
+.error-state a{display:inline-block;padding:12px 28px;background:#10B981;color:#fff;border-radius:8px;font-weight:600}
+
+/* FLOATING MOBILE BUTTON */
+.floating-register{display:none;position:fixed;bottom:0;left:0;right:0;padding:12px 20px;background:rgba(11,17,32,.95);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.06);z-index:99}
+.floating-register button{width:100%;padding:14px;background:#10B981;color:#fff;font-size:15px;font-weight:600;border:none;border-radius:10px;cursor:pointer}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;gap:24px}
+  .rsvp-card{position:static;order:-1}
+  .floating-register{display:block}
+  .event-title{font-size:22px}
+  .cover{height:200px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="/" class="nav-logo">rkrt<span>.in</span></a>
+  <a href="/events" class="nav-back" id="backLink">&larr; All Events</a>
+</nav>
+
+<!-- LOADING -->
+<div id="loadingState" class="loading-state">
+  <div class="spinner"></div>
+  <p>Loading event details&hellip;</p>
+</div>
+
+<!-- ERROR (hidden) -->
+<div id="errorState" class="error-state" style="display:none">
+  <h2>Event not found</h2>
+  <p>This event may have ended or the link may be incorrect.</p>
+  <a href="/events">Browse all events</a>
+</div>
+
+<!-- MAIN CONTENT (hidden until loaded) -->
+<div id="mainContent" style="display:none">
+
+  <!-- COVER -->
+  <div class="cover" id="coverBanner">
+    <div class="cover-overlay"></div>
+    <span class="cover-badge" id="typeBadge"></span>
+  </div>
+
+  <div class="container">
+    <div class="layout">
+
+      <!-- LEFT COLUMN -->
+      <div class="left-col">
+        <h1 class="event-title" id="eventTitle"></h1>
+
+        <div class="meta-row">
+          <span class="meta-icon">&#128197;</span>
+          <div class="meta-text" id="eventDate"></div>
+        </div>
+
+        <div class="meta-row">
+          <span class="meta-icon" id="locationIcon">&#128205;</span>
+          <div class="meta-text" id="eventLocation"></div>
+        </div>
+
+        <div class="meta-row">
+          <span class="meta-icon">&#128100;</span>
+          <div class="meta-text" id="eventHost"></div>
+        </div>
+
+        <hr class="divider">
+
+        <h2 class="section-heading">About this event</h2>
+        <div class="event-description" id="eventDescription"></div>
+
+        <hr class="divider">
+
+        <h2 class="section-heading">Hosted by</h2>
+        <div id="hostedBySection"></div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="right-col">
+        <div class="rsvp-card" id="rsvpCard">
+
+          <!-- FORM STATE -->
+          <div id="rsvpForm">
+            <h3 class="rsvp-heading">Register for free</h3>
+
+            <div class="progress-wrap" id="progressWrap">
+              <div class="progress-label">
+                <span id="spotsText">Open registration</span>
+                <span id="spotsCount"></span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width:0%"></div>
+              </div>
+            </div>
+
+            <form id="registrationForm" autocomplete="on">
+              <div class="form-group">
+                <label>Full name <span class="required-star">*</span></label>
+                <input type="text" id="fieldName" placeholder="Your full name" required>
+              </div>
+              <div class="form-group">
+                <label>Email <span class="required-star">*</span></label>
+                <input type="email" id="fieldEmail" placeholder="you@email.com" required>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="fieldPhone" placeholder="(555) 555-5555">
+              </div>
+              <div class="form-group">
+                <label>Brokerage</label>
+                <input type="text" id="fieldBrokerage" placeholder="Current brokerage">
+              </div>
+              <div class="form-group">
+                <label>Market</label>
+                <input type="text" id="fieldMarket" placeholder="City or region">
+              </div>
+              <button type="submit" class="btn-register" id="submitBtn">Register now &rarr;</button>
+            </form>
+          </div>
+
+          <!-- SUCCESS STATE (hidden) -->
+          <div id="rsvpSuccess" class="rsvp-success" style="display:none">
+            <div class="checkmark">&#10003;</div>
+            <h3>You're registered!</h3>
+            <p>Check your email for confirmation details.</p>
+            <div class="cal-links">
+              <a class="cal-link" id="gcalLink" href="#" target="_blank" rel="noopener">&#128197; Add to Google Calendar</a>
+              <a class="cal-link" id="icsLink" href="#" download="event.ics">&#128197; Download .ics file</a>
+            </div>
+          </div>
+
+          <!-- SHARE -->
+          <div class="share-section">
+            <h4>Share this event</h4>
+            <div class="share-buttons">
+              <a class="share-btn" id="shareCopy" href="javascript:void(0)">&#128279; Copy link</a>
+              <a class="share-btn" id="shareX" href="#" target="_blank" rel="noopener">&#120143; Post</a>
+              <a class="share-btn" id="shareLinkedIn" href="#" target="_blank" rel="noopener">in Share</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING MOBILE REGISTER -->
+<div class="floating-register" id="floatingRegister" style="display:none">
+  <button onclick="document.getElementById('rsvpCard').scrollIntoView({behavior:'smooth'})">Register &rarr;</button>
+</div>
+
+<script src="/empire-track.js" data-spoke="rkrt-events" defer></script>
+<script>
+(function(){
+  const SUPABASE_URL='https://usknntguurefeyzusbdh.supabase.co';
+  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVza25udGd1dXJlZmV5enVzYmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTcwODAsImV4cCI6MjA4Nzk5MzA4MH0.pxexo90zyugIA4pPzLonGo3E1frr8bSZvz-XT7BmuqQ';
+  const H={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
+
+  const pathParts=window.location.pathname.split('/').filter(Boolean);
+  const citySlug=pathParts[1]||'';
+  const eventSlug=pathParts[2]||'';
+
+  const TYPE_COLORS={webinar:'#3B82F6',workshop:'#8B5CF6',networking:'#10B981',lunch_learn:'#F59E0B'};
+  const TYPE_GRADIENTS={
+    webinar:'linear-gradient(135deg,#1E3A5F 0%,#3B82F6 100%)',
+    workshop:'linear-gradient(135deg,#2E1065 0%,#8B5CF6 100%)',
+    networking:'linear-gradient(135deg,#064E3B 0%,#10B981 100%)',
+    lunch_learn:'linear-gradient(135deg,#78350F 0%,#F59E0B 100%)'
+  };
+
+  let currentEvent=null;
+
+  // Back link
+  if(citySlug){
+    const cityName=citySlug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    document.getElementById('backLink').innerHTML='&larr; '+cityName+' events';
+    document.getElementById('backLink').href='/events/'+citySlug;
+  }
+
+  async function init(){
+    if(!eventSlug){showError();return}
+    try{
+      // Fetch event
+      const r=await fetch(SUPABASE_URL+'/rest/v1/events?slug=eq.'+encodeURIComponent(eventSlug)+'&published=eq.true',{headers:H});
+      const events=await r.json();
+      if(!events||!events.length){showError();return}
+      currentEvent=events[0];
+
+      // Fetch RSVP count + host team in parallel
+      const promises=[
+        fetch(SUPABASE_URL+'/rest/v1/event_rsvps?event_id=eq.'+currentEvent.id+'&select=id',{headers:H}).then(r=>r.json()).catch(()=>[])
+      ];
+      if(currentEvent.team_id){
+        promises.push(
+          fetch(SUPABASE_URL+'/rest/v1/team_blogs?team_id=eq.'+currentEvent.team_id+'&active=eq.true',{headers:H}).then(r=>r.json()).catch(()=>[])
+        );
+      }else{
+        promises.push(Promise.resolve([]));
+      }
+      const [rsvps,teams]=await Promise.all(promises);
+      render(currentEvent,rsvps.length||0,teams&&teams.length?teams[0]:null);
+    }catch(e){
+      console.error(e);
+      showError();
+    }
+  }
+
+  function showError(){
+    document.getElementById('loadingState').style.display='none';
+    document.getElementById('errorState').style.display='block';
+  }
+
+  function formatDate(start,end,tz){
+    const s=new Date(start);
+    const e=end?new Date(end):null;
+    const opts={weekday:'long',month:'long',day:'numeric',year:'numeric'};
+    const timeOpts={hour:'numeric',minute:'2-digit',hour12:true};
+    let str=s.toLocaleDateString('en-US',opts);
+    str+=' · '+s.toLocaleTimeString('en-US',timeOpts);
+    if(e) str+=' – '+e.toLocaleTimeString('en-US',timeOpts);
+    if(tz) str+=' '+tz;
+    return str;
+  }
+
+  function render(ev,rsvpCount,team){
+    // OG tags
+    document.title=ev.title+' — RKRT Events';
+    setMeta('og:title',ev.title);
+    setMeta('og:description',ev.summary||ev.title);
+    setMeta('description',ev.summary||ev.title);
+    if(ev.cover_image_url) setMeta('og:image',ev.cover_image_url);
+    setMeta('og:url',window.location.href);
+
+    // Cover
+    const cover=document.getElementById('coverBanner');
+    if(ev.cover_image_url){
+      const img=document.createElement('img');
+      img.src=ev.cover_image_url;
+      img.alt=ev.title;
+      cover.insertBefore(img,cover.firstChild);
+    }else{
+      const grad=document.createElement('div');
+      grad.className='cover-gradient';
+      grad.style.background=TYPE_GRADIENTS[ev.event_type]||TYPE_GRADIENTS.networking;
+      cover.insertBefore(grad,cover.firstChild);
+    }
+
+    // Badge
+    const badge=document.getElementById('typeBadge');
+    const typeLabel=(ev.event_type||'event').replace(/_/g,' ');
+    badge.textContent=typeLabel;
+    badge.style.background=TYPE_COLORS[ev.event_type]||'#10B981';
+
+    // Title
+    document.getElementById('eventTitle').textContent=ev.title;
+
+    // Date
+    const dateEl=document.getElementById('eventDate');
+    dateEl.innerHTML='<strong>'+formatDate(ev.start_time,ev.end_time,ev.timezone)+'</strong>';
+
+    // Location
+    const locEl=document.getElementById('eventLocation');
+    const locIcon=document.getElementById('locationIcon');
+    if(ev.is_virtual){
+      locIcon.innerHTML='&#128249;';
+      locEl.innerHTML='<strong>Virtual Event</strong>Link provided after registration';
+    }else{
+      locEl.innerHTML='<strong>'+(ev.venue_name||'In Person')+'</strong>'+(ev.address||ev.city||'');
+    }
+
+    // Host
+    const hostEl=document.getElementById('eventHost');
+    const hostName=team?team.team_name:'RKRT Intel';
+    hostEl.innerHTML='<strong>'+hostName+'</strong><span class="powered-by">Powered by <span>RKRT</span></span>';
+
+    // Description
+    document.getElementById('eventDescription').innerHTML=ev.description||'<p>Details coming soon.</p>';
+
+    // Hosted by section
+    const hostedBy=document.getElementById('hostedBySection');
+    const initial=hostName.charAt(0).toUpperCase();
+    let hostedHtml='<div class="host-card"><div class="host-avatar">'+initial+'</div><div><div class="host-name">'+hostName+'</div>';
+    if(team&&team.slug){
+      hostedHtml+='<div class="host-sub"><a href="/team/'+team.slug+'">View team page &rarr;</a></div>';
+    }else{
+      hostedHtml+='<div class="host-sub">Real estate recruiting intelligence</div>';
+    }
+    hostedHtml+='</div></div>';
+    hostedBy.innerHTML=hostedHtml;
+
+    // RSVP progress
+    const maxSpots=ev.max_attendees||0;
+    if(maxSpots>0){
+      const pct=Math.min(Math.round((rsvpCount/maxSpots)*100),100);
+      document.getElementById('spotsText').textContent=rsvpCount+' of '+maxSpots+' spots filled';
+      document.getElementById('spotsCount').textContent=pct+'%';
+      document.getElementById('progressFill').style.width=pct+'%';
+      if(pct>=90) document.getElementById('progressFill').style.background='#EF4444';
+      else if(pct>=70) document.getElementById('progressFill').style.background='#F59E0B';
+    }else{
+      document.getElementById('spotsText').textContent='Open registration';
+      document.getElementById('spotsCount').textContent=rsvpCount+' registered';
+      document.getElementById('progressFill').style.width='30%';
+    }
+
+    // Share links
+    const pageUrl=window.location.href;
+    const shareText=ev.title+' — Register now!';
+    document.getElementById('shareX').href='https://x.com/intent/tweet?text='+encodeURIComponent(shareText)+'&url='+encodeURIComponent(pageUrl);
+    document.getElementById('shareLinkedIn').href='https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(pageUrl);
+    document.getElementById('shareCopy').onclick=function(){
+      navigator.clipboard.writeText(pageUrl).then(()=>{this.innerHTML='&#10003; Copied!';setTimeout(()=>{this.innerHTML='&#128279; Copy link'},2000)});
+    };
+
+    // Calendar links
+    buildCalendarLinks(ev);
+
+    // Check existing registration
+    const regKey='rsvp_'+ev.id;
+    if(localStorage.getItem(regKey)){
+      showSuccess();
+    }
+
+    // Show content
+    document.getElementById('loadingState').style.display='none';
+    document.getElementById('mainContent').style.display='block';
+
+    // Floating button on mobile
+    if(window.innerWidth<=900){
+      document.getElementById('floatingRegister').style.display='block';
+    }
+
+    // Form submit
+    document.getElementById('registrationForm').addEventListener('submit',async function(e){
+      e.preventDefault();
+      const btn=document.getElementById('submitBtn');
+      btn.disabled=true;
+      btn.textContent='Registering...';
+
+      const name=document.getElementById('fieldName').value.trim();
+      const email=document.getElementById('fieldEmail').value.trim();
+      const phone=document.getElementById('fieldPhone').value.trim();
+      const brokerage=document.getElementById('fieldBrokerage').value.trim();
+      const market=document.getElementById('fieldMarket').value.trim();
+
+      try{
+        // POST RSVP
+        await fetch(SUPABASE_URL+'/rest/v1/event_rsvps',{
+          method:'POST',
+          headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({
+            event_id:ev.id,
+            name:name,
+            email:email,
+            phone:phone||null,
+            brokerage:brokerage||null,
+            market:market||null
+          })
+        });
+
+        // POST intel_subscribers
+        await fetch(SUPABASE_URL+'/rest/v1/intel_subscribers',{
+          method:'POST',
+          headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({
+            name:name,
+            email:email,
+            phone:phone||null,
+            brokerage:brokerage||null,
+            market:market||null,
+            source:'event_rsvp',
+            source_detail:ev.slug
+          })
+        }).catch(()=>{});// Ignore duplicate
+
+        localStorage.setItem(regKey,'1');
+        showSuccess();
+      }catch(err){
+        console.error(err);
+        btn.disabled=false;
+        btn.textContent='Register now →';
+        alert('Registration failed. Please try again.');
+      }
+    });
+  }
+
+  function showSuccess(){
+    document.getElementById('rsvpForm').style.display='none';
+    document.getElementById('rsvpSuccess').style.display='block';
+    const floatEl=document.getElementById('floatingRegister');
+    if(floatEl) floatEl.style.display='none';
+  }
+
+  function buildCalendarLinks(ev){
+    const title=ev.title||'';
+    const desc=(ev.summary||'').substring(0,500);
+    const loc=ev.is_virtual?'Online':(ev.address||ev.venue_name||ev.city||'');
+    const startISO=ev.start_time||'';
+    const endISO=ev.end_time||ev.start_time||'';
+
+    // Google Calendar
+    const gcalStart=startISO.replace(/[-:]/g,'').replace('.000','');
+    const gcalEnd=endISO.replace(/[-:]/g,'').replace('.000','');
+    const gcalUrl='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+gcalStart+'/'+gcalEnd+'&details='+encodeURIComponent(desc)+'&location='+encodeURIComponent(loc);
+    document.getElementById('gcalLink').href=gcalUrl;
+
+    // ICS file
+    const icsContent=[
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RKRT//Events//EN','BEGIN:VEVENT',
+      'DTSTART:'+gcalStart,'DTEND:'+gcalEnd,
+      'SUMMARY:'+title,'DESCRIPTION:'+desc.replace(/\n/g,'\\n'),
+      'LOCATION:'+loc,'END:VEVENT','END:VCALENDAR'
+    ].join('\r\n');
+    const blob=new Blob([icsContent],{type:'text/calendar'});
+    document.getElementById('icsLink').href=URL.createObjectURL(blob);
+    document.getElementById('icsLink').download=(ev.slug||'event')+'.ics';
+  }
+
+  function setMeta(prop,content){
+    let el=document.querySelector('meta[property="'+prop+'"]')||document.querySelector('meta[name="'+prop+'"]');
+    if(el) el.setAttribute('content',content);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

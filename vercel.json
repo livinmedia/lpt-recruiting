@@ -8,6 +8,8 @@
     { "source": "/join.html", "destination": "/join.html" },
     { "source": "/team-blog.html", "destination": "/team-blog.html" },
     { "source": "/team-article.html", "destination": "/team-article.html" },
+    { "source": "/events.html", "destination": "/events.html" },
+    { "source": "/event-detail.html", "destination": "/event-detail.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
