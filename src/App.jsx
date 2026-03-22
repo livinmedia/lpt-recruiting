@@ -32,6 +32,7 @@ import RueDrawer from './components/RueDrawer';
 import EmailInbox from './components/EmailInbox';
 import AgentEnrichment from './components/AgentEnrichment';
 import RKRTCommunity from './components/RKRTCommunity';
+import Events from './components/Events';
 import { ProGate } from './components/shared';
 
 import { useState, useEffect } from "react";
@@ -287,6 +288,7 @@ function AppShell() {
               ["inbox", "📬", "Inbox"],
               ["community", "💬", "Community"],
               ...(effectiveProfile?.team_id ? [["team", "👥", "Team"]] : []),
+              ...((effectiveProfile?.plan === "team_leader" || effectiveProfile?.plan === "regional_operator" || effectiveProfile?.role === "owner") ? [["events", "📅", "Events"]] : []),
               ...(teamBlogSlug ? [["blog", "📰", "My Blog"]] : []),
               ["profile", "👤", "Profile"],
             ].map(([id, ic, label]) => (
@@ -336,6 +338,7 @@ function AppShell() {
         {view === "inbox" && <EmailInbox supabase={supabase} userId={authUser?.id} profile={effectiveProfile} />}
         {view === "community" && <RKRTCommunity userId={effectiveUserId} profile={effectiveProfile} supabase={supabase} />}
         {view === "team" && effectiveProfile?.team_id && <TeamView supabase={supabase} userId={effectiveUserId} profile={effectiveProfile} />}
+        {view === "events" && <Events userId={effectiveUserId} profile={effectiveProfile} />}
         {view === "admin" && !impersonating && profile?.role === "owner" && <AdminView supabase={supabase} authUser={authUser} profile={profile} impersonating={impersonating} setImpersonating={setImpersonating} setRealUser={setRealUser} impersonateLoading={impersonateLoading} setImpersonateLoading={setImpersonateLoading} setViewWithHistory={setViewWithHistory} setProfile={setProfile} setPreviewUrl={setPreviewUrl} SUPABASE_URL={SUPABASE_URL} SUPABASE_ANON_KEY={SUPABASE_ANON_KEY} />}
         {view === "beta" && isBeta && <BetaHubView supabase={supabase} authUser={authUser} profile={profile} />}
         {view === "profile" && <ProfilePage profile={effectiveProfile} userId={effectiveUserId} leads={leads} onProfileUpdate={ctx.loadProfile} />}
