@@ -1,4 +1,5 @@
-
+// Community: Rue bot cron runs via droplet at /etc/cron.d/rkrt-rue-community
+// To set up: ssh root@droplet, add cron calling /functions/v1/rue-community?action=daily
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const T = {
@@ -8,6 +9,10 @@ const T = {
   r:"#F43F5E", y:"#F59E0B", bl:"#3B82F6", p:"#8B5CF6",
   t:"#E4E8F1", s:"#7B8BA3", m:"#1E2A3A", dim:"#161C28",
 };
+
+const RUE_BOT_ID = '00000000-0000-0000-0000-0000000000ee';
+const isRue = (userId) => userId === RUE_BOT_ID;
+const SUPA_URL = 'https://usknntguurefeyzusbdh.supabase.co';
 
 const TYPE_META = {
   win:       { label:"WIN",      color:"#00E5A0", bg:"rgba(0,229,160,0.10)",  icon:"🏆" },
@@ -35,6 +40,15 @@ function colorFromId(id) {
   return c[Math.abs(h) % c.length];
 }
 function Avatar({ profile, size=36 }) {
+  if (isRue(profile?.id)) {
+    return (
+      <div style={{ width:size, height:size, borderRadius:"50%", flexShrink:0,
+        background:"#00E5A0", display:"flex", alignItems:"center", justifyContent:"center",
+        fontSize:size*0.38, border:"2px solid rgba(0,229,160,0.3)" }}>
+        🤖
+      </div>
+    );
+  }
   const name = profile?.full_name || profile?.email || "?";
   const color = colorFromId(profile?.id);
   return (
@@ -117,6 +131,7 @@ function PostCard({ post, currentUserId, allMembers, supabase, onLikeToggle, onC
   const [submitting, setSubmitting] = useState(false);
   const meta = TYPE_META[post.type] || TYPE_META.tip;
   const author = post.profiles;
+  const isBot = isRue(post.user_id) || post.is_bot;
   async function loadComments() {
     const { data } = await supabase.from("community_comments")
       .select("*, profiles(id,full_name,email,brokerage)")
@@ -135,6 +150,7 @@ function PostCard({ post, currentUserId, allMembers, supabase, onLikeToggle, onC
   }
   return (
     <div style={{ background:T.card, borderRadius:14, border:`1px solid ${post.pinned?T.a+"30":T.b}`,
+      borderLeft:isBot?"2px solid #00E5A0":undefined,
       overflow:"hidden", transition:"border-color 0.2s" }}
       onMouseEnter={e=>e.currentTarget.style.borderColor=post.pinned?T.a+"50":T.bh}
       onMouseLeave={e=>e.currentTarget.style.borderColor=post.pinned?T.a+"30":T.b}>
@@ -148,9 +164,10 @@ function PostCard({ post, currentUserId, allMembers, supabase, onLikeToggle, onC
           <Avatar profile={author} size={42}/>
           <div style={{flex:1}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-              <span style={{fontSize:14,fontWeight:700,color:T.t}}>{author?.full_name||author?.email||"Unknown"}</span>
+              <span style={{fontSize:14,fontWeight:700,color:isBot?T.a:T.t}}>{isBot?"Rue":(author?.full_name||author?.email||"Unknown")}</span>
+              {isBot && <span style={{fontSize:10,fontWeight:700,color:"#00E5A0",background:"rgba(0,229,160,0.15)",padding:"2px 6px",borderRadius:10}}>AI</span>}
               <span style={{fontSize:10,fontWeight:800,letterSpacing:0.8,color:meta.color,background:meta.bg,padding:"2px 9px",borderRadius:20}}>{meta.icon} {meta.label}</span>
-              {author?.role==="owner" && <span style={{fontSize:10,fontWeight:700,color:"#F59E0B",background:"rgba(245,158,11,0.12)",padding:"2px 8px",borderRadius:20}}>👑 ADMIN</span>}
+              {!isBot && author?.role==="owner" && <span style={{fontSize:10,fontWeight:700,color:"#F59E0B",background:"rgba(245,158,11,0.12)",padding:"2px 8px",borderRadius:20}}>👑 ADMIN</span>}
             </div>
             <div style={{fontSize:12,color:T.s,marginTop:2}}>
               {author?.brokerage && <span>{author.brokerage} · </span>}{timeAgo(post.created_at)}
@@ -166,18 +183,21 @@ function PostCard({ post, currentUserId, allMembers, supabase, onLikeToggle, onC
       {open && (
         <div style={{borderTop:`1px solid ${T.b}`,background:T.dim,padding:"16px 20px",display:"flex",flexDirection:"column",gap:12}}>
           {comments.length===0 && <div style={{fontSize:13,color:T.s,textAlign:"center",padding:"8px 0"}}>No comments yet.</div>}
-          {comments.map((c,i) => (
+          {comments.map((c,i) => {
+            const cIsBot = isRue(c.user_id) || c.is_bot;
+            return (
             <div key={i} style={{display:"flex",gap:10}}>
-              <Avatar profile={c.profiles} size={30}/>
-              <div style={{flex:1,background:T.card,borderRadius:10,padding:"10px 14px",border:`1px solid ${T.b}`}}>
+              <Avatar profile={cIsBot ? { id: RUE_BOT_ID } : c.profiles} size={30}/>
+              <div style={{flex:1,background:T.card,borderRadius:10,padding:"10px 14px",border:`1px solid ${T.b}`,borderLeft:cIsBot?"2px solid #00E5A0":undefined}}>
                 <div style={{display:"flex",gap:8,marginBottom:4}}>
-                  <span style={{fontSize:12,fontWeight:700,color:T.t}}>{c.profiles?.full_name||c.profiles?.email||"User"}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:cIsBot?T.a:T.t}}>{cIsBot?"Rue":(c.profiles?.full_name||c.profiles?.email||"User")}</span>
+                  {cIsBot && <span style={{fontSize:9,fontWeight:700,color:"#00E5A0",background:"rgba(0,229,160,0.15)",padding:"1px 5px",borderRadius:8}}>AI</span>}
                   <span style={{fontSize:11,color:T.s}}>{timeAgo(c.created_at)}</span>
                 </div>
                 <p style={{fontSize:13,color:T.t,margin:0,lineHeight:1.6}}><RichText text={c.content}/></p>
               </div>
             </div>
-          ))}
+          );})}
           <div style={{display:"flex",gap:10,marginTop:4}}>
             <Avatar profile={{id:currentUserId}} size={30}/>
             <div style={{flex:1,display:"flex",gap:8}}>
@@ -199,11 +219,18 @@ function Compose({ currentUser, allMembers, supabase, onPost }) {
   async function submit() {
     if (!text.trim() || !currentUser?.id) return;
     setPosting(true); setError(null);
-    const { error:err } = await supabase.from("community_posts").insert({
+    const { data: newPost, error:err } = await supabase.from("community_posts").insert({
       user_id:currentUser.id, type, content:text.trim(), pinned:false, likes_count:0, comments_count:0,
-    });
+    }).select('id').single();
     if (err) { setError(err.message); }
-    else { setText(""); setType("win"); setTimeout(() => onPost && onPost(), 300); }
+    else {
+      setText(""); setType("win"); setTimeout(() => onPost && onPost(), 300);
+      // Fire-and-forget Rue auto-reply (only for human posts)
+      if (newPost?.id && !isRue(currentUser.id)) {
+        fetch(`${SUPA_URL}/functions/v1/rue-community?action=reply&post_id=${newPost.id}`)
+          .catch(e => console.error('Rue auto-reply failed:', e));
+      }
+    }
     setPosting(false);
   }
   return (
@@ -220,6 +247,125 @@ function Compose({ currentUser, allMembers, supabase, onPost }) {
           ))}
         </div>
         <button onClick={submit} disabled={!text.trim()||posting} style={{marginLeft:"auto",padding:"8px 22px",borderRadius:9,border:"none",background:text.trim()?T.a:T.m,color:text.trim()?"#000":T.s,fontSize:13,fontWeight:800,cursor:text.trim()?"pointer":"default"}}>{posting?"Posting...":"Post"}</button>
+      </div>
+    </div>
+  );
+}
+
+function CommunitySidebar({ supabase, allMembers, currentUser, posts }) {
+  const [articles, setArticles] = useState([]);
+  const [challenges, setChallenges] = useState([]);
+  const [topContributors, setTopContributors] = useState([]);
+  const [stats, setStats] = useState({ members: 0, postsWeek: 0, commentsWeek: 0 });
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    Promise.all([
+      supabase.from('landing_pages').select('id,title,slug,created_at').eq('template','insight').order('created_at',{ascending:false}).limit(5),
+      supabase.from('community_challenges').select('*').eq('active',true).gte('ends_at',new Date().toISOString()).order('ends_at',{ascending:true}).limit(3),
+      supabase.from('community_posts').select('user_id').gte('created_at',weekAgo).neq('user_id',RUE_BOT_ID),
+      supabase.from('community_comments').select('id').gte('created_at',weekAgo),
+    ]).then(([artRes, chalRes, wpRes, wcRes]) => {
+      setArticles(artRes.data || []);
+      setChallenges(chalRes.data || []);
+      // Count top contributors
+      const counts = {};
+      (wpRes.data || []).forEach(p => { counts[p.user_id] = (counts[p.user_id] || 0) + 1; });
+      const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+      setTopContributors(sorted.map(([uid, count]) => {
+        const m = allMembers.find(m => m.id === uid);
+        return { id: uid, name: m?.full_name || m?.email || "User", count };
+      }));
+      setStats({
+        members: allMembers.filter(m => m.role !== 'bot').length,
+        postsWeek: (wpRes.data || []).length,
+        commentsWeek: (wcRes.data || []).length,
+      });
+      setLoaded(true);
+    });
+  }, [supabase, allMembers.length]);
+
+  const cardStyle = { background: "#131D35", border: "1px solid #1A2744", borderRadius: 14, padding: 16, marginBottom: 12 };
+  const titleStyle = { fontSize: 13, fontWeight: 800, color: T.t, marginBottom: 12 };
+
+  if (!loaded) return (
+    <div className="community-sidebar" style={{ display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 20 }}>
+      {[1,2,3].map(i => <div key={i} style={{ ...cardStyle, height: 100, background: "#131D35", animation: "pulse 1.5s infinite" }}/>)}
+    </div>
+  );
+
+  return (
+    <div className="community-sidebar" style={{ display: "flex", flexDirection: "column", gap: 0, position: "sticky", top: 20 }}>
+      {/* Latest Articles */}
+      {articles.length > 0 && (
+        <div style={cardStyle}>
+          <div style={titleStyle}>📰 Latest from RKRT</div>
+          {articles.map(a => (
+            <a key={a.id} href={`https://app.rkrt.in/i/${a.slug}`} target="_blank" rel="noreferrer"
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", fontSize: 12, color: T.s, textDecoration: "none", borderBottom: `1px solid ${T.b}` }}
+              onMouseEnter={e => e.currentTarget.style.color = T.a}
+              onMouseLeave={e => e.currentTarget.style.color = T.s}>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8 }}>{a.title}</span>
+              <span style={{ fontSize: 10, color: T.m, flexShrink: 0 }}>{timeAgo(a.created_at)}</span>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* Challenges */}
+      <div style={cardStyle}>
+        <div style={titleStyle}>📅 Events & Challenges</div>
+        {challenges.length === 0 ? (
+          <div style={{ fontSize: 12, color: T.s }}>No active challenges</div>
+        ) : challenges.map(c => {
+          const daysLeft = Math.max(0, Math.ceil((new Date(c.ends_at) - Date.now()) / 86400000));
+          return (
+            <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${T.b}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 14 }}>{c.emoji || "🎯"}</span>
+                <span style={{ fontSize: 12, color: T.t, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</span>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                {c.points && <span style={{ fontSize: 10, fontWeight: 700, color: T.y, background: "rgba(245,158,11,0.12)", padding: "2px 6px", borderRadius: 8 }}>{c.points}pt</span>}
+                <span style={{ fontSize: 10, color: T.s }}>{daysLeft}d left</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Top Contributors */}
+      {topContributors.length > 0 && (
+        <div style={cardStyle}>
+          <div style={titleStyle}>🔥 Top Contributors This Week</div>
+          {topContributors.map((tc, i) => (
+            <div key={tc.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
+              <div style={{ width: 24, height: 24, borderRadius: "50%", background: colorFromId(tc.id), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#000" }}>{initials(tc.name)}</div>
+              <span style={{ flex: 1, fontSize: 12, color: T.t, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tc.name}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.a }}>{tc.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Community Stats */}
+      <div style={cardStyle}>
+        <div style={titleStyle}>📊 Community Stats</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {[
+            [stats.members, "Members"],
+            [stats.postsWeek, "Posts this week"],
+            [stats.commentsWeek, "Comments this week"],
+            [topContributors.length, "Active posters"],
+          ].map(([v, l], i) => (
+            <div key={i} style={{ background: T.dim, borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: T.a }}>{v}</div>
+              <div style={{ fontSize: 10, color: T.s, marginTop: 2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -280,28 +426,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
           </div>
         ) : posts.map(p => <PostCard key={p.id} post={p} currentUserId={currentUser?.id} allMembers={allMembers} supabase={supabase} onLikeToggle={handleLike} onCommentSubmit={loadPosts}/>)}
       </div>
-      <div className="community-sidebar" style={{display:"flex",flexDirection:"column",gap:16}}>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:14,padding:20}}>
-          <div style={{fontSize:13,fontWeight:800,color:T.t,marginBottom:14}}>👥 Members ({allMembers.length})</div>
-          {allMembers.slice(0,8).map(m => (
-            <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-              <Avatar profile={m} size={30}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:12,fontWeight:700,color:T.t,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.full_name||m.email}{m.id===currentUser?.id&&<span style={{fontSize:10,color:T.a}}> (you)</span>}</div>
-                {m.brokerage && <div style={{fontSize:11,color:T.s}}>{m.brokerage}</div>}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{background:T.card,border:`1px solid ${T.b}`,borderRadius:14,padding:20}}>
-          <div style={{fontSize:13,fontWeight:800,color:T.t,marginBottom:14}}>Community Guidelines</div>
-          {[["🏆","Share your wins"],["❓","Ask questions"],["💡","Drop tips"],["🤝","Lift each other up"],["🚫","No spam"]].map(([icon,text]) => (
-            <div key={text} style={{display:"flex",gap:10,marginBottom:10}}>
-              <span>{icon}</span><span style={{fontSize:13,color:T.s}}>{text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <CommunitySidebar supabase={supabase} allMembers={allMembers} currentUser={currentUser} posts={posts}/>
     </div>
   );
 }
