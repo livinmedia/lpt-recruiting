@@ -112,7 +112,6 @@ export default function Events({ userId, profile }) {
     setSaving(true); setSaveMsg('');
 
     const startISO = `${form.start_date}T${form.start_time}:00`;
-    const endDate = form.end_date || form.start_date;
     const endISO = `${endDate}T${form.end_time}:00`;
     const city = form.location_type === 'virtual' ? 'virtual' : (form.city || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const slug = editEvent?.slug || makeSlug(form.title);

@@ -109,6 +109,7 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: agentName(agent), brokerage: agent.brokerage_name, city: agent.city, state: agent.state }),
       });
+      if (!res.ok) throw new Error(`Enrich failed (${res.status})`);
       const data = await res.json();
       setEnrichedData(data);
       logActivity(userId, 'enrich_agent', { agent_id: agent.id });

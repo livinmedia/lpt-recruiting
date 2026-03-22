@@ -120,6 +120,7 @@ export default function CRM({
           user_id: userId,
         }),
       });
+      if (!r.ok) throw new Error(`Rue error (${r.status})`);
       const d = await r.json();
       if (d.content) setRueCoaching(d.content);
     } catch {
