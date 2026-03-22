@@ -128,14 +128,64 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
     setDripGenerating(true);
     setDripActivateMsg("");
     try {
-      await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-drip", {
+      if (regenerate) {
+        await supabase.from("lead_drip_emails").delete().eq("lead_id", lead.id).eq("rue_generated", true);
+      }
+
+      const prompt = `You are Rue, a recruiting email strategist. Generate a 5-email drip sequence to recruit ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}.
+
+Lead details:
+- Interest score: ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"})
+- Stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}
+- Source: ${lead.source || "unknown"}
+- Tier: ${lead.tier || "unknown"}
+- Pain points: ${lead.pain_points ? JSON.stringify(lead.pain_points) : "unknown"}
+- Outreach angle: ${lead.outreach_angle || "none set"}
+- Notes: ${lead.notes || "none"}
+${lead.activity_summary ? `- Activity: ${JSON.stringify(lead.activity_summary)}` : ""}
+
+Space each email 3-5 days apart. Make each email feel personal — reference their brokerage, market, or situation. No generic recruiting spam.
+
+IMPORTANT: Return ONLY a JSON array (no markdown, no backticks) with exactly 5 objects, each with "subject" (string) and "body" (string) keys. Example format:
+[{"subject":"...","body":"..."},{"subject":"...","body":"..."}]`;
+
+      const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ lead_id: lead.id, regenerate }),
+        body: JSON.stringify({
+          system: "You are Rue, a recruiting email strategist. You respond ONLY with valid JSON arrays. No markdown, no explanation, just the JSON.",
+          messages: [{ role: "user", content: prompt }],
+          user_id: userId,
+        }),
       });
+      const d = await r.json();
+      if (!d.content) throw new Error("No content from Rue");
+
+      // Parse the JSON array from Rue's response
+      const cleaned = d.content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+      const emails = JSON.parse(cleaned);
+      if (!Array.isArray(emails) || emails.length === 0) throw new Error("Invalid drip sequence format");
+
+      // Insert into lead_drip_emails with scheduled dates
+      const now = new Date();
+      const rows = emails.map((email, i) => ({
+        lead_id: lead.id,
+        subject: email.subject,
+        body: email.body,
+        scheduled_for: new Date(now.getTime() + (i + 1) * 3 * 24 * 60 * 60 * 1000).toISOString(),
+        status: "scheduled",
+        approved: false,
+        rue_generated: true,
+      }));
+
+      const { error } = await supabase.from("lead_drip_emails").insert(rows);
+      if (error) throw error;
+
       await loadDripEmails();
     } catch (err) {
       console.error("Generate drip error:", err);
+      setDripActivateMsg("Failed to generate drip sequence. Please try again.");
+      setTimeout(() => setDripActivateMsg(""), 4000);
     }
     setDripGenerating(false);
   };
