@@ -87,6 +87,9 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
   const [enriching, setEnriching] = useState(false);
   const [enrichDone, setEnrichDone] = useState(false);
 
+  // Routing context (plan-based)
+  const [routingCtx, setRoutingCtx] = useState(null);
+
   // Drip sequence
   const [dripEmails, setDripEmails] = useState([]);
   const [dripEnabled, setDripEnabled] = useState(lead.drip_enabled ?? false);
@@ -103,8 +106,14 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
       loadTasks();
       supabase.from("lead_events").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(100).then(({ data }) => setEvents(data || []));
       loadDripEmails();
+      // Fetch routing context for plan-based outreach
+      if (userId) {
+        supabase.from("lead_routing_context").select("*").eq("lead_id", lead.id).eq("user_id", userId).maybeSingle()
+          .then(({ data }) => setRoutingCtx(data || null))
+          .catch(() => setRoutingCtx(null));
+      }
     }
-  }, [lead?.id]);
+  }, [lead?.id, userId]);
 
   // Auto-open email sidebar and draft when arriving from Pipeline "Draft Outreach"
   const autoDraftTriggered = useRef(false);
@@ -136,6 +145,11 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
         await supabase.from("lead_drip_emails").delete().eq("lead_id", lead.id).eq("rue_generated", true);
       }
 
+      const dripSystemRules = ["You are Rue, a recruiting email strategist. You respond ONLY with valid JSON arrays. No markdown, no explanation, just the JSON."];
+      if (routingCtx?.is_same_brokerage) {
+        dripSystemRules.push("CRITICAL: The lead is at the SAME brokerage as the recruiter. NEVER reference the brokerage negatively. Focus on team benefits, mentorship, culture, leads.");
+      }
+
       const prompt = `You are Rue, a recruiting email strategist. Generate a 5-email drip sequence to recruit ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}.
 
 Lead details:
@@ -147,8 +161,9 @@ Lead details:
 - Outreach angle: ${lead.outreach_angle || "none set"}
 - Notes: ${lead.notes || "none"}
 ${lead.activity_summary ? `- Activity: ${JSON.stringify(lead.activity_summary)}` : ""}
+${getRoutingPromptBlock()}
 
-Space each email 3-5 days apart. Make each email feel personal — reference their brokerage, market, or situation. No generic recruiting spam.
+Space each email 3-5 days apart. Make each email feel personal — reference their brokerage, market, or situation. No generic recruiting spam.${routingCtx?.is_same_brokerage ? " NEVER reference their brokerage negatively — they are at the SAME brokerage. Focus on team opportunity." : ""}
 
 IMPORTANT: Return ONLY a JSON array (no markdown, no backticks) with exactly 5 objects, each with "subject" (string) and "body" (string) keys. Example format:
 [{"subject":"...","body":"..."},{"subject":"...","body":"..."}]`;
@@ -157,7 +172,7 @@ IMPORTANT: Return ONLY a JSON array (no markdown, no backticks) with exactly 5 o
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
-          system: "You are Rue, a recruiting email strategist. You respond ONLY with valid JSON arrays. No markdown, no explanation, just the JSON.",
+          system: dripSystemRules.join("\n"),
           messages: [{ role: "user", content: prompt }],
           user_id: userId,
         }),
@@ -348,7 +363,7 @@ IMPORTANT: Return ONLY a JSON array (no markdown, no backticks) with exactly 5 o
   const openEmailSidebar = async () => {
     if (onClearInline) onClearInline();
     setEmailTo(lead.email || "");
-    setEmailSubject(`Why ${lead.brokerage_name || lead.brokerage || "your brokerage"} agents are making a move`);
+    setEmailSubject(getDefaultSubject());
     setEmailBody("");
     setEmailSuccess(false);
     setRueCoaching("");
@@ -362,8 +377,8 @@ IMPORTANT: Return ONLY a JSON array (no markdown, no backticks) with exactly 5 o
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
-          system: "You are Rue, a recruiting email coach. Give brief, actionable advice. 2-3 bullet points max.",
-          messages: [{ role: "user", content: `I'm emailing ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}. Score: ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"}). Stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}. ${lead.activity_summary ? `Activity: ${JSON.stringify(lead.activity_summary)}.` : ""} What approach should I take?` }],
+          system: "You are Rue, a recruiting email coach. Give brief, actionable advice. 2-3 bullet points max. Tailor advice to the recruiter's plan and the routing context provided.",
+          messages: [{ role: "user", content: `I'm emailing ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}. Score: ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"}). Stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}. ${lead.activity_summary ? `Activity: ${JSON.stringify(lead.activity_summary)}.` : ""}${getRoutingPromptBlock()} What approach should I take?` }],
           user_id: userId,
         }),
       });
@@ -384,9 +399,7 @@ IMPORTANT: Return ONLY a JSON array (no markdown, no backticks) with exactly 5 o
 
   const draftWithRue = async () => {
     setEmailDrafting(true);
-    const autoSubject = !emailSubject.trim()
-      ? (lead.brokerage_name ? `Quick question about ${lead.brokerage_name}` : `${lead.first_name}, quick thought for you`)
-      : emailSubject;
+    const autoSubject = !emailSubject.trim() ? getDefaultSubject() : emailSubject;
     if (!emailSubject.trim()) setEmailSubject(autoSubject);
     try {
       const draftPrompt = `Write a recruiting email from me to this lead.
@@ -412,15 +425,34 @@ ABOUT THE LEAD:
 - Pain points: ${lead.pain_points ? JSON.stringify(lead.pain_points) : "unknown"}
 - Outreach angle: ${lead.outreach_angle || "none set"}
 ${rueCoaching ? `\nCoaching notes from Rue: ${rueCoaching}` : ""}
+${getRoutingPromptBlock()}
 
 EMAIL SUBJECT: ${autoSubject}
 
 Write the email body. Be specific to this person — reference their brokerage, market, or situation. Make it feel like I actually know them. No generic recruiting spam.`;
+
+      const systemRules = [
+        "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.",
+        "",
+        "CRITICAL RULES:",
+        "- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.",
+        "- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"",
+        "- Use SPECIFIC details about the lead and recruiter provided",
+        "- Keep it conversational and direct — like a real person texting a colleague",
+        "- Short paragraphs, 150-250 words max",
+        "- End with a clear, low-pressure CTA",
+        "- Do NOT include a subject line in the body — just write the email body",
+        "- Sign off with the recruiter's actual name",
+      ];
+      if (routingCtx?.is_same_brokerage) {
+        systemRules.push("- CRITICAL: The lead is at the SAME brokerage as the recruiter. NEVER badmouth or compare brokerages. Focus on team benefits, mentorship, leads, or culture instead.");
+      }
+
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
-          system: "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.\n\nCRITICAL RULES:\n- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.\n- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"\n- Use SPECIFIC details about the lead and recruiter provided\n- Keep it conversational and direct — like a real person texting a colleague\n- Short paragraphs, 150-250 words max\n- End with a clear, low-pressure CTA\n- Do NOT include a subject line in the body — just write the email body\n- Sign off with the recruiter's actual name",
+          system: systemRules.join("\n"),
           messages: [{ role: "user", content: draftPrompt }],
           user_id: userId,
         }),
@@ -453,6 +485,49 @@ Write the email body. Be specific to this person — reference their brokerage, 
 
   const rkrtEmail = userProfile?.rkrt_email;
   const fromName = userProfile?.full_name || "You";
+
+  // Routing context helpers
+  const isOutreachBlocked = routingCtx?.recommended_action === 'upgrade_required' || routingCtx?.recommended_action === 'not_relevant';
+  const ROUTING_PILLS = {
+    recruit_to_brokerage: { emoji: "🎯", label: "Recruit to Brokerage", color: T.a },
+    recruit_to_brokerage_and_team: { emoji: "🎯", label: "Recruit to Brokerage + Team", color: T.a },
+    recruit_to_team: { emoji: "👥", label: "Recruit to Team", color: "#22d3ee" },
+    recruit_to_downline: { emoji: "🚀", label: "Recruit to Downline", color: "#a78bfa" },
+    upgrade_required: { emoji: "⬆️", label: "Upgrade Required", color: "#F59E0B" },
+    not_relevant: { emoji: "⚪", label: "Not a Recruiting Target", color: T.m },
+  };
+  const routingPill = routingCtx?.recommended_action ? ROUTING_PILLS[routingCtx.recommended_action] : null;
+
+  // Build routing-aware subject line
+  const getDefaultSubject = () => {
+    if (routingCtx?.is_same_brokerage) {
+      return `${lead.first_name}, let's chat about the team`;
+    }
+    return lead.brokerage_name || lead.brokerage
+      ? `Quick question about ${lead.brokerage_name || lead.brokerage}`
+      : `${lead.first_name}, quick thought for you`;
+  };
+
+  // Build routing context block for Rue prompts
+  const getRoutingPromptBlock = () => {
+    if (!routingCtx) return "";
+    const lines = [`\nROUTING CONTEXT:`, `- User's plan: ${routingCtx.plan_name || "free"}`, `- Same brokerage as lead: ${routingCtx.is_same_brokerage ? "YES" : "NO"}`, `- Recommended action: ${routingCtx.recommended_action || "unknown"}`];
+    const angleMap = {
+      recruit_to_brokerage: "Pitch leaving their brokerage to join the user's brokerage. Highlight brokerage benefits.",
+      recruit_to_brokerage_and_team: "Pitch joining the user's brokerage AND their specific team. Highlight both brokerage and team benefits.",
+      recruit_to_team: "DO NOT pitch switching brokerages — they're already at the same brokerage. Pitch joining the user's team within the same brokerage. Focus on team culture, support, leads, mentorship.",
+      recruit_to_downline: "Pitch the bigger vision — revenue share, building something together, growing a downline. This is a leadership-level conversation.",
+      upgrade_required: "DO NOT draft outreach. This agent is at the user's brokerage. The user needs to upgrade to Team Leader plan to recruit internally. Explain this instead.",
+      not_relevant: "This lead isn't a fit for the user's current plan. Explain why and suggest alternative approaches.",
+    };
+    if (routingCtx.recommended_action && angleMap[routingCtx.recommended_action]) {
+      lines.push(`- Outreach angle: ${angleMap[routingCtx.recommended_action]}`);
+    }
+    if (routingCtx.is_same_brokerage) {
+      lines.push(`- IMPORTANT: NEVER reference the lead's brokerage negatively — they are at the SAME brokerage as the user.`);
+    }
+    return lines.join("\n");
+  };
 
   // Rue prompts for this lead
   const ruePrompts = [
@@ -569,24 +644,55 @@ Write the email body. Be specific to this person — reference their brokerage, 
       <div className="lead-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
           <div onClick={onBack} style={{ fontSize: 14, color: T.s, cursor: "pointer", marginBottom: 8 }}>← Back to Pipeline</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: T.t }}>{lead.first_name} {lead.last_name}</div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: T.t }}>{lead.first_name} {lead.last_name}</div>
+            {routingCtx?.is_same_brokerage && (
+              <span style={{ fontSize: 11, fontWeight: 700, background: "rgba(34,211,238,0.12)", color: "#22d3ee", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(34,211,238,0.25)" }}>🏠 Same Brokerage</span>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
             <TPill t={lead.tier} />
             <UPill u={lead.urgency} />
             <Pill text={lead.pipeline_stage?.replace(/_/g, " ") || "new"} color={STAGES.find(s => s.id === lead.pipeline_stage)?.c || T.s} />
+            {routingPill && routingCtx?.recommended_action !== 'upgrade_required' && (
+              <span style={{ fontSize: 11, fontWeight: 700, background: routingPill.color + "18", color: routingPill.color, padding: "4px 10px", borderRadius: 6, border: `1px solid ${routingPill.color}30` }}>{routingPill.emoji} {routingPill.label}</span>
+            )}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {lead.email && (
-            <div onClick={openEmailSidebar} style={{ padding: "10px 16px", borderRadius: 8, background: T.a, color: "#000", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>📧 Email</div>
+            <div onClick={isOutreachBlocked ? undefined : openEmailSidebar} style={{ padding: "10px 16px", borderRadius: 8, background: isOutreachBlocked ? T.d : T.a, color: isOutreachBlocked ? T.m : "#000", fontSize: 14, fontWeight: 700, cursor: isOutreachBlocked ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: isOutreachBlocked ? 0.5 : 1 }}>📧 Email</div>
           )}
           <div onClick={() => setShowDeleteConfirm(true)} style={{ padding: "10px 16px", borderRadius: 8, background: T.r + "15", color: T.r, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>🗑️ Delete</div>
         </div>
       </div>
 
+      {/* Routing: Upgrade Required Banner */}
+      {routingCtx?.recommended_action === 'upgrade_required' && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", marginBottom: 20 }}>
+          <span style={{ fontSize: 20 }}>⬆️</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#F59E0B" }}>Internal recruiting requires Team Leader plan</div>
+            <div style={{ fontSize: 12, color: T.s, marginTop: 2 }}>This agent is at your brokerage. Upgrade to recruit within your own brokerage.</div>
+          </div>
+          <div onClick={() => { if (window.location.hash) window.location.hash = '#profile'; }} style={{ padding: "8px 16px", borderRadius: 8, background: "#F59E0B", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Upgrade</div>
+        </div>
+      )}
+
+      {/* Routing: Not Relevant Banner */}
+      {routingCtx?.recommended_action === 'not_relevant' && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", borderRadius: 10, background: "rgba(107,114,128,0.08)", border: "1px solid rgba(107,114,128,0.3)", marginBottom: 20 }}>
+          <span style={{ fontSize: 20 }}>⚪</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: T.m }}>Not a Recruiting Target</div>
+            <div style={{ fontSize: 12, color: T.s, marginTop: 2 }}>This lead doesn't match your current plan's recruiting scope.</div>
+          </div>
+        </div>
+      )}
+
       {/* Rue Quick Actions */}
       <div className="lead-actions-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
-        {/* Enrich Contact — replaces Research */}
+        {/* Enrich Contact — always available */}
         <div
           onClick={enriching ? undefined : handleEnrich}
           style={{ background: enrichDone ? "rgba(16,185,129,0.1)" : T.card, border: `1px solid ${enrichDone ? "#10b981" : enriching ? T.a : T.b}`, borderRadius: 8, padding: "14px 16px", cursor: enriching ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 10, opacity: enriching ? 0.6 : 1, transition: "all 0.2s" }}
@@ -596,18 +702,22 @@ Write the email body. Be specific to this person — reference their brokerage, 
             {enrichDone ? "Enriched!" : enriching ? "Enriching..." : "Enrich Contact"}
           </span>
         </div>
-        {ruePrompts.slice(1).map(([icon, label, q], i) => (
-          <div
-            key={i}
-            onClick={() => i === 0 ? (async () => { await openEmailSidebar(); draftWithRue(); })() : onAskInline(q)}
-            style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, padding: "14px 16px", cursor: inlineLoading || emailDrafting ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 10, opacity: inlineLoading ? 0.5 : 1 }}
-            onMouseOver={e => e.currentTarget.style.borderColor = T.bh}
-            onMouseOut={e => e.currentTarget.style.borderColor = T.b}
-          >
-            <span style={{ fontSize: 20 }}>{icon}</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: T.t }}>{label}</span>
-          </div>
-        ))}
+        {ruePrompts.slice(1).map(([icon, label, q], i) => {
+          const isDraftOutreach = i === 0;
+          const blocked = isDraftOutreach && isOutreachBlocked;
+          return (
+            <div
+              key={i}
+              onClick={blocked ? undefined : () => isDraftOutreach ? (async () => { await openEmailSidebar(); draftWithRue(); })() : onAskInline(q)}
+              style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, padding: "14px 16px", cursor: blocked ? "not-allowed" : (inlineLoading || emailDrafting ? "wait" : "pointer"), display: "flex", alignItems: "center", gap: 10, opacity: blocked ? 0.4 : (inlineLoading ? 0.5 : 1) }}
+              onMouseOver={e => { if (!blocked) e.currentTarget.style.borderColor = T.bh; }}
+              onMouseOut={e => e.currentTarget.style.borderColor = T.b}
+            >
+              <span style={{ fontSize: 20 }}>{icon}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: T.t }}>{label}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Inline Response */}
@@ -694,7 +804,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
                   <div style={{ color: '#22d3ee', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>💧 DRIP SEQUENCE {dripEnabled && <span style={{ color: T.a, marginLeft: 8 }}>● Active</span>}</div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {dripEmails.length > 0 && (
-                      <button onClick={() => generateDrip(true)} disabled={dripGenerating} style={{ fontSize: 11, background: 'transparent', border: `1px solid ${T.b}`, color: T.s, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>♻️ Regenerate</button>
+                      <button onClick={() => generateDrip(true)} disabled={dripGenerating || isOutreachBlocked} style={{ fontSize: 11, background: 'transparent', border: `1px solid ${T.b}`, color: T.s, borderRadius: 6, padding: '4px 10px', cursor: isOutreachBlocked ? 'not-allowed' : 'pointer', opacity: isOutreachBlocked ? 0.4 : 1 }}>♻️ Regenerate</button>
                     )}
                   </div>
                 </div>
@@ -708,8 +818,10 @@ Write the email body. Be specific to this person — reference their brokerage, 
 
                 {!dripGenerating && dripEmails.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                    <div style={{ fontSize: 13, color: T.s, marginBottom: 12 }}>No drip emails yet. Let Rue craft a personalized sequence.</div>
-                    <button onClick={() => generateDrip(true)} style={{ background: T.a, color: '#000', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✨ Generate with Rue</button>
+                    <div style={{ fontSize: 13, color: T.s, marginBottom: 12 }}>{isOutreachBlocked ? "Outreach is not available for this lead." : "No drip emails yet. Let Rue craft a personalized sequence."}</div>
+                    {!isOutreachBlocked && (
+                      <button onClick={() => generateDrip(true)} style={{ background: T.a, color: '#000', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✨ Generate with Rue</button>
+                    )}
                   </div>
                 )}
 

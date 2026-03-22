@@ -46,6 +46,9 @@ export default function CRM({
   const [emailHistory, setEmailHistory] = useState([]);
   const [emailHistoryLoading, setEmailHistoryLoading] = useState(false);
 
+  // Routing context for the currently-selected email lead
+  const [emailRoutingCtx, setEmailRoutingCtx] = useState(null);
+
   const ruePrompts = [
     ["🔍", "Find Prospects", `Find me 5 real estate agents who might be looking to switch brokerages.`, T.a],
     ["📊", "Score Leads", `Score my current leads and tell me who to prioritize.`, T.bl],
@@ -106,16 +109,21 @@ export default function CRM({
     setDeleting(false);
   };
 
-  const loadCoaching = async (lead) => {
+  const loadCoaching = async (lead, ctx) => {
     setRueCoachingLoading(true);
     setRueCoaching("");
     try {
-      const content = `I'm about to email ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}. Their engagement score is ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"}). Pipeline stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}. ${lead.activity_summary ? `Activity: ${JSON.stringify(lead.activity_summary)}.` : ""} What approach should I take? What should I mention or avoid?`;
+      let routingBlock = "";
+      if (ctx) {
+        routingBlock = `\nRouting context: Plan=${ctx.plan_name || "free"}, Same brokerage=${ctx.is_same_brokerage ? "YES" : "NO"}, Action=${ctx.recommended_action || "unknown"}.`;
+        if (ctx.is_same_brokerage) routingBlock += " IMPORTANT: Never reference their brokerage negatively — they're at the SAME brokerage.";
+      }
+      const content = `I'm about to email ${lead.first_name} ${lead.last_name} from ${lead.brokerage_name || lead.brokerage || "their brokerage"}. Their engagement score is ${lead.interest_score || 0}/100 (${lead.heat_level || "cold"}). Pipeline stage: ${(lead.pipeline_stage || "new").replace(/_/g, " ")}. ${lead.activity_summary ? `Activity: ${JSON.stringify(lead.activity_summary)}.` : ""}${routingBlock} What approach should I take? What should I mention or avoid?`;
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
-          system: "You are Rue, a recruiting email coach. Give brief, actionable advice for this specific email. Be concise — 2-3 bullet points max.",
+          system: "You are Rue, a recruiting email coach. Give brief, actionable advice for this specific email. Be concise — 2-3 bullet points max. Tailor advice to the recruiter's plan and routing context provided.",
           messages: [{ role: "user", content }],
           user_id: userId,
         }),
@@ -146,16 +154,33 @@ export default function CRM({
     setEmailHistoryLoading(false);
   };
 
-  const openEmail = (lead) => {
+  const openEmail = async (lead) => {
     setEmailLead(lead);
     setEmailTo(lead.email || "");
-    setEmailSubject(`Why ${lead.brokerage_name || lead.brokerage || "your brokerage"} agents are making a move`);
     setEmailBody("");
     setEmailSuccess(false);
     setRueCoaching("");
     setRueCoachingOpen(true);
     setEmailHistory([]);
-    loadCoaching(lead);
+    setEmailRoutingCtx(null);
+    // Fetch routing context
+    let ctx = null;
+    if (userId && lead.id) {
+      try {
+        const { data } = await supabase.from("lead_routing_context").select("*").eq("lead_id", lead.id).eq("user_id", userId).maybeSingle();
+        ctx = data || null;
+        setEmailRoutingCtx(ctx);
+      } catch { /* routing context is optional */ }
+    }
+    // Dynamic subject based on routing
+    if (ctx?.is_same_brokerage) {
+      setEmailSubject(`${lead.first_name}, let's chat about the team`);
+    } else {
+      setEmailSubject(lead.brokerage_name || lead.brokerage
+        ? `Quick question about ${lead.brokerage_name || lead.brokerage}`
+        : `${lead.first_name}, quick thought for you`);
+    }
+    loadCoaching(lead, ctx);
     loadEmailHistory(lead);
   };
 
@@ -163,10 +188,29 @@ export default function CRM({
     if (!emailLead) return;
     setEmailDrafting(true);
     const lead = emailLead;
+    const ctx = emailRoutingCtx;
     const autoSubject = !emailSubject.trim()
-      ? (lead.brokerage_name ? `Quick question about ${lead.brokerage_name}` : `${lead.first_name}, quick thought for you`)
+      ? (ctx?.is_same_brokerage ? `${lead.first_name}, let's chat about the team`
+        : (lead.brokerage_name ? `Quick question about ${lead.brokerage_name}` : `${lead.first_name}, quick thought for you`))
       : emailSubject;
     if (!emailSubject.trim()) setEmailSubject(autoSubject);
+
+    // Build routing context block
+    let routingBlock = "";
+    if (ctx) {
+      const angleMap = {
+        recruit_to_brokerage: "Pitch leaving their brokerage to join the user's brokerage.",
+        recruit_to_brokerage_and_team: "Pitch joining the user's brokerage AND their specific team.",
+        recruit_to_team: "DO NOT pitch switching brokerages. Pitch joining the user's team within the same brokerage.",
+        recruit_to_downline: "Pitch the bigger vision — revenue share, building something together.",
+        upgrade_required: "DO NOT draft outreach. Explain the user needs Team Leader plan to recruit internally.",
+        not_relevant: "Explain why this lead isn't a fit for their plan.",
+      };
+      routingBlock = `\nROUTING CONTEXT:\n- User's plan: ${ctx.plan_name || "free"}\n- Same brokerage: ${ctx.is_same_brokerage ? "YES" : "NO"}\n- Recommended action: ${ctx.recommended_action || "unknown"}`;
+      if (ctx.recommended_action && angleMap[ctx.recommended_action]) routingBlock += `\n- Outreach angle: ${angleMap[ctx.recommended_action]}`;
+      if (ctx.is_same_brokerage) routingBlock += `\n- IMPORTANT: NEVER reference their brokerage negatively — same brokerage as the user.`;
+    }
+
     try {
       const draftPrompt = `Write a recruiting email from me to this lead.
 
@@ -191,15 +235,34 @@ ABOUT THE LEAD:
 - Pain points: ${lead.pain_points ? JSON.stringify(lead.pain_points) : "unknown"}
 - Outreach angle: ${lead.outreach_angle || "none set"}
 ${rueCoaching ? `\nCoaching notes from Rue: ${rueCoaching}` : ""}
+${routingBlock}
 
 EMAIL SUBJECT: ${autoSubject}
 
 Write the email body. Be specific to this person — reference their brokerage, market, or situation. Make it feel like I actually know them. No generic recruiting spam.`;
+
+      const systemRules = [
+        "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.",
+        "",
+        "CRITICAL RULES:",
+        "- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.",
+        "- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"",
+        "- Use SPECIFIC details about the lead and recruiter provided",
+        "- Keep it conversational and direct — like a real person texting a colleague",
+        "- Short paragraphs, 150-250 words max",
+        "- End with a clear, low-pressure CTA",
+        "- Do NOT include a subject line in the body — just write the email body",
+        "- Sign off with the recruiter's actual name",
+      ];
+      if (ctx?.is_same_brokerage) {
+        systemRules.push("- CRITICAL: The lead is at the SAME brokerage as the recruiter. NEVER badmouth or compare brokerages. Focus on team benefits, mentorship, leads, or culture instead.");
+      }
+
       const r = await fetch(RUE_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({
-          system: "You are Rue, an expert recruiting email writer for real estate. Write personalized, compelling emails that feel human — NOT templated.\n\nCRITICAL RULES:\n- NEVER use placeholders like [Name], [Your Brokerage], [X years], etc.\n- NEVER use generic phrases like \"your impressive work\" or \"exciting opportunity\"\n- Use SPECIFIC details about the lead and recruiter provided\n- Keep it conversational and direct — like a real person texting a colleague\n- Short paragraphs, 150-250 words max\n- End with a clear, low-pressure CTA\n- Do NOT include a subject line in the body — just write the email body\n- Sign off with the recruiter's actual name",
+          system: systemRules.join("\n"),
           messages: [{ role: "user", content: draftPrompt }],
           user_id: userId,
         }),
