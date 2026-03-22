@@ -500,6 +500,9 @@ Write the email body. Be specific to this person — reference their brokerage, 
 
   // Build routing-aware subject line
   const getDefaultSubject = () => {
+    if (routingCtx?.recommended_action === 'recruit_to_downline') {
+      return `${lead.first_name}, let's build something together`;
+    }
     if (routingCtx?.is_same_brokerage) {
       return `${lead.first_name}, let's chat about the team`;
     }

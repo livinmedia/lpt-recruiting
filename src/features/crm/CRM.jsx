@@ -173,7 +173,9 @@ export default function CRM({
       } catch { /* routing context is optional */ }
     }
     // Dynamic subject based on routing
-    if (ctx?.is_same_brokerage) {
+    if (ctx?.recommended_action === 'recruit_to_downline') {
+      setEmailSubject(`${lead.first_name}, let's build something together`);
+    } else if (ctx?.is_same_brokerage) {
       setEmailSubject(`${lead.first_name}, let's chat about the team`);
     } else {
       setEmailSubject(lead.brokerage_name || lead.brokerage
@@ -190,7 +192,8 @@ export default function CRM({
     const lead = emailLead;
     const ctx = emailRoutingCtx;
     const autoSubject = !emailSubject.trim()
-      ? (ctx?.is_same_brokerage ? `${lead.first_name}, let's chat about the team`
+      ? (ctx?.recommended_action === 'recruit_to_downline' ? `${lead.first_name}, let's build something together`
+        : ctx?.is_same_brokerage ? `${lead.first_name}, let's chat about the team`
         : (lead.brokerage_name ? `Quick question about ${lead.brokerage_name}` : `${lead.first_name}, quick thought for you`))
       : emailSubject;
     if (!emailSubject.trim()) setEmailSubject(autoSubject);
