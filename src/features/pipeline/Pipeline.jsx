@@ -6,6 +6,9 @@ import T from '../../lib/theme';
 import { STAGES } from '../../lib/constants';
 import { ago } from '../../lib/utils';
 import { Pill, UPill, TPill } from '../../components/ui/Pill';
+import { supabase, logActivity } from '../../lib/supabase';
+
+const normBrokerage = (b) => (b || '').toLowerCase().trim().replace(/\s*(llc|inc|corp|realty|real estate|group|company|co)\s*/gi, '').trim();
 
 function getStageAction(lead) {
   const s = lead.pipeline_stage;
@@ -25,13 +28,61 @@ export default function Pipeline({
   search,
   setSearch,
   inlineLoading = false,
-  onUpdateStage,
   onTriggerDraftEmail,
+  userId = null,
+  userProfile = null,
 }) {
   const [pipeView, setPipeView] = useState("kanban");
   const [filters, setFilters] = useState({ market: "", tier: "", urgency: "", brokerage: "" });
   const [sortBy, setSortBy] = useState("urgency");
   const [dragLead, setDragLead] = useState(null);
+  const [dragOverCol, setDragOverCol] = useState(null);
+  const [stageToast, setStageToast] = useState(null);
+  const [recruitedLead, setRecruitedLead] = useState(null);
+
+  const userBrokerage = normBrokerage(userProfile?.brokerage);
+  const userPlan = userProfile?.plan || 'free';
+
+  const handleUpdateStage = async (leadId, newStage) => {
+    // Optimistic update
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+    const oldStage = lead.pipeline_stage;
+    lead.pipeline_stage = newStage;
+    setStageToast(`Moved to ${STAGES.find(s => s.id === newStage)?.l || newStage}`);
+    setTimeout(() => setStageToast(null), 2500);
+
+    try {
+      const { error } = await supabase.from("leads").update({ pipeline_stage: newStage }).eq("id", leadId);
+      if (error) throw error;
+      logActivity(userId, 'update_lead_stage', { lead_id: leadId, stage: newStage, from: oldStage });
+      // Show recruited celebration
+      if (newStage === 'recruited') {
+        setRecruitedLead(lead);
+      }
+    } catch (err) {
+      console.error("Stage update failed:", err);
+      lead.pipeline_stage = oldStage; // rollback
+      setStageToast("Failed to update stage");
+      setTimeout(() => setStageToast(null), 3000);
+    }
+  };
+
+  const handleRecruitedPost = async () => {
+    if (!recruitedLead || !userId) return;
+    try {
+      await supabase.from("daily_content").insert({
+        content_type: 'social_proof',
+        headline: `New recruit by ${userProfile?.full_name || 'a recruiter'}!`,
+        body: `🎉 ${userProfile?.full_name || 'A recruiter'} just recruited a new agent using RKRT! Welcome to the team. #RKRT #Recruiting #RealEstate`,
+        status: 'pending_approval',
+        user_id: userId,
+      });
+    } catch (err) {
+      console.error("Social proof post error:", err);
+    }
+    setRecruitedLead(null);
+  };
 
   const allMarkets = [...new Set(leads.map(l => l.market).filter(Boolean))].sort();
   const allBrokerages = [...new Set(leads.map(l => l.brokerage).filter(Boolean))].sort();
@@ -72,17 +123,23 @@ export default function Pipeline({
 
   const KanbanCard = ({ lead: l }) => {
     const act = getStageAction(l);
+    const isSameBrokerage = userBrokerage && normBrokerage(l.brokerage) === userBrokerage;
+    const isBlockedInternal = isSameBrokerage && userPlan === 'recruiter';
     return (
       <div
-        draggable
+        draggable={!isBlockedInternal}
         onDragStart={() => setDragLead(l)}
-        style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 8, padding: "14px 16px", marginBottom: 18, cursor: "grab", transition: "border-color 0.12s" }}
-        onMouseOver={ev => ev.currentTarget.style.borderColor = T.bh}
-        onMouseOut={ev => ev.currentTarget.style.borderColor = T.b}
+        onDragEnd={() => setDragLead(null)}
+        style={{ background: T.card, border: `1px solid ${isSameBrokerage ? 'rgba(34,211,238,0.25)' : T.b}`, borderRadius: 8, padding: "14px 16px", marginBottom: 18, cursor: isBlockedInternal ? "default" : "grab", transition: "border-color 0.12s, opacity 0.15s", opacity: isBlockedInternal ? 0.5 : 1 }}
+        onMouseOver={ev => { if (!isBlockedInternal) ev.currentTarget.style.borderColor = T.bh; }}
+        onMouseOut={ev => ev.currentTarget.style.borderColor = isSameBrokerage ? 'rgba(34,211,238,0.25)' : T.b}
       >
         <div onClick={() => { onSelectLead(l); onNavigate("lead"); }} style={{ cursor: "pointer" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: T.t }}>{l.first_name} {l.last_name}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.t }}>{l.first_name} {l.last_name}</div>
+              {isSameBrokerage && <span title="Same brokerage" style={{ fontSize: 12 }}>🏠</span>}
+            </div>
             <UPill u={l.urgency} />
           </div>
           <div style={{ fontSize: 14, color: T.s, marginBottom: 2 }}>{l.brokerage?.substring(0, 22) || "Unknown"}</div>
@@ -90,6 +147,7 @@ export default function Pipeline({
             <span style={{ fontSize: 14, color: T.s }}>{l.market}</span>
             <TPill t={l.tier} />
           </div>
+          {isBlockedInternal && <div style={{ fontSize: 11, color: '#F59E0B', marginTop: 6, fontWeight: 600 }}>⬆️ Upgrade to recruit internally</div>}
         </div>
         {act && (
           <div
@@ -202,15 +260,17 @@ export default function Pipeline({
           {STAGES.map(stg => {
             const colLeads = pipeLeads.filter(l => l.pipeline_stage === stg.id);
             return (
-              <div 
-                key={stg.id} 
-                style={{ minWidth: 220, flex: 1 }} 
-                onDragOver={ev => ev.preventDefault()} 
-                onDrop={() => { 
-                  if (dragLead && dragLead.pipeline_stage !== stg.id && onUpdateStage) { 
-                    onUpdateStage(dragLead.id, stg.id); 
+              <div
+                key={stg.id}
+                style={{ minWidth: 220, flex: 1 }}
+                onDragOver={ev => { ev.preventDefault(); setDragOverCol(stg.id); }}
+                onDragLeave={() => setDragOverCol(null)}
+                onDrop={() => {
+                  if (dragLead && dragLead.pipeline_stage !== stg.id) {
+                    handleUpdateStage(dragLead.id, stg.id);
                   }
-                  setDragLead(null); 
+                  setDragLead(null);
+                  setDragOverCol(null);
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, padding: "0 2px" }}>
@@ -220,7 +280,7 @@ export default function Pipeline({
                   </div>
                   <span style={{ fontSize: 16, fontWeight: 800, color: stg.c }}>{colLeads.length}</span>
                 </div>
-                <div style={{ background: T.d, borderRadius: 8, padding: 10, minHeight: 300, border: `1px solid ${T.b}` }}>
+                <div style={{ background: dragOverCol === stg.id ? `${stg.c}08` : T.d, borderRadius: 8, padding: 10, minHeight: 300, border: `1px solid ${dragOverCol === stg.id ? stg.c + '40' : T.b}`, transition: 'background 0.15s, border-color 0.15s' }}>
                   {colLeads.map(l => <KanbanCard key={l.id || l.first_name + l.last_name} lead={l} />)}
                   {colLeads.length === 0 && <div style={{ fontSize: 14, color: T.m, textAlign: "center", padding: "30px 8px" }}>No leads</div>}
                 </div>
@@ -268,6 +328,27 @@ export default function Pipeline({
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Stage change toast */}
+      {stageToast && (
+        <div style={{ position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)", background: T.a, color: "#000", padding: "12px 24px", borderRadius: 10, fontSize: 14, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>{stageToast}</div>
+      )}
+
+      {/* Recruited celebration modal */}
+      {recruitedLead && (
+        <>
+          <div onClick={() => setRecruitedLead(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 9000 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: T.card, border: `2px solid ${T.a}`, borderRadius: 16, padding: "40px 36px", zIndex: 9001, textAlign: "center", maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.t, marginBottom: 8 }}>Congrats!</div>
+            <div style={{ fontSize: 15, color: T.s, marginBottom: 24, lineHeight: 1.6 }}>{recruitedLead.first_name} {recruitedLead.last_name} moved to Recruited. Want to share this win?</div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <div onClick={handleRecruitedPost} style={{ padding: "12px 20px", borderRadius: 8, background: "#1877F2", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>📘 Post to Facebook</div>
+              <div onClick={() => setRecruitedLead(null)} style={{ padding: "12px 20px", borderRadius: 8, background: T.d, border: `1px solid ${T.b}`, color: T.s, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Skip</div>
+            </div>
+          </div>
+        </>
       )}
     </>
   );

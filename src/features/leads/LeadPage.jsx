@@ -11,6 +11,8 @@ import { CopyButton } from '../../components/ui/CopyButton';
 
 const RUE_CHAT_URL = "https://usknntguurefeyzusbdh.supabase.co/functions/v1/rue-chat";
 
+const cleanCitations = (text) => text ? text.replace(/\[\d+\](\[\d+\])*/g, '').replace(/\s{2,}/g, ' ').trim() : '';
+
 function timeAgo(ts) {
   if (!ts) return "";
   const s = Math.floor((Date.now() - new Date(ts)) / 1000);
@@ -798,7 +800,7 @@ Write the email body. Be specific to this person — reference their brokerage, 
               {lead.outreach_angle && (
                 <div style={{ marginTop: 20, padding: "16px", borderRadius: 8, background: T.d }}>
                   <div style={{ fontSize: 11, color: T.m, letterSpacing: 1.5, marginBottom: 4 }}>OUTREACH ANGLE</div>
-                  <div style={{ fontSize: 14, color: T.t, lineHeight: 1.6 }}>{lead.outreach_angle}</div>
+                  <div style={{ fontSize: 14, color: T.t, lineHeight: 1.6 }}>{cleanCitations(lead.outreach_angle)}</div>
                 </div>
               )}
 
@@ -811,8 +813,8 @@ Write the email body. Be specific to this person — reference their brokerage, 
                     const body = lines.slice(1).join('\n').trim();
                     return (
                       <div key={i} style={{ marginBottom: i < 2 ? 14 : 0 }}>
-                        <div style={{ color: '#7B8BA3', fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>{title}</div>
-                        <div style={{ color: '#E4E8F1', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{body}</div>
+                        <div style={{ color: '#7B8BA3', fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>{cleanCitations(title)}</div>
+                        <div style={{ color: '#E4E8F1', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{cleanCitations(body)}</div>
                       </div>
                     );
                   })}
