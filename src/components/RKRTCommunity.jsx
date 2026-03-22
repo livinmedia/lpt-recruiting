@@ -117,10 +117,38 @@ function MentionTextarea({ value, onChange, placeholder, rows=3, allMembers=[], 
   );
 }
 
-function RichText({ text }) {
+function renderContent(text) {
   if (!text) return null;
-  return text.split(/(@\S+)/g).map((part, i) =>
-    part.startsWith("@") ? <span key={i} style={{color:T.a,fontWeight:700}}>{part}</span> : part
+  const parts = text.split(/(@\w+|https?:\/\/[^\s]+|\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.match(/^@\w+/)) {
+      const isR = part.toLowerCase() === '@rue';
+      const isE = part.toLowerCase() === '@everyone';
+      return <span key={i} style={{ color: isR ? '#00E5A0' : isE ? '#F59E0B' : '#00D4AA', fontWeight: 600 }}>{part}</span>;
+    }
+    if (part.match(/^https?:\/\//)) {
+      return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#00E5A0', textDecoration: 'underline', wordBreak: 'break-all' }}>{part}</a>;
+    }
+    if (part.match(/^\*\*[^*]+\*\*$/)) {
+      return <strong key={i}>{part.replace(/\*\*/g, '')}</strong>;
+    }
+    return part;
+  });
+}
+
+function extractUrl(text) {
+  if (!text) return null;
+  const m = text.match(/https?:\/\/[^\s]+/);
+  return m ? m[0] : null;
+}
+
+function LinkPreview({ url }) {
+  if (!url) return null;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: "block", background: "#131D35", border: "1px solid #1A2744", borderLeft: "3px solid #00E5A0", borderRadius: 10, padding: "12px 16px", marginTop: 10, textDecoration: "none" }}>
+      <div style={{ fontSize: 10, color: T.s, marginBottom: 4 }}>🔗 Link</div>
+      <div style={{ fontSize: 13, color: T.a, wordBreak: "break-all" }}>{url}</div>
+    </a>
   );
 }
 
@@ -142,10 +170,16 @@ function PostCard({ post, currentUserId, allMembers, supabase, onLikeToggle, onC
   async function submitReply() {
     if (!reply.trim() || !currentUserId) return;
     setSubmitting(true);
-    await supabase.from("community_comments").insert({ post_id:post.id, user_id:currentUserId, content:reply.trim() });
+    const commentText = reply.trim();
+    const { data: newComment } = await supabase.from("community_comments").insert({ post_id:post.id, user_id:currentUserId, content:commentText }).select('id').single();
     await supabase.from("community_posts").update({ comments_count:(post.comments_count||0)+1 }).eq("id",post.id);
     setReply(""); await loadComments();
     if (onCommentSubmit) onCommentSubmit();
+    // Trigger Rue reply if @rue mentioned in comment
+    if (newComment?.id && !isRue(currentUserId) && commentText.toLowerCase().includes('@rue')) {
+      fetch(`${SUPA_URL}/functions/v1/rue-community?action=reply&comment_id=${newComment.id}`)
+        .catch(e => console.error('Rue comment reply failed:', e));
+    }
     setSubmitting(false);
   }
   return (
@@ -174,8 +208,10 @@ function PostCard({ post, currentUserId, allMembers, supabase, onLikeToggle, onC
             </div>
           </div>
         </div>
-        <p style={{fontSize:14,color:T.t,lineHeight:1.75,margin:"0 0 16px",whiteSpace:"pre-wrap"}}><RichText text={post.content}/></p>
-        <div style={{display:"flex",gap:4,paddingTop:12,borderTop:`1px solid ${T.b}`}}>
+        <p style={{fontSize:14,color:T.t,lineHeight:1.75,margin:"0 0 8px",whiteSpace:"pre-wrap"}}>{renderContent(post.content)}</p>
+        {post.image_url && <img src={post.image_url} alt="" style={{ width:"100%", maxHeight:400, objectFit:"cover", borderRadius:12, marginBottom:8 }}/>}
+        <LinkPreview url={extractUrl(post.content)}/>
+        <div style={{display:"flex",gap:4,paddingTop:12,marginTop:8,borderTop:`1px solid ${T.b}`}}>
           <button onClick={()=>onLikeToggle(post)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",background:post.liked?T.am:"transparent",color:post.liked?T.a:T.s,fontSize:13,fontWeight:600}}>{post.liked?"♥":"♡"} {post.likes_count||0}</button>
           <button onClick={toggleComments} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",background:open?"rgba(59,130,246,0.10)":"transparent",color:open?T.bl:T.s,fontSize:13,fontWeight:600}}>💬 {post.comments_count||0}</button>
         </div>
@@ -194,7 +230,7 @@ function PostCard({ post, currentUserId, allMembers, supabase, onLikeToggle, onC
                   {cIsBot && <span style={{fontSize:9,fontWeight:700,color:"#00E5A0",background:"rgba(0,229,160,0.15)",padding:"1px 5px",borderRadius:8}}>AI</span>}
                   <span style={{fontSize:11,color:T.s}}>{timeAgo(c.created_at)}</span>
                 </div>
-                <p style={{fontSize:13,color:T.t,margin:0,lineHeight:1.6}}><RichText text={c.content}/></p>
+                <p style={{fontSize:13,color:T.t,margin:0,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{renderContent(c.content)}</p>
               </div>
             </div>
           );})}
@@ -216,16 +252,38 @@ function Compose({ currentUser, allMembers, supabase, onPost }) {
   const [type, setType] = useState("win");
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileRef = useRef(null);
+
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+  function removeImage() { setImageFile(null); setImagePreview(null); if (fileRef.current) fileRef.current.value = ''; }
+
   async function submit() {
     if (!text.trim() || !currentUser?.id) return;
     setPosting(true); setError(null);
-    const { data: newPost, error:err } = await supabase.from("community_posts").insert({
-      user_id:currentUser.id, type, content:text.trim(), pinned:false, likes_count:0, comments_count:0,
-    }).select('id').single();
+    let imageUrl = null;
+    // Upload image if selected
+    if (imageFile) {
+      try {
+        const ext = imageFile.name.split('.').pop();
+        const path = `posts/${currentUser.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('community-images').upload(path, imageFile, { upsert: true });
+        if (upErr) { console.warn('Image upload failed:', upErr.message); }
+        else { imageUrl = supabase.storage.from('community-images').getPublicUrl(path).data.publicUrl; }
+      } catch (e) { console.warn('Image upload error:', e); }
+    }
+    const insertData = { user_id:currentUser.id, type, content:text.trim(), pinned:false, likes_count:0, comments_count:0 };
+    if (imageUrl) insertData.image_url = imageUrl;
+    const { data: newPost, error:err } = await supabase.from("community_posts").insert(insertData).select('id').single();
     if (err) { setError(err.message); }
     else {
-      setText(""); setType("win"); setTimeout(() => onPost && onPost(), 300);
-      // Fire-and-forget Rue auto-reply (only for human posts)
+      setText(""); setType("win"); removeImage(); setTimeout(() => onPost && onPost(), 300);
       if (newPost?.id && !isRue(currentUser.id)) {
         fetch(`${SUPA_URL}/functions/v1/rue-community?action=reply&post_id=${newPost.id}`)
           .catch(e => console.error('Rue auto-reply failed:', e));
@@ -239,12 +297,20 @@ function Compose({ currentUser, allMembers, supabase, onPost }) {
         <Avatar profile={currentUser} size={40}/>
         <MentionTextarea value={text} onChange={setText} allMembers={allMembers} placeholder="Share a win, drop a tip, ask the group... (type @ to mention someone)" rows={3} onSubmit={submit}/>
       </div>
+      {imagePreview && (
+        <div style={{marginBottom:12,position:"relative",display:"inline-block"}}>
+          <img src={imagePreview} alt="Preview" style={{maxHeight:120,borderRadius:10,border:`1px solid ${T.b}`}}/>
+          <div onClick={removeImage} style={{position:"absolute",top:-6,right:-6,width:22,height:22,borderRadius:"50%",background:T.r,color:"#fff",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>✕</div>
+        </div>
+      )}
       {error && <div style={{fontSize:12,color:T.r,marginBottom:10}}>⚠ {error}</div>}
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
           {Object.entries(TYPE_META).map(([key,meta]) => (
             <button key={key} onClick={()=>setType(key)} style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer",border:`1px solid ${type===key?meta.color:T.b}`,background:type===key?meta.bg:"transparent",color:type===key?meta.color:T.s}}>{meta.icon} {meta.label}</button>
           ))}
+          <button onClick={()=>fileRef.current?.click()} style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer",border:`1px solid ${imageFile?T.bl:T.b}`,background:imageFile?"rgba(59,130,246,0.10)":"transparent",color:imageFile?T.bl:T.s}}>📷 Photo</button>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleImageSelect} style={{display:"none"}}/>
         </div>
         <button onClick={submit} disabled={!text.trim()||posting} style={{marginLeft:"auto",padding:"8px 22px",borderRadius:9,border:"none",background:text.trim()?T.a:T.m,color:text.trim()?"#000":T.s,fontSize:13,fontWeight:800,cursor:text.trim()?"pointer":"default"}}>{posting?"Posting...":"Post"}</button>
       </div>
@@ -287,8 +353,8 @@ function CommunitySidebar({ supabase, allMembers, currentUser, posts }) {
     });
   }, [supabase, allMembers.length]);
 
-  const cardStyle = { background: "#131D35", border: "1px solid #1A2744", borderRadius: 14, padding: 16, marginBottom: 12 };
-  const titleStyle = { fontSize: 13, fontWeight: 800, color: T.t, marginBottom: 12 };
+  const cardStyle = { background: "#131D35", border: "1px solid #1A2744", borderRadius: 14, padding: 20, marginBottom: 16 };
+  const titleStyle = { fontSize: 16, fontWeight: 800, color: T.t, marginBottom: 14 };
 
   if (!loaded) return (
     <div className="community-sidebar" style={{ display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 20 }}>
@@ -300,14 +366,15 @@ function CommunitySidebar({ supabase, allMembers, currentUser, posts }) {
     <div className="community-sidebar" style={{ display: "flex", flexDirection: "column", gap: 0, position: "sticky", top: 20 }}>
       {/* Latest Articles */}
       {articles.length > 0 && (
-        <div style={cardStyle}>
+        <div style={{ ...cardStyle, borderTop: "3px solid #3B82F6" }}>
           <div style={titleStyle}>📰 Latest from RKRT</div>
           {articles.map(a => (
             <a key={a.id} href={`https://app.rkrt.in/i/${a.slug}`} target="_blank" rel="noreferrer"
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", fontSize: 12, color: T.s, textDecoration: "none", borderBottom: `1px solid ${T.b}` }}
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", fontSize: 13, color: T.s, textDecoration: "none", borderBottom: `1px solid ${T.b}` }}
               onMouseEnter={e => e.currentTarget.style.color = T.a}
               onMouseLeave={e => e.currentTarget.style.color = T.s}>
-              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8 }}>{a.title}</span>
+              <span style={{ fontSize: 14, flexShrink: 0 }}>📄</span>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</span>
               <span style={{ fontSize: 10, color: T.m, flexShrink: 0 }}>{timeAgo(a.created_at)}</span>
             </a>
           ))}
@@ -315,7 +382,7 @@ function CommunitySidebar({ supabase, allMembers, currentUser, posts }) {
       )}
 
       {/* Challenges */}
-      <div style={cardStyle}>
+      <div style={{ ...cardStyle, borderTop: "3px solid #F59E0B" }}>
         <div style={titleStyle}>📅 Events & Challenges</div>
         {challenges.length === 0 ? (
           <div style={{ fontSize: 12, color: T.s }}>No active challenges</div>
@@ -338,7 +405,7 @@ function CommunitySidebar({ supabase, allMembers, currentUser, posts }) {
 
       {/* Top Contributors */}
       {topContributors.length > 0 && (
-        <div style={cardStyle}>
+        <div style={{ ...cardStyle, borderTop: "3px solid #F43F5E" }}>
           <div style={titleStyle}>🔥 Top Contributors This Week</div>
           {topContributors.map((tc, i) => (
             <div key={tc.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
@@ -351,7 +418,7 @@ function CommunitySidebar({ supabase, allMembers, currentUser, posts }) {
       )}
 
       {/* Community Stats */}
-      <div style={cardStyle}>
+      <div style={{ ...cardStyle, borderTop: "3px solid #00E5A0" }}>
         <div style={titleStyle}>📊 Community Stats</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           {[
@@ -409,7 +476,7 @@ function FeedTab({ currentUser, allMembers, supabase }) {
   }
   const FILTERS = [{id:"all",label:"All"},{id:"win",label:"🏆 Wins"},{id:"question",label:"❓ Questions"},{id:"challenge",label:"📋 Check-ins"},{id:"tip",label:"💡 Tips"}];
   return (
-    <div className="community-layout" style={{display:"grid",gridTemplateColumns:"1fr 260px",gap:24,alignItems:"start"}}>
+    <div className="community-layout" style={{display:"grid",gridTemplateColumns:"3fr 1fr",gap:24,alignItems:"start"}}>
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
         <Compose currentUser={currentUser} allMembers={allMembers} supabase={supabase} onPost={loadPosts}/>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
