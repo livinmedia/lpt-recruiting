@@ -93,11 +93,16 @@ export default function CRM({
   const handleBulkDelete = async () => {
     setDeleting(true);
     const ids = [...selectedIds];
-    trackActivity(userId, 'bulk_delete', { count: ids.length });
-    await supabase.from('leads').delete().in('id', ids);
-    onBulkDelete(ids);
-    setSelectedIds(new Set());
-    setConfirmDelete(false);
+    try {
+      trackActivity(userId, 'bulk_delete', { count: ids.length });
+      const { error } = await supabase.from('leads').delete().in('id', ids);
+      if (error) throw error;
+      onBulkDelete(ids);
+      setSelectedIds(new Set());
+      setConfirmDelete(false);
+    } catch (err) {
+      console.error('Bulk delete failed:', err);
+    }
     setDeleting(false);
   };
 
@@ -207,10 +212,10 @@ Write the email body. Be specific to this person — reference their brokerage, 
   };
 
   const sendEmail = async () => {
-    if (!emailTo || !emailSubject || !emailBody || emailSending) return;
+    if (!emailTo?.trim() || !emailSubject?.trim() || !emailBody?.trim() || emailSending) return;
     setEmailSending(true);
     try {
-      await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/send-email", {
+      const r = await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -222,13 +227,16 @@ Write the email body. Be specific to this person — reference their brokerage, 
           user_id: userId,
         }),
       });
+      if (!r.ok) throw new Error(`Send failed (${r.status})`);
       if (emailLead?.id && userId) {
         await supabase.from('lead_activities').insert({ lead_id: emailLead.id, user_id: userId, action: 'outreach_sent', notes: `Email: ${emailSubject}` });
         trackActivity(userId, 'send_email', { lead_id: emailLead.id });
       }
-    } catch { /* swallow */ }
+      setEmailSuccess(true);
+    } catch (err) {
+      setEmailBody(prev => prev + `\n\n⚠️ Failed to send: ${err.message}. Please try again.`);
+    }
     setEmailSending(false);
-    setEmailSuccess(true);
   };
 
   const rkrtEmail = profile?.rkrt_email;

@@ -60,14 +60,25 @@ export default function TeamView({ supabase, userId, profile }) {
       setInviteSending(false);
     };
     const cancelInvite=async(inviteId)=>{
-      await supabase.from('team_invites').delete().eq('id',inviteId);
-      setPendingInvites(prev=>prev.filter(i=>i.id!==inviteId));
+      try{
+        const {error}=await supabase.from('team_invites').delete().eq('id',inviteId);
+        if(error) throw error;
+        setPendingInvites(prev=>prev.filter(i=>i.id!==inviteId));
+      }catch(err){
+        console.error('Cancel invite failed:',err);
+      }
     };
     const saveTeamInfo=async()=>{
       if(!teamData) return;
       setTeamSaving(true);
-      await supabase.from('teams').update({description:teamDesc,team_info:{...teamData.team_info,value_prop:teamValueProp,content_preferences:contentPrefs,growth_goal:teamGrowthGoal}}).eq('id',teamData.id);
-      setTeamSaving(false);setTeamSaved(true);setTimeout(()=>setTeamSaved(false),3000);
+      try{
+        const {error}=await supabase.from('teams').update({description:teamDesc,team_info:{...teamData.team_info,value_prop:teamValueProp,content_preferences:contentPrefs,growth_goal:teamGrowthGoal}}).eq('id',teamData.id);
+        if(error) throw error;
+        setTeamSaved(true);setTimeout(()=>setTeamSaved(false),3000);
+      }catch(err){
+        console.error('Save team info failed:',err);
+      }
+      setTeamSaving(false);
     };
     if(teamLoading) return <div style={{textAlign:"center",padding:60,color:T.m}}>Loading team...</div>;
     if(!teamData) return <div style={{textAlign:"center",padding:60,color:T.m}}>No team found. Contact support to set up your team.</div>;

@@ -71,26 +71,35 @@ export default function ContentTab({ userId, userProfile }) {
 
   const loadContent = async (date) => {
     setLoading(true);
-    const d = date || new Date().toISOString().split('T')[0];
-    const { data } = await supabase.from('daily_content').select('*').eq('content_date', d).order('created_at', { ascending: false });
-    let dailyData = data || [];
-    if (dailyData.length === 0 && d === new Date().toISOString().split('T')[0]) {
-      const recentRes = await supabase.from('daily_content').select('*').order('content_date', { ascending: false }).limit(6);
-      dailyData = recentRes.data || [];
-      if (dailyData.length > 0 && dailyData[0].content_date !== d) {
-        setContentDate(dailyData[0].content_date);
+    try {
+      const d = date || new Date().toISOString().split('T')[0];
+      const { data } = await supabase.from('daily_content').select('*').eq('content_date', d).order('created_at', { ascending: false });
+      let dailyData = data || [];
+      if (dailyData.length === 0 && d === new Date().toISOString().split('T')[0]) {
+        const recentRes = await supabase.from('daily_content').select('*').order('content_date', { ascending: false }).limit(6);
+        dailyData = recentRes.data || [];
+        if (dailyData.length > 0 && dailyData[0].content_date !== d) {
+          setContentDate(dailyData[0].content_date);
+        }
       }
+      setDailyContent(dailyData);
+    } catch (err) {
+      console.error("loadContent error:", err);
+      setDailyContent([]);
     }
-    setDailyContent(dailyData);
     setLoading(false);
   };
 
   const loadTeamPosts = async () => {
     if (!userProfile?.team_id) return;
-    const { data: team } = await supabase.from('teams').select('slug').eq('id', userProfile.team_id).single();
-    if (team?.slug) setTeamSlug(team.slug);
-    const { data } = await supabase.from('team_posts').select('*').eq('team_id', userProfile.team_id).order('created_at', { ascending: false });
-    setTeamPosts(data || []);
+    try {
+      const { data: team } = await supabase.from('teams').select('slug').eq('id', userProfile.team_id).single();
+      if (team?.slug) setTeamSlug(team.slug);
+      const { data } = await supabase.from('team_posts').select('*').eq('team_id', userProfile.team_id).order('created_at', { ascending: false });
+      setTeamPosts(data || []);
+    } catch (err) {
+      console.error("loadTeamPosts error:", err);
+    }
   };
 
   const showToast = (msg) => { setPostToast(msg); setTimeout(() => setPostToast(""), 3500); };
@@ -150,45 +159,50 @@ export default function ContentTab({ userId, userProfile }) {
   const publishTeamPost = async (requestedStatus) => {
     if (!postTitle.trim() || !userProfile?.team_id) return;
     setPostSaving(true);
-    // Non-admins submitting "publish" get 'pending' instead
-    const finalStatus = requestedStatus === 'published' && !isAdmin ? 'pending' : requestedStatus;
-    const now = new Date().toISOString();
-    if (editingPost) {
-      await supabase.from('team_posts').update({
-        title: postTitle,
-        excerpt: postExcerpt,
-        content: postContent,
-        image_url: imageUrl || editingPost.image_url || null,
-        status: finalStatus,
-        ...(finalStatus === 'published' ? { published_at: now } : {}),
-      }).eq('id', editingPost.id);
-    } else {
-      const slug = postTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) + '-' + crypto.randomUUID().split('-')[0];
-      const { data: inserted } = await supabase.from('team_posts').insert({
-        team_id: userProfile.team_id,
-        author_id: userId,
-        title: postTitle,
-        slug,
-        excerpt: postExcerpt,
-        content: postContent,
-        image_url: imageUrl || null,
-        status: finalStatus,
-        ...(finalStatus === 'published' ? { published_at: now } : {}),
-        content_source: 'rue_ai',
-      }).select().single();
-      // Fire-and-forget image backfill if no image uploaded
-      if (!imageUrl) {
-        fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-team-content', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ team_id: userProfile.team_id, backfill_images: true }),
-        }).catch(() => {});
+    try {
+      const finalStatus = requestedStatus === 'published' && !isAdmin ? 'pending' : requestedStatus;
+      const now = new Date().toISOString();
+      if (editingPost) {
+        const { error } = await supabase.from('team_posts').update({
+          title: postTitle,
+          excerpt: postExcerpt,
+          content: postContent,
+          image_url: imageUrl || editingPost.image_url || null,
+          status: finalStatus,
+          ...(finalStatus === 'published' ? { published_at: now } : {}),
+        }).eq('id', editingPost.id);
+        if (error) throw error;
+      } else {
+        const slug = postTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) + '-' + crypto.randomUUID().split('-')[0];
+        const { error } = await supabase.from('team_posts').insert({
+          team_id: userProfile.team_id,
+          author_id: userId,
+          title: postTitle,
+          slug,
+          excerpt: postExcerpt,
+          content: postContent,
+          image_url: imageUrl || null,
+          status: finalStatus,
+          ...(finalStatus === 'published' ? { published_at: now } : {}),
+          content_source: 'rue_ai',
+        }).select().single();
+        if (error) throw error;
+        if (!imageUrl) {
+          fetch('https://usknntguurefeyzusbdh.supabase.co/functions/v1/generate-team-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_id: userProfile.team_id, backfill_images: true }),
+          }).catch(() => {});
+        }
       }
+      resetPostModal();
+      loadTeamPosts();
+      if (finalStatus === 'pending') showToast("Post submitted for approval!");
+      else showToast("Post saved!");
+    } catch (err) {
+      showToast("Failed to save post. Please try again.");
     }
-    resetPostModal();
     setPostSaving(false);
-    loadTeamPosts();
-    if (finalStatus === 'pending') showToast("✅ Post submitted for approval!");
   };
 
   const openEditPost = (post) => {
@@ -203,30 +217,51 @@ export default function ContentTab({ userId, userProfile }) {
   };
 
   const approvePost = async (post) => {
-    const now = new Date().toISOString();
-    await supabase.from('team_posts').update({ status: 'published', approved_by: userId, approved_at: now, published_at: now }).eq('id', post.id);
-    loadTeamPosts();
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase.from('team_posts').update({ status: 'published', approved_by: userId, approved_at: now, published_at: now }).eq('id', post.id);
+      if (error) throw error;
+      loadTeamPosts();
+      showToast("Post approved and published!");
+    } catch (err) {
+      showToast("Failed to approve post.");
+    }
   };
 
   const unpublishPost = async (post) => {
-    await supabase.from('team_posts').update({ status: 'draft' }).eq('id', post.id);
-    loadTeamPosts();
+    try {
+      const { error } = await supabase.from('team_posts').update({ status: 'draft' }).eq('id', post.id);
+      if (error) throw error;
+      loadTeamPosts();
+    } catch (err) {
+      showToast("Failed to unpublish post.");
+    }
   };
 
   const deletePost = async (post) => {
-    await supabase.from('team_posts').delete().eq('id', post.id);
-    loadTeamPosts();
+    try {
+      const { error } = await supabase.from('team_posts').delete().eq('id', post.id);
+      if (error) throw error;
+      loadTeamPosts();
+    } catch (err) {
+      showToast("Failed to delete post.");
+    }
   };
 
   const openDecline = (post) => { setDecliningPost(post); setDeclineReason(""); setDeclineOpen(true); };
 
   const submitDecline = async () => {
     if (!decliningPost) return;
-    const now = new Date().toISOString();
-    await supabase.from('team_posts').update({ status: 'declined', decline_reason: declineReason, declined_by: userId, declined_at: now }).eq('id', decliningPost.id);
-    setDeclineOpen(false);
-    setDecliningPost(null);
-    loadTeamPosts();
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase.from('team_posts').update({ status: 'declined', decline_reason: declineReason, declined_by: userId, declined_at: now }).eq('id', decliningPost.id);
+      if (error) throw error;
+      setDeclineOpen(false);
+      setDecliningPost(null);
+      loadTeamPosts();
+    } catch (err) {
+      showToast("Failed to decline post.");
+    }
   };
 
   const postToFacebook = async (item) => {

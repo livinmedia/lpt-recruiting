@@ -266,18 +266,23 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
   const toggleBookingActive = async () => {
     if (!bookingAvail) return;
     const newVal = !bookingAvail.is_active;
-    setBookingAvail(b => ({ ...b, is_active: newVal }));
-    await supabase.from('booking_availability').upsert({
-      ...bookingAvail,
-      is_active: newVal,
-      user_id: userId,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' });
-    showToast(newVal ? "Bookings enabled!" : "Bookings paused.");
+    try {
+      const { error } = await supabase.from('booking_availability').upsert({
+        ...bookingAvail,
+        is_active: newVal,
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+      if (error) throw error;
+      setBookingAvail(b => ({ ...b, is_active: newVal }));
+      showToast(newVal ? "Bookings enabled!" : "Bookings paused.");
+    } catch (err) {
+      showToast("Failed to update booking status.", true);
+    }
   };
 
   const copyBookingUrl = () => {
-    navigator.clipboard.writeText(`https://rkrt.in/book/${profile?.booking_slug || ''}`);
+    navigator.clipboard.writeText(`https://rkrt.in/book/${profile?.booking_slug || ''}`).catch(() => {});
     setBookingCopied(true);
     setTimeout(() => setBookingCopied(false), 2000);
   };
@@ -555,6 +560,7 @@ export default function ProfilePage({ profile = {}, userId = null, leads = [], o
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
               body: JSON.stringify({ priceId, plan, mode })
             });
+            if (!res.ok) throw new Error(`Checkout failed (${res.status})`);
             const data = await res.json();
             if (data.url) window.location.href = data.url;
             else alert("Error: " + (data.error || "Unknown"));

@@ -44,21 +44,25 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
     setLoading(true);
     if (resetPage) setPage(0);
     const offset = resetPage ? 0 : page * LIMIT;
-    
-    const result = await agentSearch({
-      state: filters.state,
-      brokerage: filters.brokerage,
-      name: filters.name,
-      city: filters.city,
-      newDays: filters.newDays ? parseInt(filters.newDays) : null,
-      limit: LIMIT,
-      offset,
-    });
-    
-    setAgents(result.data);
-    setTotal(result.total);
+    try {
+      const result = await agentSearch({
+        state: filters.state,
+        brokerage: filters.brokerage,
+        name: filters.name,
+        city: filters.city,
+        newDays: filters.newDays ? parseInt(filters.newDays) : null,
+        limit: LIMIT,
+        offset,
+      });
+      setAgents(result?.data || []);
+      setTotal(result?.total || 0);
+      logActivity(userId, 'search_agents', { filters, results: result?.total });
+    } catch (err) {
+      console.error('Agent search failed:', err);
+      setAgents([]);
+      setTotal(0);
+    }
     setLoading(false);
-    logActivity(userId, 'search_agents', { filters, results: result.total });
   }, [filters, page, userId]);
 
   useEffect(() => {
@@ -114,28 +118,33 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
     setEnriching(false);
   };
 
+  const [addingLead, setAddingLead] = useState(false);
   const addToLeads = async (agent) => {
-    const leadData = {
-      user_id: userId,
-      first_name: agent.first_name || agentName(agent).split(' ')[0] || '',
-      last_name: agent.last_name || agentName(agent).split(' ').slice(1).join(' ') || '',
-      email: agent.email || '',
-      phone: agent.phone || '',
-      market: agent.city ? `${agent.city}, ${agent.state}` : agent.state,
-      brokerage: agent.brokerage_name,
-      license_number: agent.license_number,
-      license_state: agent.state,
-      source: 'agent_directory',
-      pipeline_stage: 'new',
-      urgency: 'LOW',
-    };
-    
-    const { data, error } = await supabase.from('leads').insert(leadData).select().single();
-    if (!error && data) {
+    setAddingLead(true);
+    try {
+      const leadData = {
+        user_id: userId,
+        first_name: agent.first_name || agentName(agent).split(' ')[0] || '',
+        last_name: agent.last_name || agentName(agent).split(' ').slice(1).join(' ') || '',
+        email: agent.email || '',
+        phone: agent.phone || '',
+        market: agent.city ? `${agent.city}, ${agent.state}` : agent.state,
+        brokerage: agent.brokerage_name,
+        license_number: agent.license_number,
+        license_state: agent.state,
+        source: 'agent_directory',
+        pipeline_stage: 'new',
+        urgency: 'LOW',
+      };
+      const { data, error } = await supabase.from('leads').insert(leadData).select().single();
+      if (error) throw error;
       logActivity(userId, 'add_lead_from_directory', { agent_id: agent.id, lead_id: data.id });
       if (onAddLead) onAddLead(data);
       setSelectedAgent(null);
+    } catch (err) {
+      console.error('Add to leads failed:', err);
     }
+    setAddingLead(false);
   };
 
   const inp = { padding: "12px 16px", borderRadius: 8, background: T.card, border: `1px solid ${T.b}`, color: T.t, fontSize: 15, outline: "none", fontFamily: "inherit", width: "100%" };
@@ -344,8 +353,8 @@ export default function AgentDirectory({ userId, userProfile, onAddLead, onEnric
               <div onClick={() => enrichAgent(selectedAgent)} style={{ flex: 1, padding: "14px", borderRadius: 8, background: enriching ? T.m : T.p + "15", color: enriching ? T.s : T.p, fontSize: 15, fontWeight: 700, cursor: enriching ? "wait" : "pointer", textAlign: "center", border: `1px solid ${T.p}30` }}>
                 {enriching ? "Enriching..." : "🔍 Enrich Contact"}
               </div>
-              <div onClick={() => addToLeads(selectedAgent)} style={{ flex: 1, padding: "14px", borderRadius: 8, background: T.a, color: "#000", fontSize: 15, fontWeight: 700, cursor: "pointer", textAlign: "center" }}>
-                ➕ Add to Pipeline
+              <div onClick={() => { if (!addingLead) addToLeads(selectedAgent); }} style={{ flex: 1, padding: "14px", borderRadius: 8, background: addingLead ? T.b : T.a, color: "#000", fontSize: 15, fontWeight: 700, cursor: addingLead ? "wait" : "pointer", textAlign: "center", opacity: addingLead ? 0.6 : 1 }}>
+                {addingLead ? "Adding..." : "➕ Add to Pipeline"}
               </div>
             </div>
           </div>

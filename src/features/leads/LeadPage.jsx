@@ -120,8 +120,12 @@ export default function LeadPage({ lead, onBack, onAskInline, onClearInline, inl
   }, [autoDraftEmail]);
 
   const loadDripEmails = async () => {
-    const { data } = await supabase.from("lead_drip_emails").select("*").eq("lead_id", lead.id).eq("rue_generated", true).order("scheduled_for", { ascending: true });
-    setDripEmails(data || []);
+    try {
+      const { data } = await supabase.from("lead_drip_emails").select("*").eq("lead_id", lead.id).eq("rue_generated", true).order("scheduled_for", { ascending: true });
+      setDripEmails(data || []);
+    } catch (err) {
+      console.error("loadDripEmails error:", err);
+    }
   };
 
   const generateDrip = async (regenerate = false) => {
@@ -191,45 +195,74 @@ IMPORTANT: Return ONLY a JSON array (no markdown, no backticks) with exactly 5 o
   };
 
   const approveDripEmail = async (emailId) => {
-    await supabase.from("lead_drip_emails").update({ approved: true }).eq("id", emailId);
-    loadDripEmails();
+    try {
+      const { error } = await supabase.from("lead_drip_emails").update({ approved: true }).eq("id", emailId);
+      if (error) throw error;
+      loadDripEmails();
+    } catch (err) {
+      console.error("Approve drip error:", err);
+    }
   };
 
   const cancelDripEmail = async (emailId) => {
-    await supabase.from("lead_drip_emails").update({ status: "cancelled" }).eq("id", emailId);
-    loadDripEmails();
+    try {
+      const { error } = await supabase.from("lead_drip_emails").update({ status: "cancelled" }).eq("id", emailId);
+      if (error) throw error;
+      loadDripEmails();
+    } catch (err) {
+      console.error("Cancel drip error:", err);
+    }
   };
 
   const saveDripEdit = async (emailId) => {
-    await supabase.from("lead_drip_emails").update({ subject: dripEditSubject, body: dripEditBody }).eq("id", emailId);
-    setDripEditingId(null);
-    loadDripEmails();
+    try {
+      const { error } = await supabase.from("lead_drip_emails").update({ subject: dripEditSubject, body: dripEditBody }).eq("id", emailId);
+      if (error) throw error;
+      setDripEditingId(null);
+      loadDripEmails();
+    } catch (err) {
+      console.error("Save drip edit error:", err);
+    }
   };
 
   const activateDripSequence = async () => {
-    await supabase.from("leads").update({ drip_enabled: true }).eq("id", lead.id);
-    lead.drip_enabled = true;
-    setDripEnabled(true);
-    const approvedCount = dripEmails.filter(e => e.approved).length;
-    setDripActivateMsg(`Sequence activated! ${approvedCount} email${approvedCount !== 1 ? 's' : ''} will send on schedule.`);
-    logActivity(userId, 'drip_enabled', { lead_id: lead.id });
-    setTimeout(() => setDripActivateMsg(""), 4000);
+    try {
+      const { error } = await supabase.from("leads").update({ drip_enabled: true }).eq("id", lead.id);
+      if (error) throw error;
+      setDripEnabled(true);
+      const approvedCount = dripEmails.filter(e => e.approved).length;
+      setDripActivateMsg(`Sequence activated! ${approvedCount} email${approvedCount !== 1 ? 's' : ''} will send on schedule.`);
+      logActivity(userId, 'drip_enabled', { lead_id: lead.id });
+      setTimeout(() => setDripActivateMsg(""), 4000);
+    } catch (err) {
+      console.error("Activate drip error:", err);
+    }
   };
 
   const bulkUpdateDrips = async (newStatus) => {
     const ids = Array.from(selectedDrips);
     if (ids.length === 0) return;
-    await supabase.from('lead_drip_emails').update({ status: newStatus, ...(newStatus === 'approved' ? { approved: true } : {}) }).in('id', ids);
-    setSelectedDrips(new Set());
-    loadDripEmails();
+    try {
+      const { error } = await supabase.from('lead_drip_emails').update({ status: newStatus, ...(newStatus === 'approved' ? { approved: true } : {}) }).in('id', ids);
+      if (error) throw error;
+      setSelectedDrips(new Set());
+      loadDripEmails();
+    } catch (err) {
+      console.error("Bulk update drips error:", err);
+    }
   };
 
   const bulkDeleteDrips = async () => {
     const ids = Array.from(selectedDrips);
     if (ids.length === 0) return;
-    await supabase.from('lead_drip_emails').delete().in('id', ids);
-    setSelectedDrips(new Set());
-    loadDripEmails();
+    try {
+      const { error } = await supabase.from('lead_drip_emails').delete().in('id', ids);
+      if (error) throw error;
+      setSelectedDrips(new Set());
+      loadDripEmails();
+    } catch (err) {
+      console.error("Bulk delete drips error:", err);
+    }
   };
 
   const loadTasks = async () => {
@@ -263,8 +296,13 @@ IMPORTANT: Return ONLY a JSON array (no markdown, no backticks) with exactly 5 o
   };
 
   const completeTask = async (taskId) => {
-    await supabase.from('lead_tasks').update({ completed_at: new Date().toISOString() }).eq('id', taskId);
-    loadTasks();
+    try {
+      const { error } = await supabase.from('lead_tasks').update({ completed_at: new Date().toISOString() }).eq('id', taskId);
+      if (error) throw error;
+      loadTasks();
+    } catch (err) {
+      console.error("Complete task error:", err);
+    }
   };
 
   const handleEnrich = async () => {
@@ -394,20 +432,23 @@ Write the email body. Be specific to this person — reference their brokerage, 
   };
 
   const sendEmail = async () => {
-    if (!emailTo || !emailSubject || !emailBody || emailSending) return;
+    if (!emailTo?.trim() || !emailSubject?.trim() || !emailBody?.trim() || emailSending) return;
     setEmailSending(true);
     try {
-      await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/send-email", {
+      const r = await fetch("https://usknntguurefeyzusbdh.supabase.co/functions/v1/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({ type: "user_outreach", to: emailTo, subject: emailSubject, body: emailBody, lead_id: lead.id, user_id: userId }),
       });
+      if (!r.ok) throw new Error(`Send failed (${r.status})`);
       if (lead.id && userId) {
         await supabase.from('lead_activities').insert({ lead_id: lead.id, user_id: userId, action: 'outreach_sent', notes: `Email: ${emailSubject}` });
       }
-    } catch { /* swallow */ }
+      setEmailSuccess(true);
+    } catch (err) {
+      setEmailBody(prev => prev + `\n\n⚠️ Failed to send: ${err.message}. Please try again.`);
+    }
     setEmailSending(false);
-    setEmailSuccess(true);
   };
 
   const rkrtEmail = userProfile?.rkrt_email;
@@ -630,7 +671,6 @@ Write the email body. Be specific to this person — reference their brokerage, 
                 </div>
               )}
 
-              {console.log('Dossier check:', lead?.id, !!lead?.raw_dossier)}
               {lead?.raw_dossier && (
                 <div style={{ marginTop: 16, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', borderRadius: 10, padding: '16px 18px' }}>
                   <div style={{ color: '#00E5A0', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>🎯 RUE RECRUITING DOSSIER</div>

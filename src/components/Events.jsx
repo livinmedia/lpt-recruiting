@@ -103,6 +103,12 @@ export default function Events({ userId, profile }) {
   async function handleSave(e) {
     e.preventDefault();
     if (!form.title || !form.start_date || !form.start_time) return;
+    const endDate = form.end_date || form.start_date;
+    const startDT = new Date(`${form.start_date}T${form.start_time}`);
+    const endDT = new Date(`${endDate}T${form.end_time || form.start_time}`);
+    if (endDT < startDT) { setSaveMsg('End time must be after start time.'); return; }
+    if (form.location_type !== 'in_person' && !form.virtual_link?.trim()) { setSaveMsg('Please add a virtual meeting link.'); return; }
+    if (form.location_type !== 'virtual' && !form.location_address?.trim()) { setSaveMsg('Please add a location address.'); return; }
     setSaving(true); setSaveMsg('');
 
     const startISO = `${form.start_date}T${form.start_time}:00`;

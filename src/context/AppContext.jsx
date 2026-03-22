@@ -230,7 +230,7 @@ export function AppProvider({ children }) {
         urgency: "LOW"
       };
       const r = await fetch(`${RUE_SUPA}/leads`, { method: "POST", headers: { "apikey": RUE_KEY, "Authorization": `Bearer ${RUE_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation" }, body: JSON.stringify(body) });
-      if (!r.ok) { console.error("Add lead error:", r.status, await r.text()); setSavingLead(false); return; }
+      if (!r.ok) { console.error("Add lead error:", r.status, await r.text()); alert("Failed to save lead. Please try again."); setSavingLead(false); return; }
       const saved = await r.json();
       const lead = Array.isArray(saved) ? saved[0] : saved;
       await load();
@@ -245,7 +245,7 @@ export function AppProvider({ children }) {
       }
       setNewLead({ first_name: "", last_name: "", phone: "", email: "", market: "", brokerage: "", source: "", notes: "" });
       setSavingLead(false);
-    } catch (e) { console.error("Save lead error:", e); setSavingLead(false); }
+    } catch (e) { console.error("Save lead error:", e); alert("Failed to save lead. Please try again."); setSavingLead(false); }
   }, [canSaveLead, savingLead, authUser, newLead, load, setViewWithHistory, askRueInline]);
 
   // UI state
